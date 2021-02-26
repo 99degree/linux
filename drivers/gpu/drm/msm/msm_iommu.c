@@ -232,14 +232,8 @@ static int msm_iommu_map(struct msm_mmu *mmu, uint64_t iova,
 	size_t ret;
 
 	/* The arm-smmu driver expects the addresses to be sign extended */
-        if (iova & BIT_ULL(48))
-                iova |= GENMASK_ULL(63, 49);
-        else if (iova & BIT_ULL(39))
-                iova |= GENMASK_ULL(63, 40);
-        else if (iova & BIT_ULL(36))
-                iova |= GENMASK_ULL(63, 37);
-        else if (iova & BIT_ULL(32))
-                iova |= GENMASK_ULL(63, 33);
+	if (iova & BIT_ULL(48))
+		iova |= GENMASK_ULL(63, 49);
 
 	ret = iommu_map_sgtable(iommu->domain, iova, sgt, prot);
 	WARN_ON(!ret);
@@ -251,14 +245,8 @@ static int msm_iommu_unmap(struct msm_mmu *mmu, uint64_t iova, size_t len)
 {
 	struct msm_iommu *iommu = to_msm_iommu(mmu);
 
-        if (iova & BIT_ULL(48))
-                iova |= GENMASK_ULL(63, 49);
-        else if (iova & BIT_ULL(39))
-                iova |= GENMASK_ULL(63, 40);
-        else if (iova & BIT_ULL(36))
-                iova |= GENMASK_ULL(63, 37);
-        else if (iova & BIT_ULL(32))
-                iova |= GENMASK_ULL(63, 33);
+	if (iova & BIT_ULL(48))
+		iova |= GENMASK_ULL(63, 49);
 
 	iommu_unmap(iommu->domain, iova, len);
 
