@@ -140,7 +140,7 @@ static int qcom_adreno_smmu_init_context(struct arm_smmu_domain *smmu_domain,
 	/* Only enable split pagetables for the GPU device (SID 0) */
 	if (!qcom_adreno_smmu_is_gpu_device(dev))
 		return 0;
-
+#if 0
 	/*
 	 * All targets that use the qcom,adreno-smmu compatible string *should*
 	 * be AARCH64 stage 1 but double check because the arm-smmu code assumes
@@ -149,7 +149,7 @@ static int qcom_adreno_smmu_init_context(struct arm_smmu_domain *smmu_domain,
 	if ((smmu_domain->stage == ARM_SMMU_DOMAIN_S1) &&
 	    (smmu_domain->cfg.fmt == ARM_SMMU_CTX_FMT_AARCH64))
 		pgtbl_cfg->quirks |= IO_PGTABLE_QUIRK_ARM_TTBR1;
-
+#endif
 	/*
 	 * Initialize private interface with GPU:
 	 */
