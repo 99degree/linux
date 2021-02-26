@@ -132,6 +132,17 @@ static int qcom_adreno_smmu_alloc_context_bank(struct arm_smmu_domain *smmu_doma
 	return __arm_smmu_alloc_bitmap(smmu->context_map, start, count);
 }
 
+static const struct of_device_id qcom_smmu_client_of_match_fixup[] __maybe_unused = {
+        { .compatible = "qcom,mdp4" },
+        { .compatible = "qcom,mdss" },
+        { .compatible = "qcom,mdp5" },
+        { .compatible = "qcom,sdm630-mdss" },
+        { .compatible = "qcom,sdm660-mdss" },
+        { .compatible = "qcom,sdm630-dpu" },
+        { .compatible = "qcom,sdm660-dpu" },
+	{},
+};
+
 static int qcom_adreno_smmu_init_context(struct arm_smmu_domain *smmu_domain,
 		struct io_pgtable_cfg *pgtbl_cfg, struct device *dev)
 {
@@ -140,7 +151,10 @@ static int qcom_adreno_smmu_init_context(struct arm_smmu_domain *smmu_domain,
 	/* Only enable split pagetables for the GPU device (SID 0) */
 	if (!qcom_adreno_smmu_is_gpu_device(dev))
 		return 0;
-#if 0
+#if 1
+        if (of_match_node(qcom_smmu_client_of_match_fixup, dev->of_node))
+		return 0;
+
 	/*
 	 * All targets that use the qcom,adreno-smmu compatible string *should*
 	 * be AARCH64 stage 1 but double check because the arm-smmu code assumes
@@ -169,6 +183,8 @@ static const struct of_device_id qcom_smmu_client_of_match[] __maybe_unused = {
         { .compatible = "qcom,mdp5" },
         { .compatible = "qcom,sdm630-mdss" },
         { .compatible = "qcom,sdm660-mdss" },
+        { .compatible = "qcom,sdm630-dpu" },
+        { .compatible = "qcom,sdm660-dpu" },
 	{ .compatible = "qcom,sc7180-mdss" },
 	{ .compatible = "qcom,sc7180-mss-pil" },
 	{ .compatible = "qcom,sdm845-mdss" },
@@ -265,6 +281,9 @@ static int qcom_smmu_def_domain_type(struct device *dev)
 {
 	const struct of_device_id *match =
 		of_match_device(qcom_smmu_client_of_match, dev);
+
+	if (!match)
+		dev_info(dev, "Not found iommu client %s \n", dev->of_node->name);
 
 	return match ? IOMMU_DOMAIN_IDENTITY : 0;
 }
