@@ -86,7 +86,7 @@
 //     status = "disabled";
 //       qcom,last-domain = <2>;
        qcom,last-context = <2>;
-	compatible = "qcom,smmu-v2";
+	compatible = "qcom,adreno-smmu", "qcom,smmu-v2";
        status = "okay";
 };
 
@@ -109,7 +109,7 @@
 };
 
 &mmss_smmu {
-        compatible = "qcom,adreno-smmu", "qcom,smmu-v2";
+        compatible = "qcom,smmu-v2";
        qcom,last-context = <16>;
 //     qcom,last-domain = <16>;
        status = "okay";
