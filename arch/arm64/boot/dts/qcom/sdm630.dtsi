@@ -1768,22 +1768,27 @@
 
 					opp-150000000 {
 						opp-hz = /bits/ 64 <150000000>;
+						opp-peak-kBps = <320000 320000 76800>;
 						required-opps = <&rpmpd_opp_low_svs>;
 					};
 					opp-275000000 {
 						opp-hz = /bits/ 64 <275000000>;
+						opp-peak-kBps = <6400000 6400000 160000>;
 						required-opps = <&rpmpd_opp_svs>;
 					};
 					opp-300000000 {
 						opp-hz = /bits/ 64 <300000000>;
+						opp-peak-kBps = <6400000 6400000 190000>;
 						required-opps = <&rpmpd_opp_svs_plus>;
 					};
 					opp-330000000 {
 						opp-hz = /bits/ 64 <330000000>;
+						opp-peak-kBps = <6400000 6400000 240000>;
 						required-opps = <&rpmpd_opp_nom>;
 					};
 					opp-412500000 {
 						opp-hz = /bits/ 64 <412500000>;
+						opp-peak-kBps = <6400000 6400000 320000>;
 						required-opps = <&rpmpd_opp_turbo>;
 					};
 				};
@@ -1799,6 +1804,11 @@
 
 				interrupt-parent = <&mdss>;
 				interrupts = <4 IRQ_TYPE_LEVEL_HIGH>;
+
+                                assigned-clocks = <&mmcc BYTE0_CLK_SRC>,
+                                                  <&mmcc PCLK0_CLK_SRC>;
+                                assigned-clock-parents = <&dsi0_phy 0>,
+                                                         <&dsi0_phy 1>;
 
 				clocks = <&mmcc MDSS_MDP_CLK>,
 					 <&mmcc MDSS_BYTE0_CLK>,
