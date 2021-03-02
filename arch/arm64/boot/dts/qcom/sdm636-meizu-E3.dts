@@ -82,6 +82,26 @@
 	compatible = "meizu,s6d6ft0-tianma", "sony,pioneer-td4322-truly";
 };
 
+
+/* dpu driver not support the added opp-peak-kBps property atm */
+&mdp_opp_table {
+		opp-150000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-275000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-300000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-330000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-412500000 {
+				/delete-property/ opp-peak-kBps;
+		};
+};
+
 &adreno_smmu {
 //     status = "disabled";
 //       qcom,last-domain = <2>;
