@@ -4750,6 +4750,97 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode sony_kirin_nt36672a_truly_mode = {
+	.clock = (1080 + 25 + 12 + 120) * (2520 + 12 + 4 + 10) * 60 / 1000,
+	.hdisplay = 1080,
+	.hsync_start = 1080 + 25,
+	.hsync_end = 1080 + 25 + 12,
+	.htotal = 1080 + 25 + 12 + 120,
+	.vdisplay = 2520,
+	.vsync_start = 2520 + 12,
+	.vsync_end = 2520 + 12 + 4,
+	.vtotal = 2520 + 12 + 4 + 10,
+	.width_mm = 60,
+	.height_mm = 139,
+};
+
+static const struct panel_desc_dsi sony_kirin_nt36672a_truly = {
+	.desc = {
+		.modes = &sony_kirin_nt36672a_truly_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 60,
+			.height = 139,
+		},
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+		 MIPI_DSI_CLOCK_NON_CONTINUOUS,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
+static const struct drm_display_mode sony_mermaid_nt36672a_tianma_mode = {
+	.clock = (1080 + 102 + 20 + 40) * (2520 + 10 + 2 + 8) * 60 / 1000,
+	.hdisplay = 1080,
+	.hsync_start = 1080 + 102,
+	.hsync_end = 1080 + 102 + 20,
+	.htotal = 1080 + 102 + 20 + 40,
+	.vdisplay = 2520,
+	.vsync_start = 2520 + 10,
+	.vsync_end = 2520 + 10 + 2,
+	.vtotal = 2520 + 10 + 2 + 8,
+	.width_mm = 65,
+	.height_mm = 151,
+};
+
+static const struct panel_desc_dsi sony_mermaid_nt36672a_tianma = {
+	.desc = {
+		.modes = &sony_mermaid_nt36672a_tianma_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 65,
+			.height = 151,
+		},
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+		 MIPI_DSI_CLOCK_NON_CONTINUOUS,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
+
+static const struct drm_display_mode s6d6ft0_tianma_fhd_mode = {
+	.clock = (1080 + 229 + 4 + 4) * (2160 + 8 + 2 + 6) * 60 / 1000,
+	.hdisplay = 1080,
+	.hsync_start = 1080 + 229,
+	.hsync_end = 1080 + 229 + 4,
+	.htotal = 1080 + 229 + 4 + 4,
+	.vdisplay = 2160,
+	.vsync_start = 2160 + 8,
+	.vsync_end = 2160 + 8 + 2,
+	.vtotal = 2160 + 8 + 2 + 6,
+	.width_mm = 0,
+	.height_mm = 0,
+};
+
+static const struct panel_desc_dsi s6d6ft0_tianma_fhd = {
+	.desc = {
+		.modes = &s6d6ft0_tianma_fhd_mode,
+		.num_modes = 1,
+		.bpc = 8,
+		.size = {
+			.width = 0,
+			.height = 0,
+		},
+                .connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST,
+	.format = MIPI_DSI_FMT_RGB888,
+	.lanes = 4,
+};
+
 static const struct of_device_id dsi_of_match[] = {
 	{
 		.compatible = "auo,b080uan01",
@@ -4773,6 +4864,15 @@ static const struct of_device_id dsi_of_match[] = {
 		.compatible = "osddisplays,osd101t2045-53ts",
 		.data = &osd101t2045_53ts
 	}, {
+		.compatible = "sony,kirin-nt36672a-truly",
+		.data = &sony_kirin_nt36672a_truly
+	}, {
+		.compatible = "sony,mermaid-nt36672a-tianma",
+		.data = &sony_mermaid_nt36672a_tianma
+	}, {
+                .compatible = "meizu,s6d6ft0-tianma",
+                .data = &s6d6ft0_tianma_fhd
+        }, {
 		/* sentinel */
 	}
 };

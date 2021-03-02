@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2010-2014, The Linux Foundation. All rights reserved.
@@ -274,6 +275,7 @@ static int qce_crypto_remove(struct platform_device *pdev)
 
 static const struct of_device_id qce_crypto_of_match[] = {
 	{ .compatible = "qcom,crypto-v5.1", },
+	{ .compatible = "qcom,crypto-v5.3.4", },
 	{ .compatible = "qcom,crypto-v5.4", },
 	{}
 };

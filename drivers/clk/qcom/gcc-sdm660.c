@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/regmap.h>
 #include <linux/reset-controller.h>
@@ -626,12 +627,12 @@ static struct clk_rcg2 hmss_gpll0_clk_src = {
 	.cmd_rcgr = 0x4805c,
 	.mnd_width = 0,
 	.hid_width = 5,
-	.parent_map = gcc_parent_map_xo_gpll0_gpll0_early_div,
+	.parent_map = gcc_parent_map_xo_gpll0,
 	.freq_tbl = ftbl_hmss_gpll0_clk_src,
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "hmss_gpll0_clk_src",
-		.parent_names = gcc_parent_names_xo_gpll0_gpll0_early_div,
-		.num_parents = 3,
+		.parent_names = gcc_parent_names_xo_gpll0,
+		.num_parents = 2,
 		.ops = &clk_rcg2_ops,
 	},
 };
@@ -980,6 +981,8 @@ static struct clk_rcg2 usb3_phy_aux_clk_src = {
 static struct clk_branch gcc_aggre2_ufs_axi_clk = {
 	.halt_reg = 0x75034,
 	.halt_check = BRANCH_HALT,
+	.hwcg_reg = 0x75034,
+	.hwcg_bit = 1,
 	.clkr = {
 		.enable_reg = 0x75034,
 		.enable_mask = BIT(0),
@@ -1027,6 +1030,8 @@ static struct clk_branch gcc_bimc_gfx_clk = {
 static struct clk_branch gcc_bimc_hmss_axi_clk = {
 	.halt_reg = 0x48004,
 	.halt_check = BRANCH_HALT_VOTED,
+	.hwcg_reg = 0x48004,
+	.hwcg_bit = 1,
 	.clkr = {
 		.enable_reg = 0x52004,
 		.enable_mask = BIT(22),
@@ -1576,6 +1581,19 @@ static struct clk_branch gcc_gpu_cfg_ahb_clk = {
 	},
 };
 
+static struct clk_branch gcc_gpll0_out_msscc = {
+	.halt_reg = 0x5200c,
+	.halt_check = BRANCH_HALT_DELAY,
+	.clkr = {
+		.enable_reg = 0x5200c,
+		.enable_mask = BIT(2),
+		.hw.init = &(struct clk_init_data){
+			.name = "gpll0_out_msscc",
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
 static struct clk_branch gcc_gpu_gpll0_clk = {
 	.halt_reg = 0x5200c,
 	.halt_check = BRANCH_HALT_DELAY,
@@ -1588,6 +1606,7 @@ static struct clk_branch gcc_gpu_gpll0_clk = {
 				"gpll0",
 			},
 			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1605,6 +1624,7 @@ static struct clk_branch gcc_gpu_gpll0_div_clk = {
 				"gpll0_early_div",
 			},
 			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1654,6 +1674,7 @@ static struct clk_branch gcc_mmss_gpll0_clk = {
 				"gpll0",
 			},
 			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1671,6 +1692,7 @@ static struct clk_branch gcc_mmss_gpll0_div_clk = {
 				"gpll0_early_div",
 			},
 			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1698,6 +1720,8 @@ static struct clk_branch gcc_mmss_noc_cfg_ahb_clk = {
 static struct clk_branch gcc_mmss_sys_noc_axi_clk = {
 	.halt_reg = 0x9000,
 	.halt_check = BRANCH_HALT,
+	.hwcg_reg = 0x9000,
+	.hwcg_bit = 1,
 	.clkr = {
 		.enable_reg = 0x9000,
 		.enable_mask = BIT(0),
@@ -1956,6 +1980,8 @@ static struct clk_branch gcc_ufs_ahb_clk = {
 static struct clk_branch gcc_ufs_axi_clk = {
 	.halt_reg = 0x75008,
 	.halt_check = BRANCH_HALT,
+	.hwcg_reg = 0x75008,
+	.hwcg_bit = 1,
 	.clkr = {
 		.enable_reg = 0x75008,
 		.enable_mask = BIT(0),
@@ -1963,6 +1989,23 @@ static struct clk_branch gcc_ufs_axi_clk = {
 			.name = "gcc_ufs_axi_clk",
 			.parent_names = (const char *[]){
 				"ufs_axi_clk_src",
+			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+static struct clk_branch gcc_ufs_axi_hw_ctl_clk = {
+	.halt_reg = 0x75008,
+	.clkr = {
+		.enable_reg = 0x75008,
+		.enable_mask = BIT(1),
+		.hw.init = &(struct clk_init_data){
+			.name = "gcc_ufs_axi_hw_ctl_clk",
+			.parent_names = (const char *[]){
+					"gcc_ufs_axi_clk",
 			},
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
@@ -2002,6 +2045,23 @@ static struct clk_branch gcc_ufs_ice_core_clk = {
 	},
 };
 
+static struct clk_branch gcc_ufs_ice_core_hw_ctl_clk = {
+	.halt_reg = 0x7600c,
+	.clkr = {
+		.enable_reg = 0x7600c,
+		.enable_mask = BIT(1),
+		.hw.init = &(struct clk_init_data){
+			.name = "gcc_ufs_ice_core_hw_ctl_clk",
+			.parent_names = (const char *[]){
+					"gcc_ufs_ice_core_clk",
+			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
 static struct clk_branch gcc_ufs_phy_aux_clk = {
 	.halt_reg = 0x76040,
 	.halt_check = BRANCH_HALT,
@@ -2012,6 +2072,23 @@ static struct clk_branch gcc_ufs_phy_aux_clk = {
 			.name = "gcc_ufs_phy_aux_clk",
 			.parent_names = (const char *[]){
 				"ufs_phy_aux_clk_src",
+			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+static struct clk_branch gcc_ufs_phy_aux_hw_ctl_clk = {
+	.halt_reg = 0x76040,
+	.clkr = {
+		.enable_reg = 0x76040,
+		.enable_mask = BIT(1),
+		.hw.init = &(struct clk_init_data){
+			.name = "gcc_ufs_phy_aux_hw_ctl_clk",
+			.parent_names = (const char *[]){
+					"gcc_ufs_phy_aux_clk",
 			},
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
@@ -2072,6 +2149,23 @@ static struct clk_branch gcc_ufs_unipro_core_clk = {
 			},
 			.flags = CLK_SET_RATE_PARENT,
 			.num_parents = 1,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+static struct clk_branch gcc_ufs_unipro_core_hw_ctl_clk = {
+	.halt_reg = 0x76008,
+	.clkr = {
+		.enable_reg = 0x76008,
+		.enable_mask = BIT(1),
+		.hw.init = &(struct clk_init_data){
+			.name = "gcc_ufs_unipro_core_hw_ctl_clk",
+			.parent_names = (const char *[]){
+					"gcc_ufs_unipro_core_clk",
+			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -2232,9 +2326,47 @@ static struct clk_branch gcc_usb_phy_cfg_ahb2phy_clk = {
 	},
 };
 
+static struct clk_branch hlos1_vote_lpass_adsp_smmu_clk = {
+	.halt_reg = 0x7d014,
+	.halt_check = BRANCH_VOTED,
+	.clkr = {
+		.enable_reg = 0x7d014,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data){
+			.name = "hlos1_vote_lpass_adsp_smmu_clk",
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+static struct clk_branch hlos1_vote_turing_adsp_smmu_clk = {
+	.halt_reg = 0x7d048,
+	.halt_check = BRANCH_VOTED,
+	.clkr = {
+		.enable_reg = 0x7d048,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data){
+			.name = "hlos1_vote_turing_adsp_smmu_clk",
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+static struct clk_branch hlos2_vote_turing_adsp_smmu_clk = {
+	.halt_reg = 0x7e048,
+	.halt_check = BRANCH_VOTED,
+	.clkr = {
+		.enable_reg = 0x7e048,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data){
+			.name = "hlos2_vote_turing_adsp_smmu_clk",
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
 static struct gdsc ufs_gdsc = {
 	.gdscr = 0x75004,
-	.gds_hw_ctrl = 0x0,
 	.pd = {
 		.name = "ufs_gdsc",
 	},
@@ -2244,7 +2376,6 @@ static struct gdsc ufs_gdsc = {
 
 static struct gdsc usb_30_gdsc = {
 	.gdscr = 0xf004,
-	.gds_hw_ctrl = 0x0,
 	.pd = {
 		.name = "usb_30_gdsc",
 	},
@@ -2254,9 +2385,35 @@ static struct gdsc usb_30_gdsc = {
 
 static struct gdsc pcie_0_gdsc = {
 	.gdscr = 0x6b004,
-	.gds_hw_ctrl = 0x0,
 	.pd = {
 		.name = "pcie_0_gdsc",
+	},
+	.pwrsts = PWRSTS_OFF_ON,
+	.flags = VOTABLE,
+};
+
+static struct gdsc hlos1_vote_lpass_adsp_gdsc = {
+	.gdscr = 0x7d034,
+	.pd = {
+		.name = "hlos1_vote_lpass_adsp",
+	},
+	.pwrsts = PWRSTS_OFF_ON,
+	.flags = VOTABLE,
+};
+
+static struct gdsc hlos1_vote_turing_adsp_gdsc = {
+	.gdscr = 0x7d04c,
+	.pd = {
+		.name = "hlos1_vote_turing_adsp",
+	},
+	.pwrsts = PWRSTS_OFF_ON,
+	.flags = VOTABLE,
+};
+
+static struct gdsc hlos2_vote_turing_adsp_gdsc = {
+	.gdscr = 0x7e04c,
+	.pd = {
+		.name = "hlos2_vote_turing_adsp",
 	},
 	.pwrsts = PWRSTS_OFF_ON,
 	.flags = VOTABLE,
@@ -2394,12 +2551,23 @@ static struct clk_regmap *gcc_sdm660_clocks[] = {
 	[USB30_MASTER_CLK_SRC] = &usb30_master_clk_src.clkr,
 	[USB30_MOCK_UTMI_CLK_SRC] = &usb30_mock_utmi_clk_src.clkr,
 	[USB3_PHY_AUX_CLK_SRC] = &usb3_phy_aux_clk_src.clkr,
+	[GPLL0_OUT_MSSCC] = &gcc_gpll0_out_msscc.clkr,
+	[GCC_UFS_AXI_HW_CTL_CLK] = &gcc_ufs_axi_hw_ctl_clk.clkr,
+	[GCC_UFS_ICE_CORE_HW_CTL_CLK] = &gcc_ufs_ice_core_hw_ctl_clk.clkr,
+	[GCC_UFS_PHY_AUX_HW_CTL_CLK] = &gcc_ufs_phy_aux_hw_ctl_clk.clkr,
+	[GCC_UFS_UNIPRO_CORE_HW_CTL_CLK] = &gcc_ufs_unipro_core_hw_ctl_clk.clkr,
+	[HLOS1_VOTE_LPASS_ADSP_SMMU_CLK] = &hlos1_vote_lpass_adsp_smmu_clk.clkr,
+	[HLOS1_VOTE_TURING_ADSP_SMMU_CLK] = &hlos1_vote_turing_adsp_smmu_clk.clkr,
+	[HLOS2_VOTE_TURING_ADSP_SMMU_CLK] = &hlos2_vote_turing_adsp_smmu_clk.clkr,
 };
 
 static struct gdsc *gcc_sdm660_gdscs[] = {
 	[UFS_GDSC] = &ufs_gdsc,
 	[USB_30_GDSC] = &usb_30_gdsc,
 	[PCIE_0_GDSC] = &pcie_0_gdsc,
+	[HLOS1_VOTE_LPASS_ADSP_GDSC] = &hlos1_vote_lpass_adsp_gdsc,
+	[HLOS1_VOTE_TURING_ADSP_GDSC] = &hlos1_vote_turing_adsp_gdsc,
+	[HLOS2_VOTE_TURING_ADSP_GDSC] = &hlos2_vote_turing_adsp_gdsc,
 };
 
 static const struct qcom_reset_map gcc_sdm660_resets[] = {
@@ -2459,7 +2627,27 @@ static int gcc_sdm660_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	return qcom_cc_really_probe(pdev, &gcc_sdm660_desc, regmap);
+	ret = qcom_cc_really_probe(pdev, &gcc_sdm660_desc, regmap);
+	if (ret)
+		return ret;
+
+	/* Disable the GPLL0 active input to MMSS and GPU via MISC registers */
+	regmap_update_bits(regmap, 0x0902c, 0x3, 0x3);
+	regmap_update_bits(regmap, 0x71028, 0x3, 0x3);
+
+	/* This clock is used for all MMSSCC register access */
+	clk_prepare_enable(gcc_mmss_noc_cfg_ahb_clk.clkr.hw.clk);
+
+	/* This clock is used for all GPUCC register access */
+	clk_prepare_enable(gcc_gpu_cfg_ahb_clk.clkr.hw.clk);
+
+	/* Keep bimc gfx clock port on all the time */
+	clk_prepare_enable(gcc_bimc_gfx_clk.clkr.hw.clk);
+
+	/* Set the HMSS_GPLL0_SRC for 300MHz to CPU subsystem */
+	clk_set_rate(hmss_gpll0_clk_src.clkr.hw.clk, 300000000);
+
+	return ret;
 }
 
 static struct platform_driver gcc_sdm660_driver = {

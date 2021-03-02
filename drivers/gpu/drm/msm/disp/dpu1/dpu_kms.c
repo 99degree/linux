@@ -1032,7 +1032,7 @@ static int dpu_kms_hw_init(struct msm_kms *kms)
 
 	dpu_vbif_init_memtypes(dpu_kms);
 
-	if (of_device_is_compatible(dev->dev->of_node, "qcom,sc7180-mdss"))
+	// if (of_device_is_compatible(dev->dev->of_node, "qcom,sc7180-mdss"))
 		dpu_kms_parse_data_bus_icc_path(dpu_kms);
 
 	pm_runtime_put_sync(&dpu_kms->pdev->dev);
@@ -1217,6 +1217,8 @@ static const struct dev_pm_ops dpu_pm_ops = {
 };
 
 static const struct of_device_id dpu_dt_match[] = {
+	{ .compatible = "qcom,sdm630-dpu", },
+	{ .compatible = "qcom,sdm660-dpu", },
 	{ .compatible = "qcom,sdm845-dpu", },
 	{ .compatible = "qcom,sc7180-dpu", },
 	{}
