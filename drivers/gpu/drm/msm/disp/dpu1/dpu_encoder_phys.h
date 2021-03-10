@@ -100,6 +100,7 @@ struct dpu_encoder_virt_ops {
  * @wait_for_tx_complete:	Wait for hardware to transfer the pixels
  *				to the panel
  * @wait_for_vblank:		Wait for VBLANK, for sub-driver internal use
+ * @wait_for_active:	Wait for display scan line to be in active area
  * @prepare_for_kickoff:	Do any work necessary prior to a kickoff
  *				For CMD encoder, may wait for previous tx done
  * @handle_post_kickoff:	Do any work necessary post-kickoff work
@@ -135,6 +136,7 @@ struct dpu_encoder_phys_ops {
 	int (*wait_for_commit_done)(struct dpu_encoder_phys *phys_enc);
 	int (*wait_for_tx_complete)(struct dpu_encoder_phys *phys_enc);
 	int (*wait_for_vblank)(struct dpu_encoder_phys *phys_enc);
+	int (*wait_for_active)(struct dpu_encoder_phys *phys);
 	void (*prepare_for_kickoff)(struct dpu_encoder_phys *phys_enc);
 	void (*handle_post_kickoff)(struct dpu_encoder_phys *phys_enc);
 	void (*trigger_start)(struct dpu_encoder_phys *phys_enc);
@@ -262,6 +264,23 @@ struct dpu_encoder_phys_cmd {
 	int pp_timeout_report_cnt;
 	atomic_t pending_vblank_cnt;
 	wait_queue_head_t pending_vblank_wq;
+};
+
+/**
+ * struct dpu_encoder_phys_vid - sub-class of dpu_encoder_phys to handle video
+ *	mode specific operations
+ * @base:	Baseclass physical encoder structure
+ * @timing_params: Current timing parameter
+ * @rot_fetch:	Prefill for inline rotation
+ * @error_count: Number of consecutive kickoffs that experienced an error
+ * @rot_fetch_valid: true if rot_fetch is updated (reset in enc enable)
+ */
+struct dpu_encoder_phys_vid {
+	struct dpu_encoder_phys base;
+	struct intf_timing_params timing_params;
+	struct intf_prog_fetch rot_fetch;
+	int error_count;
+	bool rot_fetch_valid;
 };
 
 /**

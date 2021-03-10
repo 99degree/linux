@@ -4,6 +4,7 @@
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#include <asm/delay.h>
 #include "dpu_encoder_phys.h"
 #include "dpu_hw_interrupts.h"
 #include "dpu_core_irq.h"
@@ -22,6 +23,9 @@
 
 #define to_dpu_encoder_phys_cmd(x) \
 	container_of(x, struct dpu_encoder_phys_cmd, base)
+
+#define to_dpu_encoder_phys_vid(x) \
+	container_of(x, struct dpu_encoder_phys_vid, base)
 
 #define PP_TIMEOUT_MAX_TRIALS	10
 
@@ -664,6 +668,67 @@ static int dpu_encoder_phys_cmd_wait_for_vblank(
 	return rc;
 }
 
+static int dpu_encoder_phys_vid_wait_for_active(
+			struct dpu_encoder_phys *phys_enc)
+{
+	struct drm_display_mode mode;
+	struct dpu_encoder_phys_vid *vid_enc;
+	u32 ln_cnt, min_ln_cnt, active_lns_cnt;
+	u32 clk_period, time_of_line;
+	u32 delay, retry = 10;
+
+	vid_enc = to_dpu_encoder_phys_vid(phys_enc);
+
+	if (!phys_enc->hw_intf || !phys_enc->hw_intf->ops.get_line_count) {
+		DRM_ERROR("invalid vid_enc params\n");
+		return -EINVAL;
+	}
+
+	mode = phys_enc->cached_mode;
+
+	/*
+	 * Calculate clk_period as picosecond to maintain good
+	 * accuracy with high pclk rate and this number is in 17 bit
+	 * range.
+	 */
+	clk_period = DIV_ROUND_UP_ULL(1000000000, mode.clock);
+	if (!clk_period) {
+		DRM_ERROR("Unable to calculate clock period\n");
+		return -EINVAL;
+	}
+
+	min_ln_cnt = (mode.vtotal - mode.vsync_start) +
+		(mode.vsync_end - mode.vsync_start);
+	active_lns_cnt = mode.vdisplay;
+	time_of_line = mode.htotal * clk_period;
+
+	/* Delay in microseconds */
+	delay = (time_of_line * (min_ln_cnt +
+		(mode.vsync_start - mode.vdisplay))) / 1000000;
+
+	/* Wait for max delay before polling to check active region */
+	if (delay > 500)
+		delay = 500;
+
+	while (retry) {
+		ln_cnt = phys_enc->hw_intf->ops.get_line_count(
+				phys_enc->hw_intf);
+
+		if ((ln_cnt >= min_ln_cnt) &&
+			(ln_cnt < (active_lns_cnt + min_ln_cnt))) {
+			DRM_ERROR("Needed lines left line_cnt=%d\n", ln_cnt);
+			return 0;
+		}
+
+		DRM_ERROR("line count is less. line_cnt = %d\n", ln_cnt);
+		/* Add delay so that line count is in active region */
+		udelay(delay);
+		retry--;
+	}
+
+	return -EINVAL;
+}
+
 static void dpu_encoder_phys_cmd_handle_post_kickoff(
 		struct dpu_encoder_phys *phys_enc)
 {
@@ -695,6 +760,7 @@ static void dpu_encoder_phys_cmd_init_ops(
 	ops->prepare_for_kickoff = dpu_encoder_phys_cmd_prepare_for_kickoff;
 	ops->wait_for_tx_complete = dpu_encoder_phys_cmd_wait_for_tx_complete;
 	ops->wait_for_vblank = dpu_encoder_phys_cmd_wait_for_vblank;
+	ops->wait_for_active = dpu_encoder_phys_vid_wait_for_active;
 	ops->trigger_start = dpu_encoder_phys_cmd_trigger_start;
 	ops->needs_single_flush = dpu_encoder_phys_cmd_needs_single_flush;
 	ops->irq_control = dpu_encoder_phys_cmd_irq_control;

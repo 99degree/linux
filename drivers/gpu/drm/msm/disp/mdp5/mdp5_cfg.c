@@ -921,7 +921,7 @@ static const struct mdp5_cfg_hw sdm630_config = {
 	.ctl = {
 		.count = 5,
 		.base = { 0x01000, 0x01200, 0x01400, 0x01600, 0x01800 },
-		.flush_hw_mask = 0xf4ffffff,
+		.flush_hw_mask = 0xf54338c1,
 	},
 	.pipe_vig = {
 		.count = 1,
@@ -963,13 +963,12 @@ static const struct mdp5_cfg_hw sdm630_config = {
 	},
 
 	.lm = {
-		.count = 2,
+		.count = 2, /* LM0 and LM2*/
 		.base = { 0x44000, 0x46000 },
 		.instances = {
 				{ .id = 0, .pp = 0, .dspp = 0,
-				  .caps = MDP_LM_CAP_DISPLAY |
-					  MDP_LM_CAP_PAIR, },
-				{ .id = 1, .pp = 1, .dspp = -1,
+				  .caps = MDP_LM_CAP_DISPLAY, },
+				{ .id = 2, .pp = 2, .dspp = -1,
 				  .caps = MDP_LM_CAP_WB, },
 				},
 		.nb_stages = 8,
@@ -985,8 +984,8 @@ static const struct mdp5_cfg_hw sdm630_config = {
 		.base = { 0x78000, 0x78800 },
 	},
 	.pp = {
-		.count = 3,
-		.base = { 0x70000, 0x71000, 0x72000 },
+		.count = 3, /* Using PP1 is illegal... */
+		.base = { 0x70000, 0x70800, 0x71000 },
 	},
 	.cdm = {
 		.count = 1,
@@ -1014,7 +1013,7 @@ static const struct mdp5_cfg_hw sdm660_config = {
 	.ctl = {
 		.count = 5,
 		.base = { 0x01000, 0x01200, 0x01400, 0x01600, 0x01800 },
-		.flush_hw_mask = 0xf4ffffff,
+		.flush_hw_mask = 0xf5437bc3,
 	},
 	.pipe_vig = {
 		.count = 2,
@@ -1023,16 +1022,6 @@ static const struct mdp5_cfg_hw sdm660_config = {
 			MDP_PIPE_CAP_VFLIP	|
 			MDP_PIPE_CAP_SCALE	|
 			MDP_PIPE_CAP_CSC	|
-			MDP_PIPE_CAP_DECIMATION	|
-			MDP_PIPE_CAP_SW_PIX_EXT	|
-			0,
-	},
-	.pipe_rgb = {
-		.count = 4,
-		.base = { 0x14000, 0x16000, 0x18000, 0x1a000 },
-		.caps = MDP_PIPE_CAP_HFLIP	|
-			MDP_PIPE_CAP_VFLIP	|
-			MDP_PIPE_CAP_SCALE	|
 			MDP_PIPE_CAP_DECIMATION	|
 			MDP_PIPE_CAP_SW_PIX_EXT	|
 			0,

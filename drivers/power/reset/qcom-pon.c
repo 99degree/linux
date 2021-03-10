@@ -36,8 +36,9 @@ static int pm8916_reboot_mode_write(struct reboot_mode_driver *reboot,
 				 pon->baseaddr + PON_SOFT_RB_SPARE,
 				 GENMASK(7, pon->reason_shift),
 				 magic << pon->reason_shift);
+
 	if (ret < 0)
-		dev_err(pon->dev, "update reboot mode bits failed\n");
+		dev_err(pon->dev, "update reboot mode bits failed %d\n", magic);
 
 	return ret;
 }
@@ -46,6 +47,7 @@ static int pm8916_pon_probe(struct platform_device *pdev)
 {
 	struct pm8916_pon *pon;
 	int error;
+	int magic = 2;
 
 	pon = devm_kzalloc(&pdev->dev, sizeof(*pon), GFP_KERNEL);
 	if (!pon)
@@ -74,6 +76,15 @@ static int pm8916_pon_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, pon);
+
+	/*
+	 * set default magic to bootloader when kernel crash can't call
+	 * into reboot procedure
+	 */
+        regmap_update_bits(pon->regmap,
+                                 pon->baseaddr + PON_SOFT_RB_SPARE,
+                                 GENMASK(7, pon->reason_shift),
+                                 magic << pon->reason_shift);
 
 	return devm_of_platform_populate(&pdev->dev);
 }

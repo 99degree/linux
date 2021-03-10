@@ -26,16 +26,16 @@ void rmi_dbg(int flags, struct device *dev, const char *fmt, ...)
 	struct va_format vaf;
 	va_list args;
 
-	if (flags & debug_flags) {
+	// if (flags & debug_flags) {
 		va_start(args, fmt);
 
 		vaf.fmt = fmt;
 		vaf.va = &args;
 
-		dev_printk(KERN_DEBUG, dev, "%pV", &vaf);
+		dev_printk(KERN_ERR, dev, "%pV", &vaf);
 
 		va_end(args);
-	}
+	// }
 }
 EXPORT_SYMBOL_GPL(rmi_dbg);
 
@@ -395,6 +395,7 @@ static int rmi_register_function_handlers(void)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(fn_handlers); i++)	{
+		pr_err("%s: Registering fn handler %d\n", __func__, fn_handlers[i]->func);
 		ret = rmi_register_function_handler(fn_handlers[i]);
 		if (ret) {
 			pr_err("%s: error registering the RMI F%02x handler: %d\n",

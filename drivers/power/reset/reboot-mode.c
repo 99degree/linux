@@ -23,7 +23,7 @@ static unsigned int get_reboot_mode_magic(struct reboot_mode_driver *reboot,
 					  const char *cmd)
 {
 	const char *normal = "normal";
-	int magic = 0;
+	int magic = 2;
 	struct mode_info *info;
 
 	if (!cmd)
