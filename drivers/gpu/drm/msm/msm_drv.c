@@ -1195,6 +1195,8 @@ static int add_display_components(struct device *dev,
 	 * the interfaces to our components list.
 	 */
 	if (of_device_is_compatible(dev->of_node, "qcom,mdss") ||
+	    of_device_is_compatible(dev->of_node, "qcom,sdm630-mdss") ||
+	    of_device_is_compatible(dev->of_node, "qcom,sdm660-mdss") ||
 	    of_device_is_compatible(dev->of_node, "qcom,sdm845-mdss") ||
 	    of_device_is_compatible(dev->of_node, "qcom,sc7180-mdss")) {
 		ret = of_platform_populate(dev->of_node, NULL, NULL, dev);
@@ -1331,6 +1333,8 @@ static void msm_pdev_shutdown(struct platform_device *pdev)
 static const struct of_device_id dt_match[] = {
 	{ .compatible = "qcom,mdp4", .data = (void *)KMS_MDP4 },
 	{ .compatible = "qcom,mdss", .data = (void *)KMS_MDP5 },
+	{ .compatible = "qcom,sdm630-mdss", .data = (void *)KMS_DPU },
+	{ .compatible = "qcom,sdm660-mdss", .data = (void *)KMS_DPU },
 	{ .compatible = "qcom,sdm845-mdss", .data = (void *)KMS_DPU },
 	{ .compatible = "qcom,sc7180-mdss", .data = (void *)KMS_DPU },
 	{}

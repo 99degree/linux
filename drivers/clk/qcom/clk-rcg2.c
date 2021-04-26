@@ -784,6 +784,9 @@ static int clk_gfx3d_determine_rate(struct clk_hw *hw,
 	req->rate = req->best_parent_rate = parent_req.rate;
 	req->rate /= mux_div;
 
+	if (cgfx->div > 1)
+		do_div(req->rate, cgfx->div);
+
 	return 0;
 }
 

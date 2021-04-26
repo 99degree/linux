@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Copyright (c) 2020, Konrad Dybcio
+ */
+
+/dts-v1/;
+
+#include "sdm630.dtsi"
+#include "sdm630-sony-xperia-nile.dtsi"
+
+/ {
+        model = "Qualcomm Technologies, Inc. SDM 636 PM660 + PM660L MTP";
+        compatible = "qcom,sdm636-mtp", "qcom,sdm636", "qcom,mtp";
+        qcom,msm-id = <0x159 0x0>;
+        qcom,board-id = <0x8 0x0>;
+        qcom,pmic-id = <0x1001b 0x101011a 0x0 0x0 0x1001b 0x201011a 0x0 0x0>;
+
+
+        firmware: firmware {};
+        soc: soc {};
+
+};
+
+&firmware {
+               /* remove the old android node and replace with E3 own */
+               /delete-node/ android;
+
+       android {
+               compatible = "android,firmware";
+               fstab {
+                        compatible = "android,fstab";
+                        system {
+                                compatible = "android,system";
+                                dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
+                                type = "ext4";
+                                mnt_flags = "ro,barrier=1,discard";
+                                fsmgr_flags = "wait,first_stage_mount";
+                                status = "ok";
+                        };
+                        vendor {
+                                compatible = "android,vendor";
+                                dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/vendor";
+                                type = "ext4";
+                                mnt_flags = "ro,barrier=1,discard";
+				fsmgr_flags = "wait,first_stage_mount";
+                                status = "ok";
+                        };
+                 };
+        };
+};
+
+&soc {
+
+        firmware{
+               /delete-node/ android;
+               android {
+                       compatible = "android,firmware";
+                       fstab {
+                                compatible = "android,fstab";
+                                system {
+                                        compatible = "android,system";
+                                        dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
+                                        type = "ext4";
+                                        mnt_flags = "ro,barrier=1,discard";
+                                        fsmgr_flags = "wait,first_stage_mount";
+                                        status = "ok";
+                                };
+                                vendor {
+                                        compatible = "android,vendor";
+                                        dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/vendor";
+                                        type = "ext4";
+                                        mnt_flags = "ro,barrier=1,discard";
+                                        fsmgr_flags = "wait,first_stage_mount";
+                                        status = "ok";
+                                };
+                         };
+                };
+        };
+};
+
+&panel {
+	compatible = "meizu,s6d6ft0-tianma", "sony,pioneer-td4322-truly";
+};
+
+/* dpu driver not support the added opp-peak-kBps property atm */
+&mdp_opp_table {
+		opp-150000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-275000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-300000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-330000000 {
+				/delete-property/ opp-peak-kBps;
+		};
+		opp-412500000 {
+				/delete-property/ opp-peak-kBps;
+		};
+};
+
+&adreno_smmu {
+//     status = "disabled";
+//       qcom,last-domain = <2>;
+       qcom,last-context = <2>;
+	compatible = "qcom,adreno-smmu", "qcom,smmu-v2";
+       status = "okay";
+};
+
+&adreno_gpu {
+//        status = "disabled";
+       compatible = "qcom,adreno-509.2", "qcom,adreno";
+     status = "okay";
+};
+
+&lpass_smmu {
+//        status = "disabled";
+       status = "okay";
+};
+
+&anoc2_smmu {
+//        status = "disabled";
+       status = "okay";
+        qcom,last-context = <6>;
+//        qcom,last-domain = <6>;
+};
+
+&mmss_smmu {
+        compatible = "qcom,smmu-v2";
+       qcom,last-context = <16>;
+//     qcom,last-domain = <16>;
+       status = "okay";
+};
+
+&blsp1_uart1 {
+        status = "disabled";
+};
+
+&blsp1_uart2 {
+        status = "disabled";
+};
+
+&blsp2_uart1 {
+        status = "disabled";
+};
+
+&blsp_i2c4 {
+        status = "ok";
+
+                sec_ts: sec_touchscreen@48 {
+                                compatible = "sec,sec_ts";
+                                reg = <0x48>;
+                                /*status = "disabled";*/
+				status = "okay";
+                                interrupt-parent = <&tlmm>;
+                                /*sec,irq_gpio = <0x7f 0x43 0x2008>;*/
+                                /* irq 67 -> 249 from E3 orig*/
+                                /* irq 67 -> 237 from new dts*/
+                                /* irq 67+(249-237) - > 79 */
+                                sec,irq_gpio = <&tlmm 0x43 0x2008>;
+                                pinctrl-names = "on_state", "off_state";
+                                pinctrl-0 = <&ts_active>;
+                                pinctrl-1 = <&ts_int_suspend>;
+                                sec,max_coords = <0x438 0x870>;
+                                sec,num_lines = <0x12 0x20>;
+                        };
+};
+
+&tlmm {
+                ts_mux {
+                        ts_active: ts_active {
+                                pinmux {
+                                        pins = "gpio66", "gpio67";
+                                        function = "gpio";
+                                };
+
+                                pinconf {
+                                        pins = "gpio66", "gpio67";
+                                        drive-strength = <16>;
+                                        bias-pull-up;
+                                };
+                        };
+
+                        ts_reset_suspend: ts_reset_suspend {
+                                pinmux {
+                                        pins = "gpio66";
+                                        function = "gpio";
+                                };
+
+                                pinconf {
+                                        pins = "gpio66";
+                                        drive-strength = <2>;
+                                        bias-pull-down;
+                                };
+                        };
+
+                        ts_int_suspend: ts_int_suspend {
+                                pinmux {
+                                        pins = "gpio67";
+                                        function = "gpio";
+                                };
+
+                                pinconf {
+                                        pins = "gpio67";
+                                        drive-strength = <2>;
+                                        bias-disable;
+                                };
+                        };
+                };
+};
+
+&pm660l_wled /* leds@d800 */ {
+        /delete-property/ interrupts; /* = <0x3 0xd8 0x1 IRQ_TYPE_EDGE_RISING>; */
+        /delete-property/ interrupt-names; /* = "ovp"; */
+};
+
+&pon {
+        compatible = "qcom,pm8998-pon";
+        mode-bootloader = <0x2>;
+        mode-recovery = <0x1>;
+        bootloader = <0x2>;
+        recovery = <0x1>;
+};
+
+&spmi_bus {
+        pmic@2 {
+                pon_l: pon@800 {
+                        compatible = "qcom,pm8998-pon";
+                        mode-bootloader = <0x2>;
+                        mode-recovery = <0x1>;
+                        bootloader = <0x2>;
+                        recovery = <0x1>;
+
+                        reg = <0x800>;
+
+                        pwrkey {
+                                compatible = "qcom,pm8941-pwrkey";
+                                interrupts = <0x0 0x8 0 IRQ_TYPE_EDGE_BOTH>;
+                                debounce = <15625>;
+                                bias-pull-up;
+                                linux,code = <KEY_POWER>;
+                        };
+
+                };
+        };
+};
+
+&touchscreen {
+	status = "disabled";
+};
+
+&blsp_i2c6 {
+        status = "okay";
+
+        pn553c2@28 {
+			status = "disabled";
+	};
+};		
+
+&cci {
+        status = "disabled";
+};
+
+&cci_i2c0 {
+        status = "disabled";
+};
+
+&cci_i2c1 {
+        status = "disabled";
+};
+
+#if 0
+&dsi1 { 
+	/* 
+		there is an issue in board cfg and dts cause
+		 dsi_phy not found, so disable it 
+	*/
+
+	status = "disabled";
+};
+
+&dsi1_phy {
+        status = "disabled";
+};
+#endif
+

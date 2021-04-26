@@ -5,9 +5,22 @@
 
 /dts-v1/;
 
+#include "sdm630.dtsi"
 #include "sdm630-sony-xperia-nile.dtsi"
 
 / {
 	model = "Sony Xperia XA2";
 	compatible = "sony,pioneer-row", "qcom,sdm630";
+};
+
+&panel {
+	compatible = "sony,pioneer-td4322-truly";
+};
+
+&imx300_sensor {
+	VDDL-supply = <&vreg_l18a_1v8>; /* VIO */
+};
+
+&imx219_sensor {
+	VDDL-supply = <&vreg_l18a_1v8>; /* VIO */
 };

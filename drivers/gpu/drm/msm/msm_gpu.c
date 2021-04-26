@@ -465,6 +465,11 @@ static void recover_worker(struct kthread_work *work)
 	char *comm = NULL, *cmd = NULL;
 	int i;
 
+	if (!cur_ring) {
+		DRM_DEV_ERROR(dev->dev, "%s: ring null!\n", __func__);
+		return;
+	}
+
 	mutex_lock(&dev->struct_mutex);
 
 	DRM_DEV_ERROR(dev->dev, "%s: hangcheck recover!\n", gpu->name);
@@ -568,7 +573,17 @@ static void hangcheck_handler(struct timer_list *t)
 	struct msm_gpu *gpu = from_timer(gpu, t, hangcheck_timer);
 	struct drm_device *dev = gpu->dev;
 	struct msm_ringbuffer *ring = gpu->funcs->active_ring(gpu);
-	uint32_t fence = ring->memptrs->fence;
+	uint32_t fence;
+
+	if (!ring) {
+		DRM_DEV_ERROR(dev->dev, "%s: ring null!\n", __func__);
+		return;
+	}
+
+	if (!ring->memptrs)
+		pr_err("Memptrs null!\n");
+	else
+		fence = ring->memptrs->fence;
 
 	if (fence != ring->hangcheck_fence) {
 		/* some progress has been made.. ya! */
