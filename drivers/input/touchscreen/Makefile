@@ -118,3 +118,4 @@ obj-$(CONFIG_TOUCHSCREEN_IQS5XX)	+= iqs5xx.o
 obj-$(CONFIG_TOUCHSCREEN_ZINITIX)	+= zinitix.o
 
 obj-y += sec_ts/
+obj-$(CONFIG_TOUCHSCREEN_NT36672C_HOSTDL_SPI)	+= nt36672c/
