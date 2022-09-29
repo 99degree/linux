@@ -81,6 +81,8 @@ static void nt36675_tianma_reset(struct nt36675_tianma *ctx)
 	usleep_range(10000, 11000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(10000, 11000);
+        gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+        usleep_range(10000, 11000);
 }
 
 static int nt36675_tianma_on(struct nt36675_tianma *ctx)
@@ -315,7 +317,7 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
         if (ret)
                 return dev_err_probe(dev, ret, "Regulator init failure.\n");
 #endif
-	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
 				     "Failed to get reset-gpios\n");
@@ -369,7 +371,7 @@ MODULE_DEVICE_TABLE(of, nt36675_tianma_of_match);
 
 static struct mipi_dsi_driver nt36675_tianma_driver = {
 	.probe = nt36675_tianma_probe,
-	//.remove = nt36675_tianma_remove,
+	.remove = nt36675_tianma_remove,
 	.driver = {
 		.name = "panel-nt36675-tianma",
 		.of_match_table = nt36675_tianma_of_match,
