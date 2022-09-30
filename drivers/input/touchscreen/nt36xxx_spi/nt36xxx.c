@@ -1742,6 +1742,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 #endif
 
 	NVT_LOG("start\n");
+	pr_info("%s %d", __func__, __LINE__);
 #if WAKEUP_GESTURE
 	spi_geni_master_dev = NULL;
 #endif
@@ -2590,12 +2591,16 @@ static const struct spi_device_id nvt_ts_id[] = {
 	{ }
 };
 
+//MODULE_DEVICE_TABLE(spi, nvt_ts_id);
+
 #ifdef CONFIG_OF
 static struct of_device_id nvt_match_table[] = {
 	{ .compatible = "novatek,NVT-ts-spi",},
 	{ },
 };
 #endif
+
+MODULE_DEVICE_TABLE(of, nvt_match_table);
 
 static struct spi_driver nvt_spi_driver = {
 	.probe		= nvt_ts_probe,
