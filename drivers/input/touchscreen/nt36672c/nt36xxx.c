@@ -159,7 +159,7 @@ static void nvt_irq_enable(bool enable)
 		}
 	}
 
-	desc = irq_to_desc(ts->client->irq);
+	desc = irq_data_to_desc(irq_get_irq_data(ts->client->irq));
 	NVT_LOG("enable=%d, desc->depth=%d\n", enable, desc->depth);
 }
 

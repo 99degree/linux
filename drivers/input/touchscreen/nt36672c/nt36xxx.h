@@ -95,7 +95,7 @@ extern const uint16_t gesture_key_array[];
 #define NVT_TOUCH_ESD_DISP_RECOVERY 0
 
 //enable 'check touch vendor' feature
-#define CHECK_TOUCH_VENDOR
+//#define CHECK_TOUCH_VENDOR
 
 //---Touch Vendor ID---
 #define TP_VENDOR_UNKNOWN   0x00
