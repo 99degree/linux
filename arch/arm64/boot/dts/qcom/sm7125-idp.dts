@@ -830,17 +830,17 @@
 
 &usb_1 {
 	status = "okay";
-	qcom,select-utmi-as-pipe-clk;
+	//qcom,select-utmi-as-pipe-clk;
 };
 
 &usb_1_dwc3 {
-	/delete-property/ snps,dis_enblslpm_quirk;
+	///delete-property/ snps,dis_enblslpm_quirk;
 
 	status = "okay";
 
 	//dr_mode = "peripherial";
 	dr_mode = "peripheral";
-
+#if 0
 	snps,hird-threshold = /bits/ 8 <0x10>;
 	snps,usb2-gadget-lpm-disable;
 	snps,dis_u2_susphy_quirk;
@@ -851,8 +851,8 @@
 	snps,has-lpm-erratum;
 	tx-fifo-resize;
 
-
-        maximum-speed = "high-speed";
+#endif
+        maximum-speed = "full-speed";
 
 };
 
