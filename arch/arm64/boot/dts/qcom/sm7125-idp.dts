@@ -852,7 +852,7 @@
 	tx-fifo-resize;
 
 #endif
-        maximum-speed = "full-speed";
+        maximum-speed = "super-speed";
 
 };
 
