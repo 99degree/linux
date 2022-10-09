@@ -58,7 +58,7 @@
 /*
 	gpio-keys {
                 compatible = "gpio-keys";
-                autorepeat;
+                //autorepeat;
 
                 pinctrl-names = "default";
                 pinctrl-0 = <&vol_up_pin_a>;
