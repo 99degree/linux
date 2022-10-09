@@ -12,6 +12,9 @@ menuconfig INPUT_TOUCHSCREEN
 
 if INPUT_TOUCHSCREEN
 
+source "drivers/input/touchscreen/nt36672c/Kconfig"
+source "drivers/input/touchscreen/nt36xxx_spi/Kconfig"
+
 config TOUCHSCREEN_88PM860X
 	tristate "Marvell 88PM860x touchscreen"
 	depends on MFD_88PM860X
@@ -1380,3 +1383,5 @@ config TOUCHSCREEN_ZINITIX
 	  module will be called zinitix.
 
 endif
+
+source "drivers/input/touchscreen/sec_ts/Kconfig"
