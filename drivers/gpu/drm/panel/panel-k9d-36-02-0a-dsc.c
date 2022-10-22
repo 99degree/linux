@@ -448,7 +448,7 @@ static int k9d_36_02_0a_dsc_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static int k9d_36_02_0a_dsc_remove(struct mipi_dsi_device *dsi)
+static void k9d_36_02_0a_dsc_remove(struct mipi_dsi_device *dsi)
 {
 	struct k9d_36_02_0a_dsc *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
@@ -459,7 +459,6 @@ static int k9d_36_02_0a_dsc_remove(struct mipi_dsi_device *dsi)
 
 	drm_panel_remove(&ctx->panel);
 
-	return 0;
 }
 
 static const struct of_device_id k9d_36_02_0a_dsc_of_match[] = {

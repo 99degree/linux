@@ -349,7 +349,7 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static int nt36675_tianma_remove(struct mipi_dsi_device *dsi)
+static void nt36675_tianma_remove(struct mipi_dsi_device *dsi)
 {
 	struct nt36675_tianma *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
@@ -360,7 +360,6 @@ static int nt36675_tianma_remove(struct mipi_dsi_device *dsi)
 
 	drm_panel_remove(&ctx->panel);
 
-	return 0;
 }
 
 static const struct of_device_id nt36675_tianma_of_match[] = {

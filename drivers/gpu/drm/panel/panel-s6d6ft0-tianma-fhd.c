@@ -241,7 +241,7 @@ static int s6d6ft0_tianma_fhd_probe(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static int s6d6ft0_tianma_fhd_remove(struct mipi_dsi_device *dsi)
+static void s6d6ft0_tianma_fhd_remove(struct mipi_dsi_device *dsi)
 {
 	struct s6d6ft0_tianma_fhd *ctx = mipi_dsi_get_drvdata(dsi);
 	int ret;
@@ -252,7 +252,6 @@ static int s6d6ft0_tianma_fhd_remove(struct mipi_dsi_device *dsi)
 
 	drm_panel_remove(&ctx->panel);
 
-	return 0;
 }
 
 static const struct of_device_id s6d6ft0_tianma_fhd_of_match[] = {
