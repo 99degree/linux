@@ -829,31 +829,13 @@
 };
 
 &usb_1 {
-	status = "okay";
-	qcom,select-utmi-as-pipe-clk;
+        status = "okay";
 };
 
 &usb_1_dwc3 {
-	/delete-property/ snps,dis_enblslpm_quirk;
-
-	status = "okay";
-
-	//dr_mode = "peripherial";
-	dr_mode = "peripheral";
-
-	snps,hird-threshold = /bits/ 8 <0x10>;
-	snps,usb2-gadget-lpm-disable;
-	snps,dis_u2_susphy_quirk;
-	snps,is-utmi-l1-suspend;
-	snps,dis-u1-entry-quirk;
-	snps,dis-u2-entry-quirk;
-	snps,usb3_lpm_capable;
-	snps,has-lpm-erratum;
-	tx-fifo-resize;
-
-
-        maximum-speed = "high-speed";
-
+        status = "okay";
+        maximum-speed = "super-speed";
+        dr_mode = "peripheral";
 };
 
 &usb_1_hsphy {
@@ -862,12 +844,6 @@
 	vdd-supply = <&vreg_l4a_0p8>;
 	vdda-pll-supply = <&vreg_l11a_1p8>;
 	vdda-phy-dpdm-supply = <&vreg_l17a_3p0>;
-	qcom,imp-res-offset-value = <8>;
-	qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_15_PERCENT>;
-	qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
-	qcom,bias-ctrl-value = <0x22>;
-	qcom,charge-ctrl-value = <3>;
-	qcom,hsdisc-trim-value = <0>;
 };
 
 &usb_1_qmpphy {
@@ -877,8 +853,8 @@
 };
 
 &venus {
+	compatible = "qcom,sc7180-venus";
 	status = "okay";
-	//status = "disabled";
 	memory-region = <&venus_mem>;
 
 	video-firmware {
@@ -1284,17 +1260,17 @@
 
 &ipa {
         status = "okay";
-        modem-init;
+	//modem-init;
 };
 
 &pm6150_pon {
-                        pm6150_volumekey: volumekey {
-                                compatible = "qcom,pm8941-pwrkey";
-                                interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-                                debounce = <15625>;
-                                bias-pull-up;
-                                linux,code = <KEY_VOLUMEDOWN>;
-                        };
+        pm6150_volumekey: volumekey {
+                compatible = "qcom,pm8941-pwrkey";
+                interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
+                debounce = <15625>;
+                bias-pull-up;
+                linux,code = <KEY_VOLUMEDOWN>;
+        };
 };
 
 &spi11 {
