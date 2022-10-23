@@ -2035,7 +2035,7 @@ static void sec_ts_input_close(struct input_dev *dev) {
 	}
 }
 
-static int sec_ts_remove(struct i2c_client *client) {
+static void sec_ts_remove(struct i2c_client *client) {
 	struct sec_ts_data *ts = i2c_get_clientdata(client);
 
 	pr_err("%s\n", __func__);
@@ -2055,7 +2055,6 @@ static int sec_ts_remove(struct i2c_client *client) {
 	ts->plat_data->power(ts, false);
 
 	kfree(ts);
-	return 0;
 }
 
 static void sec_ts_shutdown(struct i2c_client *client) {
