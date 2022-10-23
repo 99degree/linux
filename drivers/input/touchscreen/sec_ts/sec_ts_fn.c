@@ -348,7 +348,7 @@ static ssize_t cmd_result_show(struct device *dev,
 static ssize_t cmd_list_show(struct device *dev, struct device_attribute *attr,
 														 char *buf) {
 	struct sec_ts_data *ts = dev_get_drvdata(dev);
-	char buffer[ts->cmd_buffer_size];
+	char buffer[CMD_STR_LEN + 1] = {0};
 	char buffer_name[CMD_STR_LEN];
 	int ii = 0;
 
