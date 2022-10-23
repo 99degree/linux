@@ -10,7 +10,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
-#include "sc7180.dtsi"
+#include "sm7125.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
@@ -58,7 +58,7 @@
 /*
 	gpio-keys {
                 compatible = "gpio-keys";
-                autorepeat;
+                //autorepeat;
 
                 pinctrl-names = "default";
                 pinctrl-0 = <&vol_up_pin_a>;
@@ -706,35 +706,13 @@
 	status = "okay";
 };
 
-/* override with sm7125 own addr */
 &qfprom {
-	status = "disabled";
-};
+	status = "okay";
 
-&soc {
-	qfprom0: efuse@780000 {
-		compatible = "qcom,sm7125-qfprom", "qcom,qfprom";
-		reg = <0 0x00780000 0 0x6310>;
-		status = "okay";
-
-                clocks = <&gcc GCC_SEC_CTRL_CLK_SRC>;
-                clock-names = "core";
-                #address-cells = <1>;
-                #size-cells = <1>;
-
-                vcc-supply = <&vreg_l11a_1p8>;
-
-	        qusb2_hstx_trim_new: hstx-trim@258 {
-			reg = <0x258 0x1>;
-			bits = <25 3>;
-	        };
-
-		/* 0x780000 0x6300 */
-                gpu_speed_bin_new: gpu_speed_bin@6300 {
-			reg = <0x6015 0x1>;
-			bits = <0 8>;
-                };
-	};
+        qusb2_hstx_trim_new: hstx-trim@258 {
+		reg = <0x258 0x1>;
+		bits = <25 3>;
+        };
 };
 
 /* reassign nvmem cell */
@@ -746,7 +724,6 @@
 /* reassign nvmem cell */
 &gpu {
         status = "okay";
-        nvmem-cells = <&gpu_speed_bin_new>;
 };	
 
 &qspi {
@@ -830,12 +807,35 @@
 
 &usb_1 {
         status = "okay";
+
+	/* brough from sm6375.dtsi */
+	qcom,select-utmi-as-pipe-clk;
 };
 
 &usb_1_dwc3 {
-        status = "okay";
-        maximum-speed = "super-speed";
-        dr_mode = "peripheral";
+	status = "okay";
+	maximum-speed = "high-speed";
+	dr_mode = "peripheral";
+/*
+	snps,dis_u2_susphy_quirk;
+	snps,disable-clk-gating;
+	snps,has-lpm-erratum;
+	snps,hird-threshold = [10];
+	snps,usb3_lpm_capable;
+	tx-fifo-resize;
+*/
+	snps,dis_u2_susphy_quirk;
+	snps,disable-clk-gating;
+	snps,has-lpm-erratum;
+	snps,usb3_lpm_capable;
+	tx-fifo-resize;
+	
+	snps,hird-threshold = /bits/ 8 <0x10>;
+	snps,usb2-gadget-lpm-disable;
+	snps,is-utmi-l1-suspend;
+	snps,dis-u1-entry-quirk;
+	snps,dis-u2-entry-quirk;
+	snps,dis_enblslpm_quirk;
 };
 
 &usb_1_hsphy {
