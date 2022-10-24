@@ -309,6 +309,16 @@
                         no-map;
                 };
 #endif
+
+		// from ungeskriptet/linux e9fa97937beb7ff9786a9db6edfe636eef18d659
+		rmtfs_mem: memory@f3901000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0 0xf3901000 0 0x200000>;
+			no-map;
+
+			qcom,client-id = <1>;
+			qcom,vmid = <15>;
+		};
 	};
 };
 
@@ -623,6 +633,8 @@
 &ipa {
         status = "okay";
         //modem-init;
+	memory-region = <&ipa_fw_mem>;
+	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
 };
 
 &mdp {
@@ -771,6 +783,7 @@
 	vmmc-supply = <&vreg_l9c_2p9>;
 	vqmmc-supply = <&vreg_l6c_2p9>;
 
+	//TODO: check with joyeuse dtb
 	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
 };
 
@@ -1202,17 +1215,8 @@
 		};
 	};
 
-	te_gpio: te-default {
-               //mux {
-                        pins = "gpio10";
-                        function = "mdp_vsync";
-                        drive-strength = <2>;   /* 2 mA */
-                        bias-pull-down;         /* PULL DOWN */
-                //};
-	};
-
-                pmx_ts_active {
-                        ts_active: ts_active {
+        pmx_ts_active {
+                ts_active: ts_active {
                                 mux {
                                         pins = "gpio8", "gpio9";
                                         function = "gpio";
@@ -1224,7 +1228,7 @@
                                         bias-pull-up;
                                 };
                         };
-                };
+        };
 
                 pmx_ts_int_suspend {
                         ts_int_suspend: ts_int_suspend {
@@ -1271,6 +1275,12 @@
                         };
                 };
 
+        te_gpio: te-default {
+                pins = "gpio10";
+                function = "mdp_vsync";
+                drive-strength = <2>;   /* 2 mA */
+                bias-pull-down;         /* PULL DOWN */
+        };
 };
 
 /*
