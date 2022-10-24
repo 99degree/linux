@@ -35,8 +35,7 @@
                 ranges;
 
                 stdout-path = "serial0:115200n8";
-
-		//framebuffer: a{};
+/*
                 framebuffer: framebuffer@9c000000 {
                         compatible = "drm-simple-framebuffer", "simple-framebuffer";
                         reg = <0 0x9c000000 0 0x1700000>;
@@ -45,23 +44,23 @@
                         stride = <(1080 * 4)>;
                         format = "a8r8g8b8";
 
-#if 1
+			#if 1
                         clocks = <&gcc GCC_DISP_AHB_CLK>,
                                  <&gcc GCC_DISP_HF_AXI_CLK>,
-//                                 <&gcc GCC_DISP_THROTTLE_CORE_CLK>,
-				<&gcc GCC_DISP_THROTTLE_HF_AXI_CLK>,
+                                 <&gcc GCC_DISP_THROTTLE_CORE_CLK>,
+				 <&gcc GCC_DISP_THROTTLE_HF_AXI_CLK>,
                                  <&gcc GCC_DISP_GPLL0_DIV_CLK_SRC>;
-#endif
+			#endif
                 };
+*/
         };
 
-/*
-	gpio-keys {
+        gpio-keys {
                 compatible = "gpio-keys";
-                //autorepeat;
+		label = "Volume key";
 
                 pinctrl-names = "default";
-                pinctrl-0 = <&vol_up_pin_a>;
+                pinctrl-0 = <&key_vol_up_default>;
 
                 key-vol-up {
                         label = "Volume Up";
@@ -69,8 +68,7 @@
                         gpios = <&pm6150l_gpio 2 GPIO_ACTIVE_LOW>;
                 };
 
-	};
-*/
+        };
 };
 
 &soc {
@@ -520,51 +518,12 @@
 	};
 };
 
-&pm6150l_lsid5 {
-                pm6150l_labibb: labibb@dc00 {
-                        compatible = "qcom,pmi8998-lab-ibb";
-                        status = "okay";
-
-                        ibb: ibb@dc00 {
-                                interrupts = <0x5 0xdc 0x2 IRQ_TYPE_EDGE_RISING>,
-                                             <0x5 0xdc 0x0 IRQ_TYPE_LEVEL_HIGH>;
-                                interrupt-names = "sc-err", "ocp";
-                        };
-
-                        lab: lab@de00 {
-                                interrupts = <0x5 0xde 0x1 IRQ_TYPE_EDGE_RISING>,
-                                             <0x5 0xde 0x0 IRQ_TYPE_LEVEL_LOW>;
-                                interrupt-names = "sc-err", "ocp";
-                        };
-                };
+&adreno_smmu {
+        status = "okay";
 };
 
-/* copy from sdm845-xiaomi */
-&ibb {
-        regulator-min-microvolt = <4600000>;
-        regulator-max-microvolt = <6000000>;
-        regulator-over-current-protection;
-        regulator-pull-down;
-        regulator-soft-start;
-        qcom,discharge-resistor-kohms = <300>;
-};
-
-&lab {
-        regulator-min-microvolt = <4600000>;
-        regulator-max-microvolt = <6000000>;
-        regulator-over-current-protection;
-        regulator-pull-down;
-        regulator-soft-start;
-};
-
-&pm6150l_labibb {
-	status = "okay";
-};
-
-&pm6150l_wled {
-	/delete-property/ interrupts;
-	/delete-property/ interrupt-names;
-	status = "okay";	
+&apps_smmu {
+        status = "okay";
 };
 
 &dsi0 {
@@ -639,47 +598,14 @@
 	vdds-supply = <&vreg_l4a_0p8>;
 };
 
-&mdp {
-	memory-region = <&splash_mem>;
-	status = "okay";
-};
-
-&mdss {
-	/*
-		to add headless msm_drv platform_driver support.
-	*/
-	compatible = "qcom,sc7180-mdss", "qcom,mdss";
-                        reg = <0 0x0ae00000 0 0x1000>, <0 0x0ae00000 0 0x1000>;
-                        reg-names = "mdss", "mdss_phys";
-
-	memory-region = <&splash_mem>;
-	status = "okay";
-};
-
-&mdp {
-			//override lut clk s dummy
-                                clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
-                                         <&dispcc DISP_CC_MDSS_AHB_CLK>,
-                                         <&dispcc DISP_CC_MDSS_ROT_CLK>,
-                                         <&dummy_clk>, /*<&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,*/
-                                         <&dispcc DISP_CC_MDSS_MDP_CLK>,
-                                         <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
-                                clock-names = "bus", "iface", "rot", "lut", "core",
-                                              "vsync";
-};
-
-&adreno_smmu {
-	status = "okay";
-};
-
 &gpu {
-	compatible = "qcom,adreno-618.0", "qcom,adreno";
-	status = "okay";
-	zap-shader {
-		//memory-region = <&gpu_mem>;
-		//firmware-name = "qcom/a630_zap.mbn";
-		//firmware-name = "qcom/a615_zap.mdt";
-	};
+        compatible = "qcom,adreno-618.0", "qcom,adreno";
+        status = "okay";
+        zap-shader {
+                memory-region = <&gpu_mem>;
+                //firmware-name = "qcom/a630_zap.mbn";
+                firmware-name = "qcom/a615_zap.mdt";
+        };
 };
 
 &gmu {
@@ -694,37 +620,105 @@
         status = "okay";
 };
 
+&ipa {
+        status = "okay";
+        //modem-init;
+};
+
+&mdp {
+	memory-region = <&splash_mem>;
+	status = "okay";
+        //override lut clk s dummy
+        clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
+	         <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_ROT_CLK>,
+                 <&dummy_clk>, /*<&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,*/
+                 <&dispcc DISP_CC_MDSS_MDP_CLK>,
+                 <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
+        clock-names = "bus", "iface", "rot", "lut", "core",
+	              "vsync";
+};
+
+&mdss {
+	/*
+		to add headless msm_drv platform_driver support.
+	*/
+	compatible = "qcom,sc7180-mdss", "qcom,mdss";
+        reg = <0 0x0ae00000 0 0x1000>, <0 0x0ae00000 0 0x1000>;
+        reg-names = "mdss", "mdss_phys";
+
+	memory-region = <&splash_mem>;
+	status = "okay";
+};
+
 &mdss_dp {
         status = "okay";
 };
 
-&panel0 {
+&pm6150l_lsid5 {
+                pm6150l_labibb: labibb@dc00 {
+                        compatible = "qcom,pmi8998-lab-ibb";
+                        status = "okay";
+
+                        ibb: ibb@dc00 {
+                                interrupts = <0x5 0xdc 0x2 IRQ_TYPE_EDGE_RISING>,
+                                             <0x5 0xdc 0x0 IRQ_TYPE_LEVEL_HIGH>;
+                                interrupt-names = "sc-err", "ocp";
+
+				regulator-min-microvolt = <4600000>;
+				regulator-max-microvolt = <6000000>;
+				regulator-over-current-protection;
+			        regulator-pull-down;
+			        regulator-soft-start;
+			        qcom,discharge-resistor-kohms = <300>;
+                        };
+
+                        lab: lab@de00 {
+                                interrupts = <0x5 0xde 0x1 IRQ_TYPE_EDGE_RISING>,
+                                             <0x5 0xde 0x0 IRQ_TYPE_LEVEL_LOW>;
+                                interrupt-names = "sc-err", "ocp";
+
+			        regulator-min-microvolt = <4600000>;
+			        regulator-max-microvolt = <6000000>;
+			        regulator-over-current-protection;
+			        regulator-pull-down;
+			        regulator-soft-start;
+                        };
+                };
+};
+
+&pm6150l_wled {
+        /delete-property/ interrupts;
+        /delete-property/ interrupt-names;
         status = "okay";
 };
 
-&apps_smmu {
-	status = "okay";
-};
+&pm6150_pon {
+        pm6150_volumekey: volumekey {
+                compatible = "qcom,pm8941-pwrkey";
+                interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
+                debounce = <15625>;
+                bias-pull-up;
+                linux,code = <KEY_VOLUMEDOWN>;
+        };
 
-&qfprom {
-	status = "okay";
-
-        qusb2_hstx_trim_new: hstx-trim@258 {
-		reg = <0x258 0x1>;
-		bits = <25 3>;
+        pm6150_pwrkey: pwrkey {
+                compatible = "qcom,pm8941-pwrkey";
+                interrupts = <0x0 0x8 0 IRQ_TYPE_EDGE_BOTH>;
+                debounce = <15625>;
+                bias-pull-up;
+                linux,code = <KEY_POWER>;
         };
 };
 
-/* reassign nvmem cell */
-&usb_1_hsphy {
-	status = "okay";
-	nvmem-cells = <&qusb2_hstx_trim_new>;
-}; 
-
-/* reassign nvmem cell */
-&gpu {
+&qfprom {
         status = "okay";
-};	
+
+        qusb2_hstx_trim_new: hstx-trim@258 {
+                reg = <0x258 0x1>;
+                bits = <25 3>;
+        };
+};
 
 &qspi {
 	status = "okay";
@@ -778,6 +772,26 @@
 	vqmmc-supply = <&vreg_l6c_2p9>;
 
 	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
+};
+
+&spi11 {
+        status = "okay";
+
+        //nt36xxx_touch: i2c@
+        touchscreen@0 {
+                compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
+                reg = <0>;
+
+                spi-max-frequency = <8000000>;
+                novatek,reset-gpio = <&tlmm 8 0x00>;
+                novatek,irq-gpio = <&tlmm 9 0x2001>;
+
+                /* 672C */
+                novatek,swrst-n8-addr = <0x03F0FE>;
+                novatek,spi-rd-fast-addr = <0x03F310>;
+
+                status = "okay";
+        };
 };
 
 &uart3 {
@@ -838,8 +852,10 @@
 	snps,dis_enblslpm_quirk;
 };
 
+/* reassign nvmem cell */
 &usb_1_hsphy {
-	status = "okay";
+        status = "okay";
+        nvmem-cells = <&qusb2_hstx_trim_new>;
 
 	vdd-supply = <&vreg_l4a_0p8>;
 	vdda-pll-supply = <&vreg_l11a_1p8>;
@@ -853,7 +869,7 @@
 };
 
 &venus {
-	compatible = "qcom,sc7180-venus";
+	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 	status = "okay";
 	memory-region = <&venus_mem>;
 
@@ -876,7 +892,6 @@
 };
 
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
-
 &pm6150l_gpio {
 	disp_pins: disp-state {
 		pinconf {
@@ -888,16 +903,16 @@
 			output-low;
 		};
 	};
-/*
-        key_vol_up_default: key-vol-stat {
+
+        key_vol_up_default: key-vol-state {
+		pinconf {
                         pins = "gpio2";
                         function = "normal";
                         input-enable;
                         bias-pull-up;
                         power-source = <0>;
-                };
+		};
         };
-*/
 };
 
 &qspi_clk {
@@ -1258,43 +1273,9 @@
 
 };
 
-&ipa {
-        status = "okay";
-	//modem-init;
-};
-
-&pm6150_pon {
-        pm6150_volumekey: volumekey {
-                compatible = "qcom,pm8941-pwrkey";
-                interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
-                debounce = <15625>;
-                bias-pull-up;
-                linux,code = <KEY_VOLUMEDOWN>;
-        };
-};
-
-&spi11 {
-	status = "okay";
-
-	//nt36xxx_touch: i2c@
-	touchscreen@0 {
-		compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
-		reg = <0>;
-
-		spi-max-frequency = <8000000>;
-		novatek,reset-gpio = <&tlmm 8 0x00>;
-		novatek,irq-gpio = <&tlmm 9 0x2001>;
-
-		/* 672C */
-		novatek,swrst-n8-addr = <0x03F0FE>;
-		novatek,spi-rd-fast-addr = <0x03F310>;
-
-		status = "okay";
-	};
-};
-
-&qupv3_id_0 { status = "okay"; };
-&qupv3_id_1 { status = "okay"; };
+/*
+	below are one-liner control on/off
+*/
 
 #if 0
 /* Below are one-liner control status */
@@ -1357,7 +1338,7 @@
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
 &venus { status = "disabled"; };
-&framebuffer { status = "disabled"; };
+//&framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
 /delete-node/ &rmtfs_mem ;
@@ -1382,4 +1363,4 @@
 //&soc { geniqup@8c0000                  { status = "disabled" ;};      };
 
 &pm6150l_labibb { status = "disabled"; };
-//&pm6150l_wled { status = "disabled"; };
+&pm6150l_wled { status = "disabled"; };
