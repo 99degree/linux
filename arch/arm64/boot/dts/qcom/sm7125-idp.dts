@@ -27,6 +27,40 @@
 		hsuart0 = &uart3;
 		serial0 = &uart8;
 		wifi0 = &wifi;
+
+		// below alias should move to sm7125.dtsi
+                vreg_s1a = &vreg_s1a_1p1;
+                vreg_s4a = &vreg_s4a_1p0;
+                vreg_s5a = &vreg_s5a_2p0;
+                vreg_l1a = &vreg_l1a_1p2;
+                vreg_l2a = &vreg_l2a_1p0;
+                vreg_l3a = &vreg_l3a_1p0;
+                vreg_l4a = &vreg_l4a_0p8;
+                vreg_l5a = &vreg_l5a_2p7;
+                vreg_l6a = &vreg_l6a_0p6;
+                vreg_l9a = &vreg_l9a_0p6;
+                vreg_l10a = &vreg_l10a_1p8;
+                vreg_l11a = &vreg_l11a_1p8;
+                vreg_l12a = &vreg_l12a_1p8;
+                vreg_l13a = &vreg_l13a_1p8;
+                vreg_l14a = &vreg_l14a_1p8;
+                vreg_l15a = &vreg_l15a_1p8;
+                vreg_l16a = &vreg_l16a_2p7;
+                vreg_l17a = &vreg_l17a_3p0;
+                vreg_l18a = &vreg_l18a_2p8;
+                vreg_l19a = &vreg_l19a_2p9;
+                vreg_s8c = &vreg_s8c_1p3;
+                vreg_l1c = &vreg_l1c_1p8;
+                vreg_l2c = &vreg_l2c_1p3;
+                vreg_l3c = &vreg_l3c_1p2;
+                vreg_l4c = &vreg_l4c_1p8;
+                vreg_l5c = &vreg_l5c_1p8;
+                vreg_l6c = &vreg_l6c_2p9;
+                vreg_l7c = &vreg_l7c_3p0;
+                vreg_l8c = &vreg_l8c_1p8;
+                vreg_l9c = &vreg_l9c_2p9;
+                vreg_l10c = &vreg_l10c_3p3;
+                vreg_l11c = &vreg_l11c_3p3;
 	};
 
         chosen {
@@ -630,6 +664,14 @@
         status = "okay";
 };
 
+&gpi_dma0 {
+	compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+};
+
+&gpi_dma1 {
+        compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+};
+
 &ipa {
         status = "okay";
         //modem-init;
@@ -757,6 +799,15 @@
 	status = "okay";
 };
 
+&remoteproc_adsp {
+        compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
+};
+
+&remoteproc_cdsp {
+        compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
+};
+
+/* from troger */
 &remoteproc_mpss {
 	status = "okay";
 	compatible = "qcom,sc7180-mss-pil";
@@ -830,6 +881,10 @@
 
 &uart8 {
 	status = "okay";
+};
+
+&ufs_mem_phy {
+        compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
 };
 
 &usb_1 {
