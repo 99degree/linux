@@ -410,17 +410,8 @@ const struct adreno_info *adreno_info(struct adreno_rev rev)
 	return NULL;
 }
 
-struct msm_gpu *_adreno_load_gpu(struct drm_device *dev);
 
-struct msm_gpu *adreno_load_gpu(struct drm_device *dev) {
-	struct msm_gpu *ret = _adreno_load_gpu(dev);
-	if (ret == NULL) {
-		dev_err_once(dev->dev, "no GPU device init\n");
-	}
-	return ret;
-}
-
-struct msm_gpu *_adreno_load_gpu(struct drm_device *dev)
+struct msm_gpu *adreno_load_gpu(struct drm_device *dev)
 {
 	struct msm_drm_private *priv = dev->dev_private;
 	struct platform_device *pdev = priv->gpu_pdev;
