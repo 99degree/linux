@@ -12,19 +12,54 @@
 
 / {
 	model = "Xiaomi Redmi Note 9 Pro";
-	compatible = "xiaomi,joyeuse", "qcom,sm7125";
+	compatible = "xiaomi,joyeuse", "qcom,sm7125", "qcom,sc7180";
 	qcom,msm-id = <443 0x0>;
 	qcom,board-id = <0x50022 0x1>;
+
+        aliases {
+                //bluetooth0 = &bluetooth;
+                //hsuart0 = &uart3;
+                //serial0 = &uart8;
+                wifi0 = &wifi;
+
+		vreg_s1a_1p1 = &vreg_s1a; 
+		vreg_s4a_1p0 = &vreg_s4a; 
+		vreg_s5a_2p0 = &vreg_s5a; 
+		vreg_l1a_1p2 = &vreg_l1a; 
+		vreg_l2a_1p0 = &vreg_l2a; 
+		vreg_l3a_1p0 = &vreg_l3a; 
+		vreg_l4a_0p8 = &vreg_l4a; 
+		vreg_l5a_2p7 = &vreg_l5a; 
+		vreg_l6a_0p6 = &vreg_l6a; 
+		vreg_l9a_0p6 = &vreg_l9a; 
+		vreg_l10a_1p8 = &vreg_l10a;
+		vreg_l11a_1p8 = &vreg_l11a;
+		vreg_l12a_1p8 = &vreg_l12a;
+		vreg_l13a_1p8 = &vreg_l13a;
+		vreg_l14a_1p8 = &vreg_l14a;
+		vreg_l15a_1p8 = &vreg_l15a;
+		vreg_l16a_2p7 = &vreg_l16a;
+		vreg_l17a_3p0 = &vreg_l17a;
+		vreg_l18a_2p8 = &vreg_l18a;
+		vreg_l19a_2p9 = &vreg_l19a;
+		vreg_s8c_1p3 = &vreg_s8c; 
+		vreg_l1c_1p8 = &vreg_l1c; 
+		vreg_l2c_1p3 = &vreg_l2c; 
+		vreg_l3c_1p2 = &vreg_l3c; 
+		vreg_l4c_1p8 = &vreg_l4c; 
+		vreg_l5c_1p8 = &vreg_l5c; 
+		vreg_l6c_2p9 = &vreg_l6c; 
+		vreg_l7c_3p0 = &vreg_l7c; 
+		vreg_l8c_1p8 = &vreg_l8c; 
+		vreg_l9c_2p9 = &vreg_l9c; 
+		vreg_l10c_3p3 = &vreg_l10c;
+		vreg_l11c_3p3 = &vreg_l11c;
+	};
 
         reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-
-		framebuffer_region@9c000000 {
-                        reg = <0x0 0x9c000000 0x0 (1080 * 2400 * 4)>;
-                        no-map;
-                };
 
 		mpss_mem: memory@86000000 {
 			reg = <0x0 0x86000000 0x0 0x8400000>;
@@ -56,6 +91,11 @@
 			no-map;
 		};
 
+                splash_mem: memory@9c000000 {
+                        reg = <0x0 0x9c000000 0x0 0x1700000>;
+                        no-map;
+                };
+
 		ramoops@9d800000 {
 			compatible = "ramoops";
 			reg = <0x0 0x9d800000 0x0 0x00400000>;
@@ -79,6 +119,7 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+#if 1
 		framebuffer@9c000000 {
 			compatible = "simple-framebuffer";
 			reg = <0x0 0x9c000000 0x0 (1080 * 2400 * 4)>;
@@ -87,7 +128,169 @@
 			stride = <(1080 * 4)>;
 			format = "a8r8g8b8";
 		};
+#endif
 	};
+
+        gpio-keys {
+                compatible = "gpio-keys";
+                label = "Volume key";
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&key_vol_up_default>;
+
+                key-vol-up {
+                        label = "Volume Up";
+                        linux,code = <KEY_VOLUMEUP>;
+                        gpios = <&pm6150l_gpio 2 GPIO_ACTIVE_LOW>;
+                };
+
+        };
+};
+
+&dsi0 {
+        status = "okay";
+
+        vdda-supply = <&vreg_l3c>;
+        vddio-supply = <&vreg_l18a>;
+        vdds-supply = <&vreg_l18a>;
+
+        panel0: panel@0 {
+                compatible = "mdss,nt36675-tianma",
+                                "xiaomi,nt36675-tianma-dummy",
+                                "mdss,nt36675-tianma-fhd";
+                reg = <0>;
+
+                vdda-supply = <&vreg_l8c>;
+                vdd3p3-supply = <&vreg_l18a>;
+                vddio-supply = <&vreg_l18a>;
+
+                /* display_sde.dtsi
+                vddio-supply = <&L13A>;
+                vdda-3p3-supply = <&L18A>;
+                */
+
+                /* cust_sde.dtsi
+                /delete-property/ vdda-3p3-supply;
+                vddio-supply = <&L18A>;
+                */
+
+                lab-supply = <&lab>;
+                ibb-supply = <&ibb>;
+#if 1
+                pinctrl-names = "default";
+//              pinctrl-1 = <&te_gpio>;
+                pinctrl-0 = <&disp_pins>;
+
+                /* according to panel-nt36675-tianma.c this gpio is finally low */
+                reset-gpios = <&pm6150l_gpio 3 GPIO_ACTIVE_LOW>;
+//              disp-te-gpio = <&tlmm 10 GPIO_ACTIVE_LOW>;
+#endif
+                status = "okay";
+
+                ports {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        port@0 {
+                                reg = <0>;
+                                panel0_in: endpoint {
+                                        remote-endpoint = <&dsi0_out>;
+                                };
+                        };
+                };
+        };
+};
+
+&dsi0_out {
+        remote-endpoint = <&panel0_in>;
+        data-lanes = <0 1 2 3>;
+	status = "okay";
+};
+
+&dsi_phy {
+        status = "okay";
+        vdds-supply = <&vreg_l4a>;
+};
+
+&gpu {
+        status = "okay";
+};
+
+&ipa {
+        status = "okay";
+
+        memory-region = <&ipa_fw_mem>;
+        firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
+};
+
+&mdp {
+        status = "okay";
+
+};
+
+&mdss {
+        status = "okay";
+	memory-region = <&splash_mem>;
+};
+
+&pm6150l_lsid5 {
+        pm6150l_labibb: labibb@dc00 {
+                compatible = "qcom,pmi8998-lab-ibb";
+                status = "okay";
+
+                ibb: ibb@dc00 {
+                        interrupts = <0x5 0xdc 0x2 IRQ_TYPE_EDGE_RISING>,
+                                                 <0x5 0xdc 0x0 IRQ_TYPE_LEVEL_HIGH>;
+                        interrupt-names = "sc-err", "ocp";
+
+                        regulator-min-microvolt = <4600000>;
+                        regulator-max-microvolt = <6000000>;
+                        regulator-over-current-protection;
+                        regulator-pull-down;
+                        regulator-soft-start;
+                        qcom,discharge-resistor-kohms = <300>;
+                };
+
+                lab: lab@de00 {
+                        interrupts = <0x5 0xde 0x1 IRQ_TYPE_EDGE_RISING>,
+                                                 <0x5 0xde 0x0 IRQ_TYPE_LEVEL_LOW>;
+                        interrupt-names = "sc-err", "ocp";
+
+                        regulator-min-microvolt = <4600000>;
+                        regulator-max-microvolt = <6000000>;
+                        regulator-over-current-protection;
+                        regulator-pull-down;
+                        regulator-soft-start;
+                };
+        };
+};
+
+&pm6150_pon {
+        pm6150_volumekey: volumekey {
+                compatible = "qcom,pm8941-pwrkey";
+                interrupts = <0x0 0x8 1 IRQ_TYPE_EDGE_BOTH>;
+                debounce = <15625>;
+                bias-pull-up;
+                linux,code = <KEY_VOLUMEDOWN>;
+        };
+
+        pm6150_pwrkey: pwrkey {
+                compatible = "qcom,pm8941-pwrkey";
+                interrupts = <0x0 0x8 0 IRQ_TYPE_EDGE_BOTH>;
+                debounce = <15625>;
+                bias-pull-up;
+                linux,code = <KEY_POWER>;
+        };
+};
+
+&pm6150l_wled {
+        /delete-property/ interrupts;
+        /delete-property/ interrupt-names;
+        status = "okay";
+};
+
+&remoteproc_mpss {
+        status = "okay";
+        firmware-name = "qcom/sm7125/miatoll/modem.mdt";
 };
 
 &sdhc_2 {
@@ -100,30 +303,6 @@
 	vqmmc-supply = <&vreg_l6c>;
 
 	cd-gpios = <&tlmm 69 GPIO_ACTIVE_HIGH>;
-};
-
-&mdp {
-	status = "okay";
-};
-
-&mdss {
-	status = "okay";
-};
-
-&gpu {
-	status = "disabled";
-};
-
-&remoteproc_mpss {
-	status = "okay";
-	firmware-name = "qcom/sm7125/miatoll/modem.mdt";
-};
-
-&ipa {
-	status = "okay";
-
-	memory-region = <&ipa_fw_mem>;
-	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
 };
 
 &ufs_mem_hc {
@@ -173,6 +352,30 @@
 	vdd-1.3-r3fa-supply = <&vreg_l2c>;
 	vdd-3.3-ch0-supply = <&vreg_l10c>;
 	vdd-3.3-ch1-supply = <&vreg_l11c>;
+};
+
+/* PINCTRL - additions to nodes defined in sc7180.dtsi */
+&pm6150l_gpio {
+        disp_pins: disp-state {
+                pinconf {
+                        pins = "gpio3";
+                        function = PMIC_GPIO_FUNC_FUNC1;
+                        qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
+                        power-source = <0>;
+                        bias-disable;
+                        output-low;
+                };
+        };
+
+        key_vol_up_default: key-vol-state {
+                pinconf {
+                        pins = "gpio2";
+                        function = "normal";
+                        input-enable;
+                        bias-pull-up;
+                        power-source = <0>;
+                };
+        };
 };
 
 &tlmm {

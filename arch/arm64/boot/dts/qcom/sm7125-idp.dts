@@ -10,7 +10,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
-#include "sm7125.dtsi"
+//#include "sm7125.dtsi"
+#include "sc7180.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
@@ -69,7 +70,7 @@
                 ranges;
 
                 stdout-path = "serial0:115200n8";
-/*
+
                 framebuffer: framebuffer@9c000000 {
                         compatible = "drm-simple-framebuffer", "simple-framebuffer";
                         reg = <0 0x9c000000 0 0x1700000>;
@@ -78,7 +79,7 @@
                         stride = <(1080 * 4)>;
                         format = "a8r8g8b8";
 
-			#if 1
+			#if 0
                         clocks = <&gcc GCC_DISP_AHB_CLK>,
                                  <&gcc GCC_DISP_HF_AXI_CLK>,
                                  <&gcc GCC_DISP_THROTTLE_CORE_CLK>,
@@ -86,7 +87,6 @@
                                  <&gcc GCC_DISP_GPLL0_DIV_CLK_SRC>;
 			#endif
                 };
-*/
         };
 
         gpio-keys {
@@ -112,6 +112,33 @@
 	        #clock-cells = <2>;
 	        clock-div = <1>;
 	        clock-mult = <1>;
+	};
+
+	ufs_mem_phy: phy@1d87000 {
+		compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
+		status = "disabled";
+	};
+
+	gpi_dma0: dma-controller@800000 {
+		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+                #dma-cells = <3>;
+                status = "disabled";
+	};
+
+	gpi_dma1: dma-controller@a00000 {
+		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+                #dma-cells = <3>;
+                status = "disabled";
+        };
+
+        remoteproc_adsp: remoteproc@62400000 {
+                compatible = "qcom,sm7125-adsp-pas";
+		status = "disabled";
+	};
+
+        remoteproc_cdsp: remoteproc@8300000 {
+                compatible = "qcom,sm7125-cdsp-pas";
+		status = "disabled";
 	};
 };
 
@@ -578,7 +605,9 @@
 	vdds-supply = <&vreg_l18a_2p8>;
 
 	panel0: panel@0 {
-		compatible = "mdss,nt36675-tianma", "xiaomi,nt36675-tianma-dummy", "mdss,nt36675-tianma-fhd";
+		compatible = "mdss,nt36675-tianma", 
+				"xiaomi,nt36675-tianma-dummy", 
+				"mdss,nt36675-tianma-fhd";
 
 		reg = <0>;
 
@@ -600,7 +629,7 @@
                 ibb-supply = <&ibb>;
 #if 1
 		pinctrl-names = "default";
-//		pinctrl-0 = <&te_gpio &disp_pins>;
+//		pinctrl-1 = <&te_gpio>;
 		pinctrl-0 = <&disp_pins>;
 
 		/* according to panel-nt36675-tianma.c this gpio is finally low */
@@ -620,16 +649,6 @@
 			};
 		};
 	};
-/*
-	ports {
-		port@1 {
-			dsi0_out: endpoint {
-				remote-endpoint = <&panel0_in>;
-				data-lanes = <0 1 2 3>;
-			};
-		};
-	};
-*/
 };
 
 &dsi0_out {
@@ -710,35 +729,35 @@
 };
 
 &pm6150l_lsid5 {
-                pm6150l_labibb: labibb@dc00 {
-                        compatible = "qcom,pmi8998-lab-ibb";
-                        status = "okay";
+	pm6150l_labibb: labibb@dc00 {
+		compatible = "qcom,pmi8998-lab-ibb";
+		status = "okay";
 
-                        ibb: ibb@dc00 {
-                                interrupts = <0x5 0xdc 0x2 IRQ_TYPE_EDGE_RISING>,
-                                             <0x5 0xdc 0x0 IRQ_TYPE_LEVEL_HIGH>;
-                                interrupt-names = "sc-err", "ocp";
+		ibb: ibb@dc00 {
+			interrupts = <0x5 0xdc 0x2 IRQ_TYPE_EDGE_RISING>,
+						 <0x5 0xdc 0x0 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "sc-err", "ocp";
 
-				regulator-min-microvolt = <4600000>;
-				regulator-max-microvolt = <6000000>;
-				regulator-over-current-protection;
-			        regulator-pull-down;
-			        regulator-soft-start;
-			        qcom,discharge-resistor-kohms = <300>;
-                        };
+			regulator-min-microvolt = <4600000>;
+			regulator-max-microvolt = <6000000>;
+			regulator-over-current-protection;
+			regulator-pull-down;
+			regulator-soft-start;
+			qcom,discharge-resistor-kohms = <300>;
+		};
 
-                        lab: lab@de00 {
-                                interrupts = <0x5 0xde 0x1 IRQ_TYPE_EDGE_RISING>,
-                                             <0x5 0xde 0x0 IRQ_TYPE_LEVEL_LOW>;
-                                interrupt-names = "sc-err", "ocp";
+		lab: lab@de00 {
+			interrupts = <0x5 0xde 0x1 IRQ_TYPE_EDGE_RISING>,
+						 <0x5 0xde 0x0 IRQ_TYPE_LEVEL_LOW>;
+			interrupt-names = "sc-err", "ocp";
 
-			        regulator-min-microvolt = <4600000>;
-			        regulator-max-microvolt = <6000000>;
-			        regulator-over-current-protection;
-			        regulator-pull-down;
-			        regulator-soft-start;
-                        };
-                };
+			regulator-min-microvolt = <4600000>;
+			regulator-max-microvolt = <6000000>;
+			regulator-over-current-protection;
+			regulator-pull-down;
+			regulator-soft-start;
+		};
+	};
 };
 
 &pm6150l_wled {
@@ -898,14 +917,14 @@
 	status = "okay";
 	maximum-speed = "high-speed";
 	dr_mode = "peripheral";
-/*
+#if 0
 	snps,dis_u2_susphy_quirk;
 	snps,disable-clk-gating;
 	snps,has-lpm-erratum;
 	snps,hird-threshold = [10];
 	snps,usb3_lpm_capable;
 	tx-fifo-resize;
-*/
+////////
 	snps,dis_u2_susphy_quirk;
 	snps,disable-clk-gating;
 	snps,has-lpm-erratum;
@@ -918,6 +937,7 @@
 	snps,dis-u1-entry-quirk;
 	snps,dis-u2-entry-quirk;
 	snps,dis_enblslpm_quirk;
+#endif
 };
 
 /* reassign nvmem cell */
@@ -1386,20 +1406,21 @@
 //&qfprom0 { status = "disabled" ;};
 //&soc { cpufreq@18323000 { status = "disabled" ;};      };
 
-//&dsi_phy { status = "disabled"; };
-//&mdp { status = "disabled"; };
+&dsi0 { status = "disabled"; };
+&dsi_phy { status = "disabled"; };
+&mdp { status = "disabled"; };
 
 /* disable all ref to dp */
-//&mdp { ports { /delete-node/ port@2; }; }; 
-//&dp_in { /delete-property/ remote-endpoint; };
+&mdp { ports { /delete-node/ port@2; }; }; 
+&dp_in { /delete-property/ remote-endpoint; };
 
-//&mdss { status = "disabled"; };
-//&adreno_smmu { status = "disabled"; };
-//&gpu { status = "disabled"; };
-//&gmu { status = "disabled"; };
+&mdss { status = "disabled"; };
+&adreno_smmu { status = "disabled"; };
+&gpu { status = "disabled"; };
+&gmu { status = "disabled"; };
 //&apps_smmu { status = "disabled"; };
 &mdss_dp { status = "disabled"; };
-//&panel0 { status = "disabled"; };
+&panel0 { status = "disabled"; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
 &venus { status = "disabled"; };
