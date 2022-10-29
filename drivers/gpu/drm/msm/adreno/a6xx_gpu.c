@@ -1861,10 +1861,12 @@ static u32 a618_get_speed_bin(u32 fuse)
 		return 2;
 	else if (fuse == 159)
 		return 3;
-	else
+	else {
+		return 1;
 		pr_info(" parse qfprom match fail speedbin %d\n", fuse);
+	}
 
-	return 0;
+	return UINT_MAX;
 }
 
 static u32 a619_get_speed_bin(u32 fuse)
