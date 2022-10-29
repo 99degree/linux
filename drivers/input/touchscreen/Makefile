@@ -118,3 +118,4 @@ obj-$(CONFIG_TOUCHSCREEN_RASPBERRYPI_FW)	+= raspberrypi-ts.o
 obj-$(CONFIG_TOUCHSCREEN_IQS5XX)	+= iqs5xx.o
 obj-$(CONFIG_TOUCHSCREEN_ZINITIX)	+= zinitix.o
 obj-y					+= sec_ts/
+obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI)	+= nt36xxx_spi/
