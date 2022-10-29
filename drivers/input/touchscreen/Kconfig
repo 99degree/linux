@@ -1397,3 +1397,4 @@ config TOUCHSCREEN_ZINITIX
 endif
 
 source "drivers/input/touchscreen/sec_ts/Kconfig"
+source "drivers/input/touchscreen/nt36xxx_spi/Kconfig"

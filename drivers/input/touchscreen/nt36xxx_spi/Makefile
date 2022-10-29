@@ -5,4 +5,4 @@
 # Each configuration option enables a list of files.
 
 obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI) += nt366xx.o
-nt36xxx-objs += nt36xxx.o nt36xxx_fw_update.o nt36xxx_ext_proc.o
+nt366xx-objs += nt36xxx.o nt36xxx_fw_update.o nt36xxx_ext_proc.o
