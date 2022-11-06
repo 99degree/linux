@@ -993,6 +993,7 @@
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 	status = "okay";
 	memory-region = <&venus_mem>;
+	/* currently kernel and ramdisk does not contain fw file */
 
 	video-firmware {
 		iommus = <&apps_smmu 0x0c42 0x0>;
@@ -1453,7 +1454,7 @@
 //&panel0 { status = "disabled"; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
-//&venus { status = "disabled"; };
+&venus { status = "disabled"; };
 //&framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
