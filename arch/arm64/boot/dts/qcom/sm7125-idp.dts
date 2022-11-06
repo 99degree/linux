@@ -10,8 +10,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
-//#include "sm7125.dtsi"
-#include "sc7180.dtsi"
+#include "sm7125.dtsi"
+//#include "sc7180.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
@@ -164,7 +164,7 @@
 	reg = <0x0 0x94600000 0x0 0x800000>;
 };
 
-///delete-node/ &rmtfs_mem;
+/delete-node/ &rmtfs_mem;
 /delete-node/ &ipa_fw_mem;
 
 / {
@@ -232,6 +232,7 @@
 		atf_mem: memory@80b00000 {
 			reg = <0x0 0x80b00000 0x0 0x100000>;
 			no-map;
+			node_name = "atf_mem";
 		};
 
 		/*
@@ -245,6 +246,7 @@
 		mpss_mem: memory@86000000 {
 			reg = <0x0 0x86000000 0x0 0x8400000>;
 			no-map;
+			node_name = "mpss_mem";
 		};
 
 		/*
@@ -257,6 +259,7 @@
 		camera_mem: memory@8e400000 {
 			reg = <0x0 0x8e400000 0x0 0x500000>;
 			no-map;
+			node_name = "camera_mem";
 		};
 
 		/* TODO:check
@@ -268,6 +271,7 @@
 		venus_mem: memory@8ee00000 {
 			reg = <0 0x8ee00000 0 0x500000>;
 			no-map;
+			node_name = "venus_mem";
 		};
 
 		/*
@@ -276,6 +280,7 @@
                 cdsp_mem: memory@8f300000 {
                         reg = <0x0 0x8f300000 0x0 0x1e00000>;
                         no-map;
+			node_name = "cdsp_mem";
                 };
 
 		/*
@@ -284,6 +289,7 @@
                 adsp_mem: memory@91100000 {
                         reg = <0x0 0x91100000 0x0 0x2800000>;
                         no-map;
+			node_name = "adsp_mem";
                 };
 
                 /*
@@ -295,6 +301,7 @@
                 wlan_mem: memory@93900000 {
                         reg = <0x0 0x93900000 0x0 0x200000>;
                         no-map;
+			node_name = "wlan_mem";
                 };
 
 		/*
@@ -306,6 +313,7 @@
 		ipa_fw_mem: memory@93b00000 {
                         reg = <0x0 0x93b00000 0x0 0x15000>;
                         no-map;
+			node_name = "ipa_fw_mem";
                 };
 
 
@@ -315,12 +323,14 @@
                 gpu_mem: memory@93b15000 {
                         reg = <0x0 0x93b15000 0x0 0x2000>;
                         no-map;
+			node_name = "gpu_mem";
                 };
 
                 //TODO:
                 mba_mem: memory@94400000 {
                         reg = <0x0 0x94400000 0x0 0x200000>;
                         no-map;
+			node_name = "mba_mem";
                 };
 
 		/*
@@ -329,6 +339,7 @@
 		splash_mem: memory@9c000000 {
                         reg = <0x0 0x9c000000 0x0 0x1700000>;
                         no-map;
+			node_name = "splash_mem";
                 };
 
 		/*
@@ -337,6 +348,7 @@
                 dfps_data_mem: memory@9d700000 {
                         reg = <0x0 0x9d700000 0x0 0x100000>;
                         no-map;
+			node_name = "dfps_data_mem";
                 };
 
 	        ramoops_mem: ramoops@9d800000 {
@@ -347,6 +359,7 @@
 	                pmsg-size = <0x200000>;
 			console-size = <0x100000>;
 			mem-type = <1>;
+			node_name = "ramoops_mem";
 	        };
 
 		/*
@@ -355,6 +368,7 @@
 		qseecom_mem: memory@9e000000 {
                         reg = <0x0 0x9e000000 0x0 0x1400000>;
                         no-map;
+			node_name = "qseecom_mem";
                 };
 
 		/*
@@ -363,6 +377,7 @@
 		cdsp_sec_mem: memory@9f400000 {
                         reg = <0x0 0x9f400000 0x0 0x1e00000>;
                         no-map;
+			node_name = "cdsp_sec_mem";
                 };
 #if 0
                 protect_mem: memory@80000000 {
@@ -379,6 +394,7 @@
 
 			qcom,client-id = <1>;
 			qcom,vmid = <15>;
+			node_name = "rmtfs_mem";
 		};
 	};
 };
@@ -693,13 +709,20 @@
 
 &ipa {
         status = "okay";
-        //modem-init;
+        modem-init;
 	memory-region = <&ipa_fw_mem>;
-	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
+	//firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
+	///delete-property/ firmware-name;
 };
 
 &mdp {
-	memory-region = <&splash_mem>;
+	/* sm7125.dtsi override mdp reg, so restore it here */
+        reg = <0 0x0ae01000 0 0x8f000>,
+              <0 0x0aeb0000 0 0x2008>,
+		<0 0x0aeac000 0 0x214>;
+        reg-names = "mdp", "vbif", "regdma";
+
+//	memory-region = <&splash_mem>;
 	status = "okay";
         //override lut clk s dummy
         clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
@@ -720,7 +743,7 @@
         reg = <0 0x0ae00000 0 0x1000>, <0 0x0ae00000 0 0x1000>;
         reg-names = "mdss", "mdss_phys";
 
-	memory-region = <&splash_mem>;
+//	memory-region = <&splash_mem>;
 	status = "okay";
 };
 
@@ -938,6 +961,16 @@
 	snps,dis-u2-entry-quirk;
 	snps,dis_enblslpm_quirk;
 #endif
+//	snps,dis_u2_susphy_quirk;
+//	snps,dis_enblslpm_quirk;
+//	snps,has-lpm-erratum;
+//	snps,hird-threshold = /bits/ 8 <0x10>;
+//	snps,usb3_lpm_capable;
+
+	phys = <&usb_1_hsphy>;
+	phy-names = "usb2-phy";
+	snps,dis_u2_susphy_quirk;
+	snps,dis_enblslpm_quirk;
 };
 
 /* reassign nvmem cell */
@@ -1406,28 +1439,25 @@
 //&qfprom0 { status = "disabled" ;};
 //&soc { cpufreq@18323000 { status = "disabled" ;};      };
 
-&dsi0 { status = "disabled"; };
-&dsi_phy { status = "disabled"; };
-&mdp { status = "disabled"; };
-
-/* disable all ref to dp */
-&mdp { ports { /delete-node/ port@2; }; }; 
-&dp_in { /delete-property/ remote-endpoint; };
-
-&mdss { status = "disabled"; };
-&adreno_smmu { status = "disabled"; };
-&gpu { status = "disabled"; };
-&gmu { status = "disabled"; };
+//&dsi0 { status = "disabled"; };
+//&dsi_phy { status = "disabled"; };
+//&mdp { status = "disabled"; };
+//&mdp { ports { /delete-node/ port@2; }; }; 
+//&dp_in { /delete-property/ remote-endpoint; };
+//&mdss { status = "disabled"; };
+//&adreno_smmu { status = "disabled"; };
+//&gpu { status = "disabled"; };
+//&gmu { status = "disabled"; };
 //&apps_smmu { status = "disabled"; };
-&mdss_dp { status = "disabled"; };
-&panel0 { status = "disabled"; };
+//&mdss_dp { status = "disabled"; };
+//&panel0 { status = "disabled"; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
-&venus { status = "disabled"; };
+//&venus { status = "disabled"; };
 //&framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
-/delete-node/ &rmtfs_mem ;
+/delete-node/ &rmtfs_mem;
 //&wifi { status = "disabled"; };
 
 //&usb_1 {status = "disabled";};
