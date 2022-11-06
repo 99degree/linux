@@ -264,6 +264,8 @@ static const struct adreno_info gpulist[] = {
 		.gmem = SZ_512K,
 		.inactive_period = DRM_MSM_INACTIVE_PERIOD,
 		.init = a6xx_gpu_init,
+		.zapfw = "a615_zap.mdt",
+		.hwcg = a615_hwcg,
 	}, {
 		.rev = ADRENO_REV(6, 1, 9, ANY_ID),
 		.revn = 619,
@@ -371,6 +373,10 @@ MODULE_FIRMWARE("qcom/a530_zap.mdt");
 MODULE_FIRMWARE("qcom/a530_zap.b00");
 MODULE_FIRMWARE("qcom/a530_zap.b01");
 MODULE_FIRMWARE("qcom/a530_zap.b02");
+MODULE_FIRMWARE("qcom/a615_zap.mbt");
+MODULE_FIRMWARE("qcom/a615_zap.b00");
+MODULE_FIRMWARE("qcom/a615_zap.b01");
+MODULE_FIRMWARE("qcom/a615_zap.b02");
 MODULE_FIRMWARE("qcom/a619_gmu.bin");
 MODULE_FIRMWARE("qcom/a630_sqe.fw");
 MODULE_FIRMWARE("qcom/a630_gmu.bin");
@@ -403,6 +409,7 @@ const struct adreno_info *adreno_info(struct adreno_rev rev)
 
 	return NULL;
 }
+
 
 struct msm_gpu *adreno_load_gpu(struct drm_device *dev)
 {
@@ -520,6 +527,7 @@ static int adreno_bind(struct device *dev, struct device *master, void *data)
 	struct msm_gpu *gpu;
 	int ret;
 
+	dev_warn(dev, "adreno_bind\n");
 	ret = find_chipid(dev, &config.rev);
 	if (ret)
 		return ret;
@@ -590,7 +598,7 @@ static int adreno_probe(struct platform_device *pdev)
 {
 
 	int ret;
-
+	pr_info("adreno_probe");
 	ret = component_add(&pdev->dev, &a3xx_ops);
 	if (ret)
 		return ret;
