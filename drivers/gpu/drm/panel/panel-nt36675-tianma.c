@@ -75,10 +75,10 @@ static int nt36675_tianma_init_vregs(struct nt36675_tianma *nt, struct device *d
 
 static void nt36675_tianma_reset(struct nt36675_tianma *ctx)
 {
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	usleep_range(10000, 11000);
-	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-	usleep_range(10000, 11000);
+//	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+//	usleep_range(10000, 11000);
+//	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
+//	usleep_range(10000, 11000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(10000, 11000);
         gpiod_set_value_cansleep(ctx->reset_gpio, 0);
