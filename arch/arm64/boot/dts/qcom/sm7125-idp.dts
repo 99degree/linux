@@ -719,12 +719,13 @@
 };
 
 &mdp {
+#if 0
 	/* sm7125.dtsi override mdp reg, so restore it here */
         reg = <0 0x0ae01000 0 0x8f000>,
               <0 0x0aeb0000 0 0x2008>,
 		<0 0x0aeac000 0 0x214>;
         reg-names = "mdp", "vbif", "regdma";
-
+#endif
 //	memory-region = <&splash_mem>;
 	status = "okay";
         //override lut clk s dummy

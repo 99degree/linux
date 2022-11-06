@@ -16,7 +16,7 @@
 /* SM7125 uses Kryo 465 instead of Kryo 468 */
 &CPU0 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -34,7 +34,7 @@
 
 &CPU1 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -47,7 +47,7 @@
 
 &CPU2 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -60,7 +60,7 @@
 
 &CPU3 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -73,7 +73,7 @@
 
 &CPU4 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -86,7 +86,7 @@
 
 &CPU5 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
@@ -99,7 +99,7 @@
 
 &CPU6 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x10000>;
 	i-cache-size = <0x10000>;
@@ -112,7 +112,7 @@
 
 &CPU7 {
 	compatible = "qcom,kryo465";
-	/delete-property/ operating-points-v2;
+	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x10000>;
 	i-cache-size = <0x10000>;
@@ -800,18 +800,18 @@
 };
 
 &mdp {
-/*
+#if 1
 	reg = <0 0x0ae01000 0 0x8f000>,
 		  <0 0x0aeac000 0 0x214>,
 		  <0 0x0aeb0000 0 0x2008>,
 		  <0 0x0aeb8000 0 0x3000>;
 	reg-names = "mdp", "regdma", "vbif", "vbif_nrt";
-*/
+#else
         reg = <0 0x0ae01000 0 0x8f000>,
                   <0 0x0aeac000 0 0x214>,
                   <0 0x0aeb0000 0 0x2008>;
         reg-names = "mdp", "regdma", "vbif";
-
+#endif
 
         status = "okay";
 
