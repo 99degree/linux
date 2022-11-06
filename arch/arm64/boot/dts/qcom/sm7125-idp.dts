@@ -140,6 +140,9 @@
                 compatible = "qcom,sm7125-cdsp-pas";
 		status = "disabled";
 	};
+
+	watchdog: watchdog@17c10000 {
+	};
 };
 
 &CPU0 { compatible = "qcom,kryo465"; };
@@ -1448,18 +1451,22 @@
 //&qfprom0 { status = "disabled" ;};
 //&soc { cpufreq@18323000 { status = "disabled" ;};      };
 
+&watchdog { status = "disabled" ;};
+
 //&dsi0 { status = "disabled"; };
 //&dsi_phy { status = "disabled"; };
 //&mdp { status = "disabled"; };
-//&mdp { ports { /delete-node/ port@2; }; }; 
-//&dp_in { /delete-property/ remote-endpoint; };
 //&mdss { status = "disabled"; };
 //&adreno_smmu { status = "disabled"; };
 //&gpu { status = "disabled"; };
 //&gmu { status = "disabled"; };
 //&apps_smmu { status = "disabled"; };
-//&mdss_dp { status = "disabled"; };
 //&panel0 { status = "disabled"; };
+
+/* all related to display-port here */
+&mdss_dp { status = "disabled"; };
+&mdp { ports { /delete-node/ port@2; }; };
+&dp_in { /delete-property/ remote-endpoint; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
 &venus { status = "disabled"; };
