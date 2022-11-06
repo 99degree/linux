@@ -164,6 +164,9 @@
 	reg = <0x0 0x94600000 0x0 0x800000>;
 };
 
+/*	remove this node is needed because sc7180.dtsi/sm7125.dtsi 
+	contain non-working node 
+*/
 /delete-node/ &rmtfs_mem;
 /delete-node/ &ipa_fw_mem;
 
@@ -960,17 +963,21 @@
 	snps,dis-u1-entry-quirk;
 	snps,dis-u2-entry-quirk;
 	snps,dis_enblslpm_quirk;
+#else
+	snps,dis_u2_susphy_quirk;
+	snps,dis_enblslpm_quirk;
+	snps,has-lpm-erratum;
+	snps,hird-threshold = /bits/ 8 <0x10>;
+	snps,usb3_lpm_capable;
+	tx-fifo-resize;
 #endif
-//	snps,dis_u2_susphy_quirk;
-//	snps,dis_enblslpm_quirk;
-//	snps,has-lpm-erratum;
-//	snps,hird-threshold = /bits/ 8 <0x10>;
-//	snps,usb3_lpm_capable;
 
+#if 0
 	phys = <&usb_1_hsphy>;
 	phy-names = "usb2-phy";
 	snps,dis_u2_susphy_quirk;
 	snps,dis_enblslpm_quirk;
+#endif
 };
 
 /* reassign nvmem cell */
@@ -1455,7 +1462,7 @@
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
 &venus { status = "disabled"; };
-//&framebuffer { status = "disabled"; };
+&framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
 /delete-node/ &rmtfs_mem;
