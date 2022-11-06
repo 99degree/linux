@@ -277,7 +277,6 @@ static int msm_drm_uninit(struct device *dev)
 
 struct msm_gem_address_space *msm_kms_init_aspace(struct drm_device *dev)
 {
-	struct iommu_domain *domain;
 	struct msm_gem_address_space *aspace;
 	struct msm_mmu *mmu;
 	struct device *mdp_dev = dev->dev;
@@ -293,22 +292,21 @@ struct msm_gem_address_space *msm_kms_init_aspace(struct drm_device *dev)
 	else
 		iommu_dev = mdss_dev;
 
-	domain = iommu_domain_alloc(iommu_dev->bus);
-	if (!domain) {
+	mmu = msm_iommu_new(iommu_dev, 0);
+	if (IS_ERR(mmu))
+		return ERR_CAST(mmu);
+
+	if (!mmu) {
 		drm_info(dev, "no IOMMU, fallback to phys contig buffers for scanout\n");
 		return NULL;
 	}
 
-	mmu = msm_iommu_new(iommu_dev, domain);
-	if (IS_ERR(mmu)) {
-		iommu_domain_free(domain);
-		return ERR_CAST(mmu);
-	}
-
 	aspace = msm_gem_address_space_create(mmu, "mdp_kms",
 		0x1000, 0x100000000 - 0x1000);
-	if (IS_ERR(aspace))
+	if (IS_ERR(aspace)) {
+		dev_err(mdp_dev, "aspace create, error %pe\n", aspace);
 		mmu->funcs->destroy(mmu);
+	}
 
 	return aspace;
 }
@@ -819,6 +817,7 @@ static int msm_ioctl_gem_info(struct drm_device *dev, void *data,
 	case MSM_INFO_GET_OFFSET:
 	case MSM_INFO_GET_IOVA:
 	case MSM_INFO_SET_IOVA:
+	case MSM_INFO_GET_FLAGS:
 		/* value returned as immediate, not pointer, so len==0: */
 		if (args->len)
 			return -EINVAL;
@@ -845,6 +844,15 @@ static int msm_ioctl_gem_info(struct drm_device *dev, void *data,
 		break;
 	case MSM_INFO_SET_IOVA:
 		ret = msm_ioctl_gem_info_set_iova(dev, file, obj, args->value);
+		break;
+	case MSM_INFO_GET_FLAGS:
+		if (obj->import_attach) {
+			ret = -EINVAL;
+			break;
+		}
+		/* Hide internal kernel-only flags: */
+		args->value = to_msm_bo(obj)->flags & MSM_BO_FLAGS;
+		ret = 0;
 		break;
 	case MSM_INFO_SET_NAME:
 		/* length check should leave room for terminating null: */
@@ -1148,40 +1156,10 @@ static int add_components_mdp(struct device *master_dev,
 		if (!intf)
 			continue;
 
-		if (of_device_is_available(intf)) {
-			struct platform_device *pdev = of_find_device_by_node(intf);
-			struct device_link *sup_link;
-			struct device *dev;
-
-			if (!pdev) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
-			dev = &pdev->dev;
-
-			if(!dev->driver) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
-			sup_link = device_link_add(master_dev, dev,
-						DL_FLAG_AUTOREMOVE_CONSUMER);
-
-			if (!sup_link) {
-				of_node_put(intf);
-				dev_err(dev, "sup_link is NULL\n");
-				return -EPROBE_DEFER;
-			}
-
-			if (sup_link->supplier->links.status != DL_DEV_DRIVER_BOUND) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
+		if (of_device_is_available(intf))
 			drm_of_component_match_add(master_dev, matchptr,
 						   component_compare_of, intf);
-		}
+
 		of_node_put(intf);
 	}
 
@@ -1252,12 +1230,12 @@ int msm_drv_probe(struct device *master_dev,
 		ret = add_components_mdp(master_dev, &match);
 		if (ret)
 			return ret;
-	} else {
-
-		ret = add_gpu_components(master_dev, &match);
-		if (ret)
-			return ret;
 	}
+
+	ret = add_gpu_components(master_dev, &match);
+	if (ret)
+		return ret;
+
 	/* on all devices that I am aware of, iommu's which can map
 	 * any address the cpu can see are used:
 	 */
