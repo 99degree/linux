@@ -425,7 +425,7 @@
 				min-residency-us = <5555>;
 				local-timer-stop;
 			};
-
+/*
 			CLUSTER_SLEEP_0: cluster-sleep-0 {
 				compatible = "arm,idle-state";
 				idle-state-name = "cluster-power-down";
@@ -435,7 +435,20 @@
 				min-residency-us = <9926>;
 				local-timer-stop;
 			};
+*/
 		};
+
+                domain-idle-states {
+                        CLUSTER_SLEEP_0: cluster-sleep-0 {
+                                compatible = "domain-idle-state";
+                                idle-state-name = "cluster-llcc-off";
+                                arm,psci-suspend-param = <0x4100c244>;
+                                entry-latency-us = <3264>;
+                                exit-latency-us = <6562>;
+                                min-residency-us = <9987>;
+                                local-timer-stop;
+                        };
+                };
 	};
 
 	cpu0_opp_table: opp-table-cpu0 {
