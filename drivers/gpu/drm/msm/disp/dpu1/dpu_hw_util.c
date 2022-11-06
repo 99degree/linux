@@ -86,8 +86,10 @@ void dpu_reg_write(struct dpu_hw_blk_reg_map *c,
 	writel_relaxed(val, c->blk_addr + reg_off);
 }
 
-int dpu_reg_read(struct dpu_hw_blk_reg_map *c, u32 reg_off)
+int dpu_reg_read(struct dpu_hw_blk_reg_map *c, u32 reg_off, const char *name, const char *fname, int line)
 {
+	DPU_DEBUG_DRIVER("[%s: 0x%X 0x%X] <= 0x%X  %s:%d\n",
+                               name, (void *)c->blk_addr, reg_off, 0, fname, line);
 	return readl_relaxed(c->blk_addr + reg_off);
 }
 
