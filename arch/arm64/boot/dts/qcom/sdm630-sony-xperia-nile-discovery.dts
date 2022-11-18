@@ -13,3 +13,8 @@
 	compatible = "sony,discovery-row", "qcom,sdm630";
 	chassis-type = "handset";
 };
+#if 0
+&panel {
+	compatible = "sony,discovery-td4322-innolux";
+};
+#endif
