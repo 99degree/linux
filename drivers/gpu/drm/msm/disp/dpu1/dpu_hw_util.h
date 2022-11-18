@@ -326,11 +326,11 @@ u32 *dpu_hw_util_get_log_mask_ptr(void);
 void dpu_reg_write(struct dpu_hw_blk_reg_map *c,
 		u32 reg_off,
 		u32 val,
-		const char *name);
-int dpu_reg_read(struct dpu_hw_blk_reg_map *c, u32 reg_off);
+		const char *name, const char *fname, int line);
+int dpu_reg_read(struct dpu_hw_blk_reg_map *c, u32 reg_off, const char *name, const char *fname, int line);
 
-#define DPU_REG_WRITE(c, off, val) dpu_reg_write(c, off, val, #off)
-#define DPU_REG_READ(c, off) dpu_reg_read(c, off)
+#define DPU_REG_WRITE(c, off, val) dpu_reg_write(c, off, val, #off, __func__, __LINE__)
+#define DPU_REG_READ(c, off) dpu_reg_read(c, off, #off, __func__, __LINE__)
 
 void *dpu_hw_util_get_dir(void);
 
