@@ -48,7 +48,7 @@ static int pm8916_pon_probe(struct platform_device *pdev)
 {
 	struct pm8916_pon *pon;
 	long reason_shift;
-	int error;
+	int error, ret;
 
 	pon = devm_kzalloc(&pdev->dev, sizeof(*pon), GFP_KERNEL);
 	if (!pon)
@@ -82,7 +82,11 @@ static int pm8916_pon_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, pon);
 
-	return devm_of_platform_populate(&pdev->dev);
+	ret = devm_of_platform_populate(&pdev->dev);
+
+	pm8916_reboot_mode_write(&pon->reboot_mode, 2);
+
+	return ret;
 }
 
 static const struct of_device_id pm8916_pon_id_table[] = {
