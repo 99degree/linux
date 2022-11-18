@@ -140,6 +140,26 @@
 			no-map;
 		};
 
+                cdsp_secure_heap: memory@81800000 {
+                        no-map;
+                        reg = <0x00 0x81800000 0x00 0x1e00000>;
+                };
+
+                camera: memory@86200000 {
+                        no-map;
+                        reg = <0x00 0x86200000 0x00 0x500000>;
+                };
+
+                adsp: memory@86700000 {
+                        no-map;
+                        reg = <0x00 0x86700000 0x00 0x4000000>;
+                };
+
+                video: memory@8ad00000 {
+                        no-map;
+                        reg = <0x00 0x8ad00000 0x00 0x500000>;
+                };
+
 		video_mem: memory@8b200000 {
 			reg = <0x0 0x8b200000 0x0 0x500000>;
 			no-map;
@@ -150,6 +170,31 @@
 			no-map;
 		};
 
+                ipa_gsi@8b710000 {
+                        no-map;
+                        reg = <0x00 0x8b710000 0x00 0xa000>;
+                };
+
+                gpu_micro_code@8b71a000 {
+                        no-map;
+                        reg = <0x00 0x8b71a000 0x00 0x2000>;
+                };
+
+                mpss@8b800000 {
+                        no-map;
+                        reg = <0x00 0x8b800000 0x00 0xf600000>;
+                };
+
+                wlan@9ae00000 {
+                        no-map;
+                        reg = <0x00 0x9ae00000 0x00 0x1900000>;
+                };
+
+                cdsp@9c700000 {
+                        no-map;
+                        reg = <0x00 0x9c700000 0x00 0x1e00000>;
+                };
+
 		rmtfs_mem: memory@9c900000 {
 			compatible = "qcom,rmtfs-mem";
 			reg = <0x0 0x9c900000 0x0 0x280000>;
@@ -158,6 +203,41 @@
 			qcom,client-id = <1>;
 			qcom,vmid = <15>;
 		};
+
+                removed_region@c0000000 {
+                        no-map;
+                        reg = <0x00 0xc0000000 0x00 0x5100000>;
+                };
+
+                pil_trustedvm_region@d0800000 {
+                        no-map;
+                        reg = <0x00 0xd0800000 0x00 0x76f7000>;
+                };
+
+                qrtr-shmem@d7ef7000 {
+                        no-map;
+                        reg = <0x00 0xd7ef7000 0x00 0x9000>;
+                };
+
+                neuron_block0@d7f00000 {
+                        no-map;
+                        reg = <0x00 0xd7f00000 0x00 0x80000>;
+                };
+
+                neuron_block1@d7f80000 {
+                        no-map;
+                        reg = <0x00 0xd7f80000 0x00 0x80000>;
+                };
+
+                splash_region {
+                        reg = <0x00 0xe1000000 0x00 0x2300000>;
+                        label = "cont_splash_region";
+                };
+
+                dfps_data_memory@e3300000 {
+                        reg = <0x00 0xe3300000 0x00 0x100000>;
+                        label = "dfps_data_memory";
+                };
 	};
 
 	cpus {
