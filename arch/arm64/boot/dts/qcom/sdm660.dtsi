@@ -9,6 +9,74 @@
 
 #include "sdm630.dtsi"
 
+/ {
+	reserved-memory {
+		/delete-node/ tzbuffer@94a00000;
+
+		cdsp_region: cdsp@94a00000 {
+			reg = <0x0 0x94a00000 0x0 0x600000>;
+			no-map;
+		};
+
+	};
+
+	smp2p-cdsp {
+		compatible = "qcom,smp2p";
+		qcom,smem = <94>, <432>;
+		interrupts = <GIC_SPI 514 IRQ_TYPE_EDGE_RISING>;
+		mboxes = <&apcs_glb 30>;
+		qcom,local-pid = <0>;
+		qcom,remote-pid = <5>;
+
+		cdsp_smp2p_out: master-kernel {
+			qcom,entry-name = "master-kernel";
+			#qcom,smem-state-cells = <1>;
+		};
+
+		cdsp_smp2p_in: slave-kernel {
+			qcom,entry-name = "slave-kernel";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+
+	soc {
+		cdsp_pil: remoteproc@1a300000 {
+			compatible = "qcom,sdm660-cdsp-pas";
+			reg = <0x1a300000 0x4040>;
+
+			interrupts-extended =
+				<&intc GIC_SPI 518 IRQ_TYPE_EDGE_RISING>,
+				<&cdsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
+				<&cdsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
+				<&cdsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
+				<&cdsp_smp2p_in 3 IRQ_TYPE_EDGE_RISING>;
+			interrupt-names = "wdog", "fatal", "ready",
+					  "handover", "stop-ack";
+
+			clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
+			clock-names = "xo";
+
+			memory-region = <&cdsp_region>;
+			power-domains = <&rpmpd SDM660_VDDCX>;
+			power-domain-names = "cx";
+
+			qcom,smem-states = <&cdsp_smp2p_out 0>;
+			qcom,smem-state-names = "stop";
+
+			glink-edge {
+				interrupts = <GIC_SPI 513 IRQ_TYPE_EDGE_RISING>;
+
+				label = "turing";
+				mboxes = <&apcs_glb 29>;
+				qcom,remote-pid = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+	};
+};
+
 &adreno_gpu {
 	compatible = "qcom,adreno-512.0", "qcom,adreno";
 	operating-points-v2 = <&gpu_sdm660_opp_table>;
