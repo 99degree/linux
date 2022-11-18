@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/dts-v1/;
+
+#include "sdm636.dtsi"
+#include "sdm630-sony-xperia-nile.dtsi"
+
+/ {
+	model = "Meizu E3";
+	compatible = "qcom,sdm636", "qcom,sdm630";
+	chassis-type = "handset";
+
+	qcom,msm-id = <0x159 0x0>;
+	qcom,board-id = <0x8 0x0>;
+	qcom,pmic-id = <0x1001b 0x101011a 0x0 0x0 0x1001b 0x201011a 0x0 0x0>;
+
+	chosen {
+		#address-cells = <2>;
+		#size-cells = <2>;
+                ranges;
+
+		stdout-path = "framebuffer0";
+		bootargs = "earlycon=tty0 console=tty0";
+
+		framebuffer0: framebuffer@9d400000 {
+			compatible = "drm-simple-framebuffer", "simple-framebuffer";
+			reg = <0x0 0x9d400000 0x0 (1080 * 2160 * 4)>;
+			status = "okay";
+			width = <1080>;
+			height = <2160>;
+			stride = <(1080 * 4)>;
+			format = "a8r8g8b8";
+		};
+        };
+
+	reserved-memory {
+
+		/* cont_splash_region / framebuffer */
+		cont_splash: splash_region@9d400000 {
+			reg = <0x0 0x9d400000 0x0 0x2400000>;
+			no-map;
+		};
+	};
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_dwc3 {
+	status = "okay";
+};
+
+&usb2 {
+        status = "disabled";
+};
+
+&usb2_dwc3 {
+        status = "disabled";
+};
+
+&sdc2_state_on {
+	pinconf-clk {
+		drive-strength = <14>;
+	};
+};
+
+&anoc2_smmu {
+	qcom,secured-cbs = /bits/ 8 <7 8 9 10 11 12 13 14 15 16 17 18 19 20>;
+	status = "okay";
+};
+
+&kgsl_smmu {
+	qcom,secured-cbs = /bits/ 8 <2 3 4>;
+	status = "okay";
+};
+
+&lpass_smmu {
+	qcom,secured-cbs = /bits/ 8 <13>;
+	status = "okay";
+};
+
+&mmss_smmu {
+	qcom,secured-cbs = /bits/ 8 <14 15 16>;
+	status = "okay";
+};
+
+&panel {
+        compatible = "mdss,s6d6ft0-tianma-fhd", "meizu,s6d6ft0-tianma-fhd", "meizu,s6d6ft0-tianma", "sony,mermaid-nt36672a-tianma";
+};
+
+&adreno_gpu {
+	//status = "disabled";
+	status = "okay";
+};
+
+&mdss {
+	//status = "disabled";
+	status = "okay";
+};
+
+&tlmm {
+                        ts_active: ts_active {
+                                        pins = "gpio66", "gpio67";
+                                        function = "gpio";
+                                        drive-strength = <16>;
+                                        bias-pull-up;
+                        };
+
+                        ts_reset_suspend: ts_reset_suspend {
+                                        pins = "gpio66";
+                                        function = "gpio";
+                                        drive-strength = <2>;
+                                        bias-pull-down;
+                        };
+
+                        ts_int_suspend: ts_int_suspend {
+                                        pins = "gpio67";
+                                        function = "gpio";
+                                        drive-strength = <2>;
+                                        bias-disable;
+                        };
+
+};
+
+&blsp_i2c4 {
+        status = "ok";
+
+                sec_ts: sec_touchscreen@48 {
+                                compatible = "sec,sec_ts";
+                                reg = <0x48>;
+                                /*status = "disabled";*/
+				status = "okay";
+                                interrupt-parent = <&tlmm>;
+                                /*sec,irq_gpio = <0x7f 0x43 0x2008>;*/
+                                /* irq 67 -> 249 from E3 orig*/
+                                /* irq 67 -> 237 from new dts*/
+                                /* irq 67+(249-237) - > 79 */
+                                sec,irq_gpio = <&tlmm 0x43 0x2008>;
+                                pinctrl-names = "on_state", "off_state";
+                                pinctrl-0 = <&ts_active>;
+                                pinctrl-1 = <&ts_int_suspend>;
+				//pinctrl-1 = <&ts_active>;
+                                sec,max_coords = <0x438 0x870>;
+                                sec,num_lines = <0x12 0x20>;
+                        };
+};
+
+&bluetooth {
+	status = "disabled";
+};
