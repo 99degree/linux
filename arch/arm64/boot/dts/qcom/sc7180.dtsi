@@ -87,8 +87,13 @@
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			next-level-cache = <&L2_0>;
+
+			power-domain-names = "psci";
+			power-domains = <&CPU_PD0>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_0: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -115,8 +120,13 @@
 			operating-points-v2 = <&cpu0_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD1>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_100: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -139,8 +149,13 @@
 			operating-points-v2 = <&cpu0_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD2>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_200: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -163,8 +178,13 @@
 			operating-points-v2 = <&cpu0_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD3>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_300: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -187,8 +207,13 @@
 			operating-points-v2 = <&cpu0_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD4>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_400: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -211,8 +236,13 @@
 			operating-points-v2 = <&cpu0_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD5>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
+			clocks = <&cpufreq_hw 0>;
 			L2_500: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -235,8 +265,13 @@
 			operating-points-v2 = <&cpu6_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD6>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
+			clocks = <&cpufreq_hw 1>;
 			L2_600: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -259,8 +294,13 @@
 			operating-points-v2 = <&cpu6_opp_table>;
 			interconnects = <&gem_noc MASTER_APPSS_PROC 3 &mc_virt SLAVE_EBI1 3>,
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
+
+                        power-domain-names = "psci";
+                        power-domains = <&CPU_PD7>;
+
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
+			clocks = <&cpufreq_hw 1>;
 			L2_700: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -346,7 +386,7 @@
 				min-residency-us = <5555>;
 				local-timer-stop;
 			};
-
+/*
 			CLUSTER_SLEEP_0: cluster-sleep-0 {
 				compatible = "arm,idle-state";
 				idle-state-name = "cluster-power-down";
@@ -356,7 +396,20 @@
 				min-residency-us = <9926>;
 				local-timer-stop;
 			};
+*/
 		};
+
+                domain-idle-states {
+                        CLUSTER_SLEEP_0: cluster-sleep-0 {
+                                compatible = "domain-idle-state";
+                                idle-state-name = "cluster-llcc-off";
+                                arm,psci-suspend-param = <0x4100c244>;
+                                entry-latency-us = <3264>;
+                                exit-latency-us = <6562>;
+                                min-residency-us = <9987>;
+                                local-timer-stop;
+                        };
+                };
 	};
 
 	firmware {
