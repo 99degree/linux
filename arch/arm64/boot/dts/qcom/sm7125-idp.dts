@@ -405,13 +405,13 @@
                 };
 
 		// from ungeskriptet/linux e9fa97937beb7ff9786a9db6edfe636eef18d659
-		rmtfs_mem: memory@f3901000 {
+		rmtfs_mem: memory@f5800000 {
 			compatible = "qcom,rmtfs-mem";
-			reg = <0 0xf3901000 0 0x200000>;
+			reg = <0 0xf5800000 0 0x200000>;
 			no-map;
 
-			qcom,client-id = <1>;
-			qcom,vmid = <15>;
+			//qcom,client-id = <1>;
+			//qcom,vmid = <15>;
 			node_name = "rmtfs_mem";
 		};
 
@@ -1482,7 +1482,7 @@
 &framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
-/delete-node/ &rmtfs_mem;
+///delete-node/ &rmtfs_mem;
 //&wifi { status = "disabled"; };
 
 //&usb_1 {status = "disabled";};
