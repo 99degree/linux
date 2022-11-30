@@ -14,6 +14,9 @@
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
+/* this is a hack to skip MDP_LUT clk enable problem */
+#define DUMMY_CLK
+
 / {
 	model = "Qualcomm Technologies, Inc. SM7125 IDP";
 	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
@@ -691,9 +694,13 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
         //override lut clk s dummy
         clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
-                <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_AHB_CLK>,
                  <&dispcc DISP_CC_MDSS_ROT_CLK>,
-                 /* <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,*/ <&dummy_clk>,
+#ifdef DUMMY_CLK
+		 <&dummy_clk>,
+#else
+                 <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,
+#endif
                  <&dispcc DISP_CC_MDSS_MDP_CLK>,
                  <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
         clock-names = "bus", "iface", "rot", "lut", "core",
@@ -827,18 +834,16 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &sdhc_1 {
-	status = "disabled";
-
 	pinctrl-names = "default", "sleep";
 	pinctrl-0 = <&sdc1_on>;
 	pinctrl-1 = <&sdc1_off>;
 	vmmc-supply = <&vreg_l19a_2p9>;
 	vqmmc-supply = <&vreg_l12a_1p8>;
+
+	status = "okay";
 };
 
 &sdhc_2 {
-	status = "disabled";
-
 	pinctrl-names = "default","sleep";
 	pinctrl-0 = <&sdc2_on>;
 	pinctrl-1 = <&sdc2_off>;
@@ -847,6 +852,8 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 	//TODO: check with joyeuse dtb
 	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
 };
 
 &spi11 {
@@ -886,7 +893,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 		vddrf-supply = <&vreg_l2c_1p3>;
 		vddch0-supply = <&vreg_l10c_3p3>;
 		max-speed = <3200000>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -894,9 +901,15 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	status = "okay";
 };
 
+&ufs_mem_hc {
+	status = "okay";
+};
+
 &ufs_mem_phy {
         compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
+	status = "okay";
 };
+
 
 &usb_1 {
         status = "okay";
