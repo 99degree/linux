@@ -193,65 +193,68 @@
 
 / {
 	reserved-memory {
-/*joyeuse
-@1:0x800000                      adsp_mem = "/reserved-memory/adsp_region";
-@0                      reserved_memory = "/reserved-memory";
-@2:0x1000000                      qseecom_ta_mem = "/reserved-memory/qseecom_ta_region";
-@3:0x8c00000                      secure_display_memory = "/reserved-memory/secure_display_region";
-@80000000";0x600000             hyp_region = "/reserved-memory/hyp_region
-@80700000";0x140000             xbl_aop_mem = "/reserved-memory/xbl_aop_mem
-@808ff000";0x1000             sec_apps_mem = "/reserved-memory/sec_apps_region
-@80900000";0x200000             smem_region = "/reserved-memory/smem
-@80b00000";0x3900000             removed_region = "/reserved-memory/removed_region
-@86000000";0x8400000             pil_modem_mem = "/reserved-memory/modem_region
-@8e400000";0x500000             pil_camera_mem = "/reserved-memory/camera_region
-@8e900000";0x500000             pil_npu_mem = "/reserved-memory/pil_npu_region
-@8ee00000";0x500000             pil_video_mem = "/reserved-memory/pil_video_region
-@8f300000";0x1e00000             pil_cdsp_mem = "/reserved-memory/cdsp_regions
-@91100000";0x2800000             pil_adsp_mem = "/reserved-memory/pil_adsp_region
-@93900000";0x200000             wlan_fw_mem = "/reserved-memory/wlan_fw_region
-@93b00000":0x10000             pil_ipa_fw_mem = "/reserved-memory/ipa_fw_region
-@93b10000";0x5000             pil_ipa_gsi_mem = "/reserved-memory/ipa_gsi_region
-@93b15000";0x2000             pil_gpu_mem = "/reserved-memory/gpu_region
-@9c000000";0x1700000           cont_splash_memory = "/reserved-memory/cont_splash_region
-@9d700000";0x100000             dfps_data_memory = "/reserved-memory/dfps_data_region
-@9e000000";0x1400000             qseecom_mem = "/reserved-memory/qseecom_region
-@9f400000";0x1e00000           cdsp_sec_mem = "/reserved-memory/cdsp_sec_regions
+/*
+0x00000000f7000000, size 140 MiB
+secure_display_region, compatible id shared-dma-pool
+
+0x00000000f6000000, size 16 MiB
+qseecom_ta_region, compatible id shared-dma-pool
+
+0x00000000f5800000, size 8 MiB
+adsp_region, compatible id shared-dma-pool
+
+0x00000000f3800000, size 32 MiB
+linux,cma, compatible id shared-dma-pool
+
+ 0x0000000080000000, size 6 MiB
+hyp_region@80000000, compatible id removed-dma-pool
+
+ 0x0000000080700000, size 1 MiB
+xbl_aop_mem@80700000, compatible id removed-dma-pool
+
+ 0x00000000808ff000, size 0 MiB
+sec_apps_region@808ff000, compatible id removed-dma-pool
+
+ 0x0000000080900000, size 2 MiB
+smem@80900000, compatible id removed-dma-pool
+
+ 0x0000000080b00000, size 57 MiB
+removed_region@80b00000, compatible id removed-dma-pool
+
+ 0x0000000086000000, size 132 MiB
+modem_region@86000000, compatible id removed-dma-pool
+
+ 0x000000008e400000, size 5 MiB
+camera_region@8e400000, compatible id removed-dma-pool
+
+ 0x000000008e900000, size 5 MiB
+pil_npu_region@8e900000, compatible id removed-dma-pool
+
+ 0x000000008ee00000, size 5 MiB
+pil_video_region@8ee00000, compatible id removed-dma-pool
+
+ 0x000000008f300000, size 30 MiB
+cdsp_regions@8f300000, compatible id removed-dma-pool
+
+ 0x0000000091100000, size 40 MiB
+pil_adsp_region@91100000, compatible id removed-dma-pool
+
+ 0x0000000093900000, size 2 MiB
+wlan_fw_region@93900000, compatible id removed-dma-pool
+
+ 0x0000000093b00000, size 0 MiB
+ipa_fw_region@93b00000, compatible id removed-dma-pool
+
+ 0x0000000093b10000, size 0 MiB
+ipa_gsi_region@93b10000, compatible id removed-dma-pool
+
+ 0x0000000093b15000, size 0 MiB
+gpu_region@93b15000, compatible id removed-dma-pool
+
+0x000000009e000000, size 20 MiB
+qseecom_region@9e000000, compatible id shared-dma-pool
+
 */
-
-		/*
-		sc7180 arrangement:
-			xbl_mem arranged 0x80600000-0x80800000
-			aop_mem arranged 0x80800000-0x80820000
-
-		which is equivlent to joyeuse
-			@80600000-80700000	joyeuse@available to sc7180@xbl_mem (80600000:200000)
-			@80700000";0x140000             xbl_aop_mem = "/reserved-memory/xbl_aop_mem
-
-		====
-
-		sc7180:
-			sec_apps_mem: memory@808ff000 { //size 0x1000
-			@808ff000";0x1000             sec_apps_mem = "/reserved-memory/sec_apps_region
-		joyeuse:
-			sec_apps_mem = "/reserved-memory/sec_apps_region		
-
-		====
-		sc7180:
-			smem_mem: memory@80900000 {
-		joyeuse:
-			smem_region = "/reserved-memory/smem
-
-		*/
-
-
-		/*
-		sc7180:
-			tz_mem: memory@80b00000 {
-		joyeuse:
-			removed_region = "/reserved-memory/removed_region
-
-		*/
 
 		atf_mem: memory@80b00000 {
 			reg = <0x0 0x80b00000 0x0 0x100000>;
@@ -259,116 +262,66 @@
 			node_name = "atf_mem";
 		};
 
-		/*
-		joyeuse:
-			@86000000";0x8400000             pil_modem_mem = "/reserved-memory/modem_region
-
-			@86000000 till 0x8E400000
-		sc7180:
-			@86000000 till 0x8EC00000
-		*/
 		mpss_mem: memory@86000000 {
 			reg = <0x0 0x86000000 0x0 0x8400000>;
 			no-map;
 			node_name = "mpss_mem";
 		};
 
-		/*
-		joyeuse:
-			@8e400000";0x500000             pil_camera_mem = "/reserved-memory/camera_region
-		sc7180:
-			0x0 0x8ec00000 0x0 0x500000
-	
-		*/
 		camera_mem: memory@8e400000 {
 			reg = <0x0 0x8e400000 0x0 0x500000>;
 			no-map;
 			node_name = "camera_mem";
 		};
 
-		/* TODO:check
-		joyeuse:
-			@8ee00000";0x500000             pil_video_mem = "/reserved-memory/pil_video_region
-		sc7180:
-			reg = <0 0x8f600000 0 0x500000>;
-		*/
 		venus_mem: memory@8ee00000 {
 			reg = <0 0x8ee00000 0 0x500000>;
 			no-map;
 			node_name = "venus_mem";
 		};
 
-		/*
-			@8f300000";0x1e00000             pil_cdsp_mem = "/reserved-memory/cdsp_regions
-		*/
                 cdsp_mem: memory@8f300000 {
                         reg = <0x0 0x8f300000 0x0 0x1e00000>;
                         no-map;
 			node_name = "cdsp_mem";
                 };
 
-		/*
-			@91100000";0x2800000             pil_adsp_mem = "/reserved-memory/pil_adsp_region
-		*/
                 adsp_mem: memory@91100000 {
                         reg = <0x0 0x91100000 0x0 0x2800000>;
                         no-map;
 			node_name = "adsp_mem";
                 };
 
-                /*
-                joyeuse:
-                        @93900000";0x200000             wlan_fw_mem = "/reserved-memory/wlan_fw_region
-                sc7180:
-                        reg = <0x0 0x94100000 0x0 0x200000>;
-                */
                 wlan_mem: memory@93900000 {
                         reg = <0x0 0x93900000 0x0 0x200000>;
                         no-map;
 			node_name = "wlan_mem";
                 };
 
-		/*
-			@93b00000":0x10000             pil_ipa_fw_mem = "/reserved-memory/ipa_fw_region
-			@93b10000";0x5000             pil_ipa_gsi_mem = "/reserved-memory/ipa_gsi_region
-		sc7180:
-			memory@8b700000 (0x000000008b700000--0x000000008b710000)
-		*/
 		ipa_fw_mem: memory@93b00000 {
                         reg = <0x0 0x93b00000 0x0 0x15000>;
                         no-map;
 			node_name = "ipa_fw_mem";
                 };
 
-
-		/*
-			@93b15000";0x2000             pil_gpu_mem = "/reserved-memory/gpu_region
-		*/
                 gpu_mem: memory@93b15000 {
                         reg = <0x0 0x93b15000 0x0 0x2000>;
                         no-map;
 			node_name = "gpu_mem";
                 };
 
-                //TODO:
                 mba_mem: memory@94400000 {
                         reg = <0x0 0x94400000 0x0 0x200000>;
                         no-map;
 			node_name = "mba_mem";
                 };
 
-		/*
-			@9c000000";0x1700000           cont_splash_memory = "/reserved-memory/cont_splash_region
-		*/
 		splash_mem: memory@9c000000 {
                         reg = <0x0 0x9c000000 0x0 0x1700000>;
                         no-map;
 			node_name = "splash_mem";
                 };
 
-		/*
-			@9d700000";0x100000             dfps_data_memory = "/reserved-memory/dfps_data_region
-		*/
                 dfps_data_mem: memory@9d700000 {
                         reg = <0x0 0x9d700000 0x0 0x100000>;
                         no-map;
@@ -386,25 +339,18 @@
 			node_name = "ramoops_mem";
 	        };
 
-		/*
-			@9e000000";0x1400000             qseecom_mem = "/reserved-memory/qseecom_region
-		*/
 		qseecom_mem: memory@9e000000 {
                         reg = <0x0 0x9e000000 0x0 0x1400000>;
                         no-map;
 			node_name = "qseecom_mem";
                 };
 
-		/*
-			@9f400000";0x1e00000           cdsp_sec_mem = "/reserved-memory/cdsp_sec_regions
-		*/
 		cdsp_sec_mem: memory@9f400000 {
                         reg = <0x0 0x9f400000 0x0 0x1e00000>;
                         no-map;
 			node_name = "cdsp_sec_mem";
                 };
 
-		// from ungeskriptet/linux e9fa97937beb7ff9786a9db6edfe636eef18d659
 		rmtfs_mem: memory@f5800000 {
 			compatible = "qcom,rmtfs-mem";
 			reg = <0 0xf5800000 0 0x200000>;
