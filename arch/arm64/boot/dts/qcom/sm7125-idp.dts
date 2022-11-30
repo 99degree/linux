@@ -11,7 +11,6 @@
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include "sm7125.dtsi"
-//#include "sc7180.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
@@ -191,17 +190,6 @@
  * required by the board dts.
  *
  */
-
-/* Increase the size from 2MB to 8MB */
-&rmtfs_mem {
-	reg = <0x0 0x94600000 0x0 0x800000>;
-};
-
-/*	TODO: remove this node is needed because sc7180.dtsi/sm7125.dtsi 
-	contain non-working node 
-*/
-/delete-node/ &rmtfs_mem;
-/delete-node/ &ipa_fw_mem;
 
 / {
 	reserved-memory {
@@ -759,7 +747,7 @@
         clocks = <&gcc GCC_DISP_HF_AXI_CLK>,
                 <&dispcc DISP_CC_MDSS_AHB_CLK>,
                  <&dispcc DISP_CC_MDSS_ROT_CLK>,
-                 /*<&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,*/ <&dummy_clk>,
+                 /* <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,*/ <&dummy_clk>,
                  <&dispcc DISP_CC_MDSS_MDP_CLK>,
                  <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
         clock-names = "bus", "iface", "rot", "lut", "core",
