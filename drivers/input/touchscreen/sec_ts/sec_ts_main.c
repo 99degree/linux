@@ -24,6 +24,7 @@
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
+#include <linux/pinctrl/consumer.h>
 /*
 #include <linux/wakelock.h>
 */
@@ -1647,10 +1648,10 @@ static int sec_ts_probe(struct i2c_client *client,
 	if (!(IS_ERR_OR_NULL(ts->plat_data->pins_default) ||
 				IS_ERR_OR_NULL(ts->plat_data->pinctrl))) {
 		ret = pinctrl_select_state(ts->plat_data->pinctrl,
-															 ts->plat_data->pins_default);
+						 ts->plat_data->pins_default);
 		if (ret < 0)
 			input_err(true, &ts->client->dev,
-								"%s: Failed to configure tsp_attn pin\n", __func__);
+					"%s: Failed to configure tsp_attn pin\n", __func__);
 	}
 
 	ts->input_dev = input_allocate_device();
