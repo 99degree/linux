@@ -706,6 +706,10 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
+	/* update DISP_CC_XO_CLK DISP_CC_MDSS_RSCC_AHB_CLK */
+	regmap_update_bits(regmap, 0x605c, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0x400c, BIT(0), BIT(0));
+
 	/* 1380MHz configuration */
 	disp_cc_pll_config.l = 0x47;
 	disp_cc_pll_config.alpha = 0xe000;
