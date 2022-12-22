@@ -98,6 +98,7 @@
                         label = "Volume Up";
                         linux,code = <KEY_VOLUMEUP>;
                         gpios = <&pm6150l_gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <15>;
                 };
 
         };
@@ -1193,6 +1194,8 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &tlmm {
+	/* adapt from https://github.com/ungeskriptet/linux/tree/sm7125 */
+	gpio-reserved-ranges = <0 4>, <34 4>, <59 4>;
 	qup_uart3_sleep: qup-uart3-sleep {
 		pinmux {
 			pins = "gpio38", "gpio39",
