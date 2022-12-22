@@ -52,6 +52,7 @@
 				debounce = <15625>;
 				bias-pull-up;
 				linux,code = <KEY_POWER>;
+				status = "disabled";
 			};
 		};
 
