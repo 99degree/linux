@@ -188,7 +188,7 @@
 
 	ufs_mem_phy: phy@1d87000 {
 		compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
-		reg = <0 0x01d87000 0 0xddc>;
+		reg = <0 0x01d87000 0 0x400>;
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
