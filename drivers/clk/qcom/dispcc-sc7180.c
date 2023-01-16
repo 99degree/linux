@@ -167,7 +167,7 @@ static struct clk_rcg2 disp_cc_mdss_byte0_clk_src = {
 		.name = "disp_cc_mdss_byte0_clk_src",
 		.parent_data = disp_cc_parent_data_2,
 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_2),
-		.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
+		.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE | CLK_GET_RATE_NOCACHE,
 		.ops = &clk_byte2_ops,
 	},
 };
@@ -263,7 +263,7 @@ static struct clk_rcg2 disp_cc_mdss_mdp_clk_src = {
 		.name = "disp_cc_mdss_mdp_clk_src",
 		.parent_data = disp_cc_parent_data_3,
 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_3),
-		.flags = CLK_SET_RATE_PARENT,
+		.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
 		.ops = &clk_rcg2_shared_ops,
 	},
 };
@@ -529,7 +529,7 @@ static struct clk_branch disp_cc_mdss_mdp_lut_clk = {
 				&disp_cc_mdss_mdp_clk_src.clkr.hw,
 			},
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			//.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -707,10 +707,6 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
-	/* update DISP_CC_XO_CLK DISP_CC_MDSS_RSCC_AHB_CLK */
-	regmap_update_bits(regmap, 0x605c, BIT(0), BIT(0));
-	regmap_update_bits(regmap, 0x400c, BIT(0), BIT(0));
-
 	/* 1380MHz configuration */
 	disp_cc_pll_config.l = 0x47;
 	disp_cc_pll_config.alpha = 0xe000;
@@ -718,6 +714,14 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 	disp_cc_pll_config.user_ctl_hi_val = 0x00004805;
 
 	clk_fabia_pll_configure(&disp_cc_pll0, regmap, &disp_cc_pll_config);
+
+        /* update DISP_CC_MISC_CMD */
+#define DISP_CC_MISC_CMD        0x8000
+        regmap_update_bits(regmap, DISP_CC_MISC_CMD, 0x7f0, 0x7f0);
+
+        /* update DISP_CC_XO_CLK DISP_CC_MDSS_RSCC_AHB_CLK */
+        regmap_update_bits(regmap, 0x605c, BIT(0), BIT(0));
+        regmap_update_bits(regmap, 0x400c, BIT(0), BIT(0));
 
 	return qcom_cc_really_probe(pdev, &disp_cc_sc7180_desc, regmap);
 }
@@ -727,6 +731,7 @@ static struct platform_driver disp_cc_sc7180_driver = {
 	.driver = {
 		.name = "sc7180-dispcc",
 		.of_match_table = disp_cc_sc7180_match_table,
+		.sync_state = clk_sync_state_disable_unused,
 	},
 };
 
