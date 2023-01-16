@@ -2470,6 +2470,7 @@ static struct platform_driver gcc_sc7180_driver = {
 	.driver = {
 		.name = "gcc-sc7180",
 		.of_match_table = gcc_sc7180_match_table,
+		.sync_state = clk_sync_state_disable_unused,
 	},
 };
 
