@@ -927,8 +927,8 @@ int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz,
 	src_sz = hweight_long(srcvm_bits) * sizeof(*src);
 	mem_to_map_sz = sizeof(*mem_to_map);
 	dest_sz = dest_cnt * sizeof(*destvm);
-	ptr_sz = ALIGN(src_sz, SZ_64) + ALIGN(mem_to_map_sz, SZ_64) +
-			ALIGN(dest_sz, SZ_64);
+	ptr_sz = max(4097, ALIGN(src_sz, SZ_64) + ALIGN(mem_to_map_sz, SZ_64) +
+			ALIGN(dest_sz, SZ_64));
 
 	ptr = dma_alloc_coherent(__scm->dev, ptr_sz, &ptr_phys, GFP_KERNEL);
 	if (!ptr)
