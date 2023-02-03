@@ -148,8 +148,7 @@
 	};
 
 	ufs_mem_phy: phy@1d87000 {
-		//compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
-		compatible = "qcom,sdm845-qmp-ufs-phy";
+		compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
 		status = "disabled";
 	};
 
@@ -667,22 +666,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 		};
 	};
 };
-/*
-&dispcc {
-                        clocks = <&rpmhcc RPMH_CXO_CLK>,
-                                 <&gcc GCC_DISP_GPLL0_CLK_SRC>,
-                                 <&dummy_clk>,
-                                 <&dummy_clk>,
-                                 <&dp_phy 0>,
-                                 <&dp_phy 1>;
-                        clock-names = "bi_tcxo",
-                                      "gcc_disp_gpll0_clk_src",
-                                      "dsi0_phy_pll_out_byteclk",
-                                      "dsi0_phy_pll_out_dsiclk",
-                                      "dp_phy_pll_link_clk",
-                                      "dp_phy_pll_vco_div_clk";
-};
-*/
+
 &dsi0_out {
         remote-endpoint = <&panel0_in>;
         data-lanes = <0 1 2 3>;
@@ -960,7 +944,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &ufs_mem_phy {
-        //compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
+        compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
 
         vdda-phy-supply = <&vreg_l4a_0p8>;
         vdda-pll-supply = <&vreg_l3c_1p2>;
