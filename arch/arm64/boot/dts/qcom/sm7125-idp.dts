@@ -15,7 +15,7 @@
 #include "pm6150l.dtsi"
 
 /* this is a hack to skip MDP_LUT clk enable problem */
-//#define DUMMY_CLK
+#define DUMMY_CLK
 
 / {
 	model = "Qualcomm Technologies, Inc. SM7125 IDP";
