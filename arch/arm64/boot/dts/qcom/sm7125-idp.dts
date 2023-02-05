@@ -324,7 +324,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 		rmtfs_mem: memory@f5800000 {
 			compatible = "qcom,rmtfs-mem";
-			reg = <0 0xf5800000 0 0x200000>;
+			reg = <0 0xf3901000 0 0x200000>;
 			no-map;
 
 			qcom,client-id = <1>;
@@ -1436,7 +1436,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 &framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
-///delete-node/ &rmtfs_mem;
+/delete-node/ &rmtfs_mem;
 //&wifi { status = "disabled"; };
 
 //&usb_1 {status = "disabled";};
