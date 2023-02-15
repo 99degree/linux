@@ -17,6 +17,8 @@ static ssize_t write_pmsg(struct file *file, const char __user *buf,
 	struct pstore_record record;
 	int ret;
 
+	return -EFAULT;
+
 	if (!count)
 		return 0;
 
