@@ -97,7 +97,7 @@
 			 BIT(MDP_SSPP_TOP0_INTR2) | \
 			 BIT(MDP_SSPP_TOP0_HIST_INTR) | \
 			 BIT(MDP_INTF0_INTR) | \
-			 BIT(MDP_INTF1_INTR))
+			 BIT(MDP_INTF2_INTR))
 
 #define IRQ_SC7280_MASK (BIT(MDP_SSPP_TOP0_INTR) | \
 			 BIT(MDP_SSPP_TOP0_INTR2) | \
@@ -1842,6 +1842,11 @@ static struct dpu_dsc_cfg sm8150_dsc[] = {
 	DSC_BLK("dsc_3", DSC_3, 0x80c00, BIT(DPU_DSC_OUTPUT_CTRL)),
 };
 
+static struct dpu_dsc_cfg sc7180_dsc[] = {
+	DSC_BLK("dsc_0", DSC_0, 0x80000),
+	DSC_BLK("dsc_1", DSC_1, 0x80400),
+};
+
 /*************************************************************
  * INTF sub blocks config
  *************************************************************/
@@ -2591,6 +2596,8 @@ static const struct dpu_mdss_cfg sc7180_dpu_cfg = {
 	.dma_cfg = &sdm845_regdma,
 	.perf = &sc7180_perf_data,
 	.mdss_irqs = IRQ_SC7180_MASK,
+	.dsc_count = ARRAY_SIZE(sc7180_dsc),
+	.dsc = sc7180_dsc,
 };
 
 static const struct dpu_mdss_cfg sm6115_dpu_cfg = {
