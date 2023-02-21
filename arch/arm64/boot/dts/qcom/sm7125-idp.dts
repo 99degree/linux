@@ -97,7 +97,7 @@
                 key-vol-up {
                         label = "Volume Up";
                         linux,code = <KEY_VOLUMEUP>;
-                        gpios = <&pm6150l_gpio 2 GPIO_ACTIVE_LOW>;
+                        gpios = <&pm6150l_gpios 2 GPIO_ACTIVE_LOW>;
 			debounce-interval = <15>;
                 };
 
@@ -649,7 +649,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 		pinctrl-0 = <&disp_pins>;
 
 		/* according to panel-nt36675-tianma.c this gpio is finally set to low */
-		reset-gpios = <&pm6150l_gpio 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&pm6150l_gpios 3 GPIO_ACTIVE_LOW>;
 //		disp-te-gpio = <&tlmm 10 GPIO_ACTIVE_LOW>;
 
 		status = "okay";
@@ -1037,7 +1037,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
-&pm6150l_gpio {
+&pm6150l_gpios {
 	disp_pins: disp-state {
 		pinconf {
 			pins = "gpio3";
