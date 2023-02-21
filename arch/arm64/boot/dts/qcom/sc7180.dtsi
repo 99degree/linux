@@ -700,6 +700,64 @@
 		};
 	};
 
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+
+                CPU_PD0: cpu0 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD1: cpu1 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD2: cpu2 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD3: cpu3 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD4: cpu4 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD5: cpu5 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0>;
+                };
+
+                CPU_PD6: cpu6 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&BIG_CPU_SLEEP_0>;
+                };
+
+                CPU_PD7: cpu7 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&BIG_CPU_SLEEP_0>;
+                };
+
+                CLUSTER_PD: cpu-cluster0 {
+                        #power-domain-cells = <0>;
+                        domain-idle-states = <&CLUSTER_SLEEP_0>;
+                };
+	};
+
 	soc: soc@0 {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -3504,6 +3562,8 @@
 					  <SLEEP_TCS   3>,
 					  <WAKE_TCS    3>,
 					  <CONTROL_TCS 1>;
+
+			power-domains = <&CLUSTER_PD>;
 
 			rpmhcc: clock-controller {
 				compatible = "qcom,sc7180-rpmh-clk";
