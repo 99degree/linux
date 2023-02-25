@@ -1843,8 +1843,8 @@ static struct dpu_dsc_cfg sm8150_dsc[] = {
 };
 
 static struct dpu_dsc_cfg sc7180_dsc[] = {
-	DSC_BLK("dsc_0", DSC_0, 0x80000),
-	DSC_BLK("dsc_1", DSC_1, 0x80400),
+	DSC_BLK("dsc_0", DSC_0, 0x80000, 0),
+	DSC_BLK("dsc_1", DSC_1, 0x80400, 0),
 };
 
 /*************************************************************
