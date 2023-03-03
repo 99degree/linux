@@ -1161,40 +1161,10 @@ static int add_components_mdp(struct device *master_dev,
 		if (!intf)
 			continue;
 
-		if (of_device_is_available(intf)) {
-			struct platform_device *pdev = of_find_device_by_node(intf);
-			struct device_link *sup_link;
-			struct device *dev;
-
-			if (!pdev) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
-			dev = &pdev->dev;
-
-			if(!dev->driver) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
-			sup_link = device_link_add(master_dev, dev,
-						DL_FLAG_AUTOREMOVE_CONSUMER);
-
-			if (!sup_link) {
-				of_node_put(intf);
-				dev_err(dev, "sup_link is NULL\n");
-				return -EPROBE_DEFER;
-			}
-
-			if (sup_link->supplier->links.status != DL_DEV_DRIVER_BOUND) {
-				of_node_put(intf);
-				return -EPROBE_DEFER;
-			}
-
+		if (of_device_is_available(intf))
 			drm_of_component_match_add(master_dev, matchptr,
 						   component_compare_of, intf);
-		}
+
 		of_node_put(intf);
 	}
 
@@ -1265,12 +1235,12 @@ int msm_drv_probe(struct device *master_dev,
 		ret = add_components_mdp(master_dev, &match);
 		if (ret)
 			return ret;
-	} else {
-
-		ret = add_gpu_components(master_dev, &match);
-		if (ret)
-			return ret;
 	}
+
+	ret = add_gpu_components(master_dev, &match);
+	if (ret)
+		return ret;
+
 	/* on all devices that I am aware of, iommu's which can map
 	 * any address the cpu can see are used:
 	 */
