@@ -1614,8 +1614,7 @@ static int sec_ts_read_device_id(struct sec_ts_data *ts) {
 }
 
 #define T_BUFF_SIZE 5
-static int sec_ts_probe(struct i2c_client *client,
-												const struct i2c_device_id *id) {
+static int sec_ts_probe(struct i2c_client *client) {
 #ifdef SEC_TS_WAKEUP_GESTURE
 	int i;
 #endif
