@@ -24,6 +24,7 @@
         qcom,msm-id = <0x1bb 0x00>;
         qcom,msm-name = "ATOLL-AB";
         qcom,pmic-name = "PM6150";
+        chassis-type = "handset";
 
 	aliases {
 		bluetooth0 = &bluetooth;
