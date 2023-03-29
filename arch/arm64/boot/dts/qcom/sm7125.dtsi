@@ -857,6 +857,18 @@
         clock-names = "iface", "ahb", "core", "bus";//, "nrt_bus";
 };
 
+&mdp {
+        assigned-clocks = <&dispcc DISP_CC_MDSS_VSYNC_CLK>,
+                          <&dispcc DISP_CC_MDSS_ROT_CLK>,
+                          <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                          <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>,
+        assigned-clock-rates = <19200000>,
+                               <19200000>,
+                               <19200000>,
+                               <19200000>,
+
+};
+
 &venus {
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 };
