@@ -261,6 +261,12 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 */
 
+                kernel_mem: memory@80000000 {
+                        reg = <0x0 0x80000000 0x0 0x600000>;
+                        no-map;
+                        node_name = "kernel_mem";
+                };
+
 		atf_mem: memory@80b00000 {
 			reg = <0x0 0x80b00000 0x0 0x100000>;
 			no-map;
