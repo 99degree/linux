@@ -89,7 +89,6 @@
 			next-level-cache = <&L2_0>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_0: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -119,7 +118,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_100: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -144,7 +142,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_200: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -169,7 +166,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_300: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -194,7 +190,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_400: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -219,7 +214,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_500: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -244,7 +238,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
-			clocks = <&cpufreq_hw 1>;
 			L2_600: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -269,7 +262,6 @@
 					<&osm_l3 MASTER_OSM_L3_APPS &osm_l3 SLAVE_OSM_L3>;
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
-			clocks = <&cpufreq_hw 1>;
 			L2_700: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
