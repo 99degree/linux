@@ -1051,24 +1051,20 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
 &pm6150l_gpios {
 	disp_pins: disp-state {
-		pinconf {
 			pins = "gpio3";
 			function = PMIC_GPIO_FUNC_FUNC1;
 			qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
 			power-source = <0>;
 			bias-disable;
 			output-low;
-		};
 	};
 
         key_vol_up_default: key-vol-state {
-		pinconf {
                         pins = "gpio2";
                         function = "normal";
                         input-enable;
                         bias-pull-up;
                         power-source = <0>;
-		};
         };
 };
 
@@ -1093,43 +1089,35 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &qup_i2c2_default {
-	pinconf {
 		pins = "gpio15", "gpio16";
 		drive-strength = <2>;
 
 		/* Has external pullup */
 		bias-disable;
-	};
 };
 
 &qup_i2c4_default {
-	pinconf {
 		pins = "gpio115", "gpio116";
 		drive-strength = <2>;
 
 		/* Has external pullup */
 		bias-disable;
-	};
 };
 
 &qup_i2c7_default {
-	pinconf {
 		pins = "gpio6", "gpio7";
 		drive-strength = <2>;
 
 		/* Has external pullup */
 		bias-disable;
-	};
 };
 
 &qup_i2c9_default {
-	pinconf {
 		pins = "gpio46", "gpio47";
 		drive-strength = <2>;
 
 		/* Has external pullup */
 		bias-disable;
-	};
 };
 
 &qup_uart3_cts {
