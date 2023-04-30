@@ -1122,78 +1122,74 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	};
 };
 
-&qup_uart3_default {
-	pinconf-cts {
-		/*
-		 * Configure a pull-down on CTS to match the pull of
-		 * the Bluetooth module.
-		 */
-		pins = "gpio38";
-		bias-pull-down;
-	};
-
-	pinconf-rts {
-		/* We'll drive RTS, so no pull */
-		pins = "gpio39";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	pinconf-tx {
-		/* We'll drive TX, so no pull */
-		pins = "gpio40";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	pinconf-rx {
-		/*
-		 * Configure a pull-up on RX. This is needed to avoid
-		 * garbage data when the TX pin of the Bluetooth module is
-		 * in tri-state (module powered off or not driving the
-		 * signal yet).
-		 */
-		pins = "gpio41";
-		bias-pull-up;
-	};
+&qup_uart3_cts {
+	/*
+	 * Configure a pull-down on CTS to match the pull of
+	 * the Bluetooth module.
+	 */
+	bias-pull-down;
 };
 
-&qup_uart8_default {
-	pinconf-tx {
-		pins = "gpio44";
-		drive-strength = <2>;
-		bias-disable;
-	};
-
-	pinconf-rx {
-		pins = "gpio45";
-		drive-strength = <2>;
-		bias-pull-up;
-	};
+&qup_uart3_rts {
+	/* We'll drive RTS, so no pull */
+	drive-strength = <2>;
+	bias-disable;
 };
 
-&qup_spi0_default {
-	pinconf {
-		pins = "gpio34", "gpio35", "gpio36", "gpio37";
-		drive-strength = <2>;
-		bias-disable;
-	};
+&qup_uart3_tx {
+	/* We'll drive TX, so no pull */
+	drive-strength = <2>;
+	bias-disable;
 };
 
-&qup_spi6_default {
-	pinconf {
-		pins = "gpio59", "gpio60", "gpio61", "gpio62";
-		drive-strength = <2>;
-		bias-disable;
-	};
+&qup_uart3_rx {
+	/*
+	 * Configure a pull-up on RX. This is needed to avoid
+	 * garbage data when the TX pin of the Bluetooth module is
+	 * in tri-state (module powered off or not driving the
+	 * signal yet).
+	 */
+	bias-pull-up;
 };
 
-&qup_spi10_default {
-	pinconf {
-		pins = "gpio86", "gpio87", "gpio88", "gpio89";
-		drive-strength = <2>;
-		bias-disable;
-	};
+&qup_uart8_tx {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_uart8_rx {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+&qup_spi0_spi {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_spi0_cs {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_spi6_spi {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_spi6_cs {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_spi10_spi {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&qup_spi10_cs {
+	drive-strength = <2>;
+	bias-disable;
 };
 
 &tlmm {
