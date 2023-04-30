@@ -790,6 +790,26 @@
 	};
 };
 
+&dispcc {
+	/*
+		the 'gcc_disp_gpll0_div_clk_src' clk is not avail in sc7180
+	*/
+        clocks = <&rpmhcc RPMH_CXO_CLK>,
+                 <&gcc GCC_DISP_GPLL0_CLK_SRC>,
+                 <&gcc GCC_DISP_GPLL0_DIV_CLK_SRC>,
+                 <&dsi_phy 0>,
+                 <&dsi_phy 1>,
+                 <0>,
+                 <0>;
+	        clock-names = "bi_tcxo",
+                              "gcc_disp_gpll0_clk_src",
+                              "gcc_disp_gpll0_div_clk_src",
+                              "dsi0_phy_pll_out_byteclk",
+                              "dsi0_phy_pll_out_dsiclk",
+                              "dp_phy_pll_link_clk",
+                              "dp_phy_pll_vco_div_clk";
+};
+
 &lpasscc {
 	status = "disabled";
 };
@@ -826,6 +846,15 @@
                  <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
         clock-names = "bus", "iface", "rot", "lut", "core",
                       "vsync";
+};
+
+&mdss {
+        clocks = <&gcc GCC_DISP_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_MDP_CLK>,
+                 <&gcc GCC_DISP_HF_AXI_CLK>;
+                 //<&gcc GCC_DISP_SF_AXI_CLK>;
+        clock-names = "iface", "ahb", "core", "bus";//, "nrt_bus";
 };
 
 &venus {
