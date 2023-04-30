@@ -106,7 +106,7 @@ EXPORT_SYMBOL(sec_ts_dev);
 #ifndef SAMSUNG_PROJECT
 struct class *sec_class;
 static int sec_class_create(void) {
-	sec_class = class_create(THIS_MODULE, "sec");
+	sec_class = class_create("sec");
 	if (IS_ERR_OR_NULL(sec_class)) {
 		pr_err("%s:Failed to create class(sec) %ld\n", __func__,
 					 PTR_ERR(sec_class));
