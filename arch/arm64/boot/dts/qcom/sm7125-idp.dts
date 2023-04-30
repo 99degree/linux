@@ -838,7 +838,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	status = "okay";
 
 	pinctrl-names = "default";
-	pinctrl-0 = <&qspi_clk &qspi_cs0 &qspi_data01>;
+	pinctrl-0 = <&qspi_clk &qspi_cs0 &qspi_data0 &qspi_data1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -1073,26 +1073,23 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &qspi_clk {
-	pinconf {
-		pins = "gpio63";
-		bias-disable;
-	};
+	pins = "gpio63";
+	bias-disable;
 };
 
 &qspi_cs0 {
-	pinconf {
-		pins = "gpio68";
-		bias-disable;
-	};
+	pins = "gpio68";
+	bias-disable;
 };
 
-&qspi_data01 {
-	pinconf {
-		pins = "gpio64", "gpio65";
+&qspi_data0 {
+	/* High-Z when no transfers; nice to park the lines */
+	bias-pull-up;
+};
 
-		/* High-Z when no transfers; nice to park the lines */
-		bias-pull-up;
-	};
+&qspi_data1 {
+        /* High-Z when no transfers; nice to park the lines */
+        bias-pull-up;
 };
 
 &qup_i2c2_default {
