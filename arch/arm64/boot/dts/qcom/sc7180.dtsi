@@ -93,7 +93,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_0: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -128,7 +127,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_100: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -158,7 +156,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_200: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -188,7 +185,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_300: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -218,7 +214,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_400: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -248,7 +243,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 0>;
-			clocks = <&cpufreq_hw 0>;
 			L2_500: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -278,7 +272,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
-			clocks = <&cpufreq_hw 1>;
 			L2_600: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
@@ -308,7 +301,6 @@
 
 			#cooling-cells = <2>;
 			qcom,freq-domain = <&cpufreq_hw 1>;
-			clocks = <&cpufreq_hw 1>;
 			L2_700: l2-cache {
 				compatible = "cache";
 				cache-level = <2>;
