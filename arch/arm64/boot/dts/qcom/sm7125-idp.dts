@@ -821,12 +821,11 @@ qseecom_region@9e000000, compatible id shared-dma-pool
         compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
 };
 
-/* from troger */
 &remoteproc_mpss {
 	status = "okay";
-	compatible = "qcom,sc7180-mss-pil";
-	iommus = <&apps_smmu 0x461 0x0>, <&apps_smmu 0x444 0x3>;
-	memory-region = <&mba_mem &mpss_mem>;
+//	compatible = "qcom,sc7180-mss-pil";
+//	iommus = <&apps_smmu 0x461 0x0>, <&apps_smmu 0x444 0x3>;
+	memory-region = <&mpss_mem>;
 };
 
 &sdhc_1 {
