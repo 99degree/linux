@@ -14,9 +14,6 @@
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
 
-/* this is a hack to skip MDP_LUT clk enable problem */
-#define DUMMY_CLK
-
 / {
 	model = "Qualcomm Technologies, Inc. SM7125 IDP";
 	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
