@@ -884,7 +884,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	bluetooth: wcn3990-bt {
 		compatible = "qcom,wcn3990-bt";
 
-		firmware-name = "qcom/sm7125/miatoll/crnv21.bin";
+		firmware-name = "qcom/sm7125/crnv21.bin";
 
 		vddio-supply = <&vreg_l10a_1p8>;
 		vddxo-supply = <&vreg_l1c_1p8>;
