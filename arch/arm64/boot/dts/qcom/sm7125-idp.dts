@@ -882,7 +882,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	pinctrl-1 = <&qup_uart3_sleep>;
 
 	bluetooth: wcn3990-bt {
-		compatible = "qcom,wcn3990-bt";
+		compatible = "qcom,wcn3991-bt";
 
 		firmware-name = "qcom/sm7125/crnv21.bin";
 
