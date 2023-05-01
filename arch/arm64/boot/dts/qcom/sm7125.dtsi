@@ -126,16 +126,6 @@
 	cache-level = <2>;
 };
 
-&soc {
-        dummy_lut_clk: dummy_clk {
-                compatible = "fixed-factor-clock";
-                clocks = <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>;
-                #clock-cells = <2>;
-                clock-div = <1>;
-                clock-mult = <1>;
-        };
-};
-
 // SC7180 doesn't have UFS yet.
 &soc {
 	ufs_mem_hc: ufshc@1d84000 {
@@ -878,3 +868,4 @@
 			<&gpi_dma1 1 1 QCOM_GPI_I2C>;
 	dma-names = "tx", "rx";
 };
+
