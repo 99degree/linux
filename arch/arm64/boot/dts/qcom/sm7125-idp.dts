@@ -671,12 +671,12 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &ipa {
-        status = "okay";
-
-	/* TODO: remove this and add correct fw file */
-        modem-init;
 	memory-region = <&ipa_fw_mem>;
+	qcom,gsi-loader = "self";	
+
 	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
+
+        status = "okay";
 };
 
 &mdp {
@@ -815,17 +815,26 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 &remoteproc_adsp {
         compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
+	firmware-name = "qcom/sm7125/miatoll/adsp.mdt";
+
+	status = "okay";
 };
 
 &remoteproc_cdsp {
         compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
+	firmware-name = "qcom/sm7125/miatoll/cdsp.mdt";
+
+	status = "okay";
 };
 
 &remoteproc_mpss {
-	status = "okay";
 //	compatible = "qcom,sc7180-mss-pil";
 //	iommus = <&apps_smmu 0x461 0x0>, <&apps_smmu 0x444 0x3>;
 	memory-region = <&mpss_mem>;
+
+	firmware-name = "qcom/sm7125/miatoll/modem.mdt";
+
+        status = "okay";
 };
 
 &sdhc_1 {
@@ -979,9 +988,11 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 &venus {
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
-	status = "okay";
 	memory-region = <&venus_mem>;
-	/* currently kernel and ramdisk does not contain fw file */
+
+        firmware-name = "qcom/sm7125/miatoll/venus.mdt";
+
+        status = "okay";
 
 	video-firmware {
 		iommus = <&apps_smmu 0x0c42 0x0>;
