@@ -100,6 +100,7 @@ struct nt36xxx_ts {
 	struct input_dev *input;
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
+        struct gpio_desc *irq_gpio;
 	int irq;
 	struct device *dev;
 
@@ -536,8 +537,22 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 {
 	struct nt36xxx_ts *ts = dev_id;
 
+        u8 point[POINT_DATA_LEN + 1] = { 0 };
+        unsigned int ppos = 0;
+        int i, ret, finger_cnt = 0;
+
+        mutex_lock(&ts->lock);
+
 	disable_irq_nosync(ts->irq);
-	nt36xxx_report(ts);
+	//nt36xxx_report(ts);
+
+        ret = regmap_noinc_read(ts->fw_regmap, NT36XXX_EVT_REPORT,
+                                point, sizeof(point));
+
+	pr_info("%d", __LINE__);
+	enable_irq(ts->irq);
+
+	mutex_unlock(&ts->lock);
 
 	return IRQ_HANDLED;
 }
@@ -717,7 +732,7 @@ static void nt36xxx_disable_regulators(void *data)
 	regulator_bulk_disable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 }
 
-static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
+static int nt36xxx_probe1(struct device *dev, struct regmap *regmap,
                  int irq, u16 bus_type, u8 devid);
 #if 0
 static int nt36xxx_i2c_probe(struct i2c_client *i2c_hw_client,
@@ -771,21 +786,21 @@ static int nt36xxx_i2c_probe(struct i2c_client *i2c_hw_client,
 static int nt36xxx_spi_probe(struct spi_device *spi)
 {
         struct regmap *regmap;
-
+#if 0
         /* don't exceed max specified SPI CLK frequency */
         if (spi->max_speed_hz > MAX_SPI_FREQ_HZ) {
                 dev_err(&spi->dev, "SPI CLK %d Hz?\n", spi->max_speed_hz);
                 return -EINVAL;
         }
-
+#endif
         regmap = devm_regmap_init_spi(spi, &nt36xxx_regmap_hw_config);
         if (IS_ERR(regmap))
                 return PTR_ERR(regmap);
 
-        return nt36xxx_probe(&spi->dev, regmap, spi->irq, BUS_SPI, 0);
+        return nt36xxx_probe1(&spi->dev, regmap, spi->irq, BUS_SPI, 0);
 }
 
-static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
+static int nt36xxx_probe1(struct device *dev, struct regmap *regmap,
                  int irq, u16 bus_type, u8 devid)
 {
         struct nt36xxx_ts *ts;
@@ -793,12 +808,12 @@ static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
         int ret;
 
 	dev_err(dev, "%s\n", __func__);
-
+#if 0
 	if (irq <= 0) {
 		dev_err(dev, "No irq specified\n");
 		return -EINVAL;
 	}
-
+#endif
 	ts = devm_kzalloc(dev, sizeof(*ts), GFP_KERNEL);
 	if (!ts)
 		return -ENOMEM;
@@ -821,35 +836,51 @@ static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
 	ts->regmap =regmap;
 	ts->dev = dev;
 
+pr_info("%d ok", __LINE__);
 	ts->reset_gpio = devm_gpiod_get_optional(dev, "reset",
-						 GPIOD_OUT_HIGH);
+						 GPIOD_OUT_LOW);
+pr_info("%d ok1", __LINE__);
 	if (IS_ERR(ts->reset_gpio))
 		return PTR_ERR(ts->reset_gpio);
+pr_info("%d ok2", __LINE__);
 	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx reset");
 
+pr_info("%d ok3", __LINE__);
+
+        ts->irq_gpio = devm_gpiod_get_optional(dev, "irq",
+                                                 GPIOD_IN);
+pr_info("%d ok4", __LINE__);
+        if (IS_ERR(ts->irq_gpio))
+                return PTR_ERR(ts->irq_gpio);
+pr_info("%d ok5", __LINE__);
+        gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
+pr_info("%d ok6", __LINE__);
 	/* These supplies are optional */
 	ts->supplies[0].supply = "vdd";
 	ts->supplies[1].supply = "vio";
 	ret = devm_regulator_bulk_get(dev,
 				      NT36XXX_NUM_SUPPLIES,
 				      ts->supplies);
+pr_info("%d ok7", __LINE__);
 	if (ret)
 		return dev_err_probe(dev, ret,
 				     "Cannot get supplies: %d\n", ret);
-
+pr_info("%d ok8", __LINE__);
 	ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 	if (ret)
 		return ret;
-
+pr_info("%d ok9", __LINE__);
 	usleep_range(10000, 11000);
 
 	ret = devm_add_action_or_reset(dev,
 				       nt36xxx_disable_regulators, ts);
+
+pr_info("%d ok10", __LINE__);
 	if (ret)
 		return ret;
 
 	mutex_init(&ts->lock);
-
+#if 0
 	/* Set memory maps for the specific chip version */
 	ret = nt36xxx_chip_version_init(ts);
 	if (ret) {
@@ -871,7 +902,7 @@ static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
 	ret = nt36xxx_get_fw_info(ts);
 	if (ret < 0)
 		return ret;
-
+#endif
 	input->phys = devm_kasprintf(dev, GFP_KERNEL,
 				     "%s/input0", dev_name(dev));
 	if (!input->phys)
@@ -913,7 +944,9 @@ static int nt36xxx_probe(struct device *dev, struct regmap *regmap,
 		return ret;
 	}
 
-	ret = devm_request_threaded_irq(dev, irq, NULL,
+	ts->irq = gpiod_to_irq(ts->irq_gpio);
+
+	ret = devm_request_threaded_irq(dev, ts->irq, NULL,
 					nt36xxx_irq_handler, IRQF_ONESHOT,
 					dev_name(dev), ts);
 	if (ret) {
@@ -1000,6 +1033,7 @@ module_i2c_driver(nt36xxx_i2c_ts_driver);
 static const struct of_device_id nt36xxx_spi_of_match[] = {
         { .compatible = "novatek,nt36525-spi" },
 	{ .compatible = "novatek,nt36675-spi" },
+	{ .compatible = "novatek,NVT-ts-spi" },
         { }
 };
 MODULE_DEVICE_TABLE(of, nt36xxx_spi_of_match);
