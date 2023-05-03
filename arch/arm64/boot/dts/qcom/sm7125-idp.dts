@@ -919,7 +919,6 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	status = "okay";
 };
 
-
 &usb_1 {
         status = "okay";
 
