@@ -107,7 +107,10 @@ extern const uint16_t gesture_key_array[];
 #define NVT_TOUCH_WDT_RECOVERY 1
 
 //enable 'check touch vendor' feature
-//#define CHECK_TOUCH_VENDOR
+/*
+	since BOOT_UPDATE_TIANMA_FIRMWARE_NAME is used so below show define
+*/
+#define CHECK_TOUCH_VENDOR
 
 /*functions description*/
 //enable tp usb plugin feature
