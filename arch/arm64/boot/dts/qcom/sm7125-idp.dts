@@ -664,10 +664,14 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 
 &gpi_dma0 {
 	compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+
+	status = "okay";
 };
 
 &gpi_dma1 {
         compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+
+	status = "okay";
 };
 
 &ipa {
@@ -861,6 +865,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 };
 
 &spi11 {
+	spi-max-frequency = <4000000>;
         status = "okay";
 
         //nt36xxx_touch: i2c@
@@ -868,13 +873,26 @@ qseecom_region@9e000000, compatible id shared-dma-pool
                 compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
                 reg = <0>;
 
-                spi-max-frequency = <8000000>;
+                spi-max-frequency = <4000000>;
+
+		//interrupts = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
+
                 novatek,reset-gpio = <&tlmm 8 0x00>;
                 novatek,irq-gpio = <&tlmm 9 0x2001>;
 
                 /* 672C */
                 novatek,swrst-n8-addr = <0x03F0FE>;
                 novatek,spi-rd-fast-addr = <0x03F310>;
+
+		reset-gpio = <&tlmm 8 0x00>;
+		irq-gpio = <&tlmm 9 0x2001>;
+
+                /* Regulator configuration */
+                //vddio-supply = <&vreg_l18a>;
+                //lab-supply = <&lcdb_ldo_vreg>;
+                //ibb-supply = <&lcdb_ncp_vreg>;
+		vdd-supply = <0>;
+		vio-supply = <0>;
 
                 status = "okay";
         };
@@ -1032,6 +1050,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
         };
 };
 
+#if 0
 &qspi_clk {
 	pins = "gpio63";
 	bias-disable;
@@ -1051,6 +1070,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
         /* High-Z when no transfers; nice to park the lines */
         bias-pull-up;
 };
+#endif
 
 &qup_i2c2_default {
 		pins = "gpio15", "gpio16";
@@ -1153,6 +1173,23 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 	drive-strength = <2>;
 	bias-disable;
 };
+
+#if 1
+&qup_spi11_spi {
+        drive-strength = <2>;
+        //bias-disable;
+};
+
+&qup_spi11_cs {
+        drive-strength = <2>;
+        //bias-disable;
+};
+
+&qup_spi11_cs_gpio {
+        drive-strength = <2>;
+        bias-disable;
+};
+#endif
 
 &tlmm {
 	/* adapt from https://github.com/ungeskriptet/linux/tree/sm7125 */
