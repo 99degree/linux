@@ -869,3 +869,15 @@
 	dma-names = "tx", "rx";
 };
 
+&spi11 {
+	/* //from atoll dtsi 
+		dmas = <&gpi_dma1 0 5 1 64 0>,
+		       <&gpi_dma1 1 5 1 64 0>;	
+	*/
+
+	dma-names = "tx", "rx";
+        dmas = <&gpi_dma1 0 5 QCOM_GPI_SPI>,
+                <&gpi_dma1 1 5 QCOM_GPI_SPI>;
+
+	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;	
+};
