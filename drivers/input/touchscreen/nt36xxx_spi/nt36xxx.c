@@ -51,7 +51,7 @@
 #endif
 
 #ifdef CHECK_TOUCH_VENDOR
-extern char *saved_command_line;
+//extern char *saved_command_line;
 
 //---Touch Vendor ID---
 static uint8_t touch_vendor_id = 0;
@@ -1361,6 +1361,10 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	int32_t i = 0;
 	int32_t finger_cnt = 0;
 
+	//irq_handler
+	//pr_info("%d", __LINE__);
+	//return IRQ_HANDLED;
+
 #if WAKEUP_GESTURE
 #ifdef CONFIG_PM
 	if (ts->dev_pm_suspend && ts->is_gesture_mode) {
@@ -2635,29 +2639,10 @@ static int32_t __init nvt_driver_init(void)
 #ifdef CHECK_TOUCH_VENDOR
 	//Check TP vendor
 
-	if (IS_ERR_OR_NULL(saved_command_line)){
-		NVT_ERR("saved_command_line ERROR!\n");
-		ret = -ENOMEM;
-		goto err_driver;
-	} else {
-		if (strstr(saved_command_line,"tianma") != NULL) {
-			touch_vendor_id = TP_VENDOR_TIANMA;
-			NVT_LOG("TP info: [Vendor]tianma [IC]nt36675\n");
-		} else {
-			touch_vendor_id = TP_VENDOR_UNKNOW;
-			NVT_ERR("Unknow Touch\n");
-			ret = -ENODEV;
-			goto err_driver;
-		}
-	}
+	touch_vendor_id = TP_VENDOR_TIANMA;
 
 	//Check android mode
 
-	if (strstr(saved_command_line, "androidboot.mode=charger") != NULL) {
-		NVT_LOG("androidboot.mode=charger, doesn't support touch in the charging mode!\n");
-		ret = -ENODEV;
-		goto err_driver;
-	}
 #endif
 
 	//---add spi driver---
