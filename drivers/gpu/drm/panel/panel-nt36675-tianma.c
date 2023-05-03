@@ -238,9 +238,8 @@ static int nt36675_tianma_prepare(struct drm_panel *panel)
 
 	ctx->prepared = true;
 	return 0;
-#ifdef ENABLE_REGULATOR
+
 end:
-#endif
 	regulator_disable(ctx->vregs[0].consumer);
 	return ret;
 }
