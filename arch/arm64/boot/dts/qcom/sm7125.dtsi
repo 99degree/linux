@@ -780,7 +780,6 @@
 	};
 };
 
-<<<<<<< HEAD
 &dispcc {
 	/*
 		the 'gcc_disp_gpll0_div_clk_src' clk is not avail in sc7180
@@ -839,7 +838,6 @@
                       "vsync";
 };
 
-<<<<<<< HEAD
 &mdss {
         clocks = <&gcc GCC_DISP_AHB_CLK>,
                  <&dispcc DISP_CC_MDSS_AHB_CLK>,
