@@ -142,6 +142,7 @@
 		#reset-cells = <1>;
 		resets = <&gcc GCC_UFS_PHY_BCR>;
 		reset-names = "rst";
+		dma-coherent;
 
 		iommus = <&apps_smmu 0xa0 0x0>;
 
