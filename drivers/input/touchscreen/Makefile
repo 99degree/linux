@@ -122,4 +122,4 @@ obj-$(CONFIG_TOUCHSCREEN_HIMAX_HX83112B)	+= himax_hx83112b.o
 obj-$(CONFIG_TOUCHSCREEN_NT36xxx_HOSTDL_SPI)	+= nt36xxx_spi/
 obj-y                                   += sec_ts/
 obj-m += nt36xxx.o
-
+obj-m += nt36.o
