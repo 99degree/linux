@@ -153,182 +153,210 @@
 
 / {
 	reserved-memory {
+	
 /*
-0x00000000f7000000, size 140 MiB
-secure_display_region, compatible id shared-dma-pool
+[    0.000000] Memory limit set/overridden to 5068MB
+[    0.000000] Reserved memory: created CMA memory pool at 0x00000000f7000000, size 140 MiB
+[    0.000000] OF: reserved mem: initialized node secure_display_region, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created CMA memory pool at 0x00000000f6000000, size 16 MiB
+[    0.000000] OF: reserved mem: initialized node qseecom_ta_region, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created CMA memory pool at 0x00000000f5800000, size 8 MiB
+[    0.000000] OF: reserved mem: initialized node adsp_region, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created CMA memory pool at 0x00000000f3800000, size 32 MiB
+[    0.000000] OF: reserved mem: initialized node linux,cma, compatible id shared-dma-pool
 
-0x00000000f6000000, size 16 MiB
-qseecom_ta_region, compatible id shared-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000080000000, size 6 MiB
+[    0.000000] OF: reserved mem: initialized node hyp_region@80000000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000080700000, size 1 MiB
+[    0.000000] OF: reserved mem: initialized node xbl_aop_mem@80700000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x00000000808ff000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node sec_apps_region@808ff000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000080900000, size 2 MiB
+[    0.000000] OF: reserved mem: initialized node smem@80900000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000080b00000, size 57 MiB
+[    0.000000] OF: reserved mem: initialized node removed_region@80b00000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000086000000, size 132 MiB
+[    0.000000] OF: reserved mem: initialized node modem_region@86000000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x000000008e400000, size 5 MiB
+[    0.000000] OF: reserved mem: initialized node camera_region@8e400000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x000000008e900000, size 5 MiB
+[    0.000000] OF: reserved mem: initialized node pil_npu_region@8e900000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x000000008ee00000, size 5 MiB
+[    0.000000] OF: reserved mem: initialized node pil_video_region@8ee00000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x000000008f300000, size 30 MiB
+[    0.000000] OF: reserved mem: initialized node cdsp_regions@8f300000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000091100000, size 40 MiB
+[    0.000000] OF: reserved mem: initialized node pil_adsp_region@91100000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000093900000, size 2 MiB
+[    0.000000] OF: reserved mem: initialized node wlan_fw_region@93900000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000093b00000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node ipa_fw_region@93b00000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000093b10000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node ipa_gsi_region@93b10000, compatible id removed-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x0000000093b15000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node gpu_region@93b15000, compatible id removed-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x000000009e000000, size 20 MiB
+[    0.000000] OF: reserved mem: initialized node qseecom_region@9e000000, compatible id shared-dma-pool
+[    0.000000] Removed memory: created DMA memory pool at 0x000000009f400000, size 30 MiB
+[    0.000000] OF: reserved mem: initialized node cdsp_sec_regions@0x9f400000, compatible id removed-dma-pool
+[    0.000000] cma: dma_contiguous_reserve(limit 100000000)
+*/	
 
-0x00000000f5800000, size 8 MiB
-adsp_region, compatible id shared-dma-pool
+		/* below node will get modified by bootloader, node name can't change. */
+		kernel_mem: memory@80000000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x80000000 0x00 0x600000>;
+		};
+		
+		memory@80600000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x80600000 0x00 0x200000>;
+		};
 
-0x00000000f3800000, size 32 MiB
-linux,cma, compatible id shared-dma-pool
+		memory@808ff000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x808ff000 0x00 0x1000>;
+		};
 
- 0x0000000080000000, size 6 MiB
-hyp_region@80000000, compatible id removed-dma-pool
-
- 0x0000000080700000, size 1 MiB
-xbl_aop_mem@80700000, compatible id removed-dma-pool
-
- 0x00000000808ff000, size 0 MiB
-sec_apps_region@808ff000, compatible id removed-dma-pool
-
- 0x0000000080900000, size 2 MiB
-smem@80900000, compatible id removed-dma-pool
-
- 0x0000000080b00000, size 57 MiB
-removed_region@80b00000, compatible id removed-dma-pool
-
- 0x0000000086000000, size 132 MiB
-modem_region@86000000, compatible id removed-dma-pool
-
- 0x000000008e400000, size 5 MiB
-camera_region@8e400000, compatible id removed-dma-pool
-
- 0x000000008e900000, size 5 MiB
-pil_npu_region@8e900000, compatible id removed-dma-pool
-
- 0x000000008ee00000, size 5 MiB
-pil_video_region@8ee00000, compatible id removed-dma-pool
-
- 0x000000008f300000, size 30 MiB
-cdsp_regions@8f300000, compatible id removed-dma-pool
-
- 0x0000000091100000, size 40 MiB
-pil_adsp_region@91100000, compatible id removed-dma-pool
-
- 0x0000000093900000, size 2 MiB
-wlan_fw_region@93900000, compatible id removed-dma-pool
-
- 0x0000000093b00000, size 0 MiB
-ipa_fw_region@93b00000, compatible id removed-dma-pool
-
- 0x0000000093b10000, size 0 MiB
-ipa_gsi_region@93b10000, compatible id removed-dma-pool
-
- 0x0000000093b15000, size 0 MiB
-gpu_region@93b15000, compatible id removed-dma-pool
-
-0x000000009e000000, size 20 MiB
-qseecom_region@9e000000, compatible id shared-dma-pool
-
-*/
-
-                kernel_mem: memory@80000000 {
-                        reg = <0x0 0x80000000 0x0 0x600000>;
-                        no-map;
-                        node_name = "kernel_mem";
-                };
+		smem: memory@80900000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x80900000 0x00 0x200000>;
+		};
 
 		atf_mem: memory@80b00000 {
-			reg = <0x0 0x80b00000 0x0 0x100000>;
+			compatible = "removed-dma-pool";
 			no-map;
-			node_name = "atf_mem";
+			reg = <0x00 0x80b00000 0x00 0x3900000>;
 		};
 
-		mpss_mem: memory@86000000 {
-			reg = <0x0 0x86000000 0x0 0x8400000>;
+		/* below node name can change */
+		mpss_mem: modem_region@86000000 {
+			compatible = "removed-dma-pool";
 			no-map;
-			node_name = "mpss_mem";
+			reg = <0x00 0x86000000 0x00 0x8400000>;
 		};
 
-		camera_mem: memory@8e400000 {
-			reg = <0x0 0x8e400000 0x0 0x500000>;
+		camera_mem: camera_region@8e400000 {
+			compatible = "removed-dma-pool";
 			no-map;
-			node_name = "camera_mem";
+			reg = <0x00 0x8e400000 0x00 0x500000>;
+		};
+		
+		pil_npu_region@8e900000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x8e900000 0x00 0x500000>;
 		};
 
-		venus_mem: memory@8ee00000 {
-			reg = <0 0x8ee00000 0 0x500000>;
+		venus_mem: pil_video_region@8ee00000 {
+			compatible = "removed-dma-pool";
 			no-map;
-			node_name = "venus_mem";
+			reg = <0x00 0x8ee00000 0x00 0x500000>;
+		};
+		
+		cdsp_mem: cdsp_regions@8f300000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x8f300000 0x00 0x1e00000>;
+		};
+		
+		adsp_mem: pil_adsp_region@91100000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x91100000 0x00 0x2800000>;
+		};
+		
+		wlan_mem: wlan_fw_region@93900000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x93900000 0x00 0x200000>;
 		};
 
-                cdsp_mem: memory@8f300000 {
-                        reg = <0x0 0x8f300000 0x0 0x1e00000>;
-                        no-map;
-			node_name = "cdsp_mem";
-                };
+		ipa_fw_mem: ipa_fw_region@93b00000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x93b00000 0x00 0x10000>;
+		};
 
-                adsp_mem: memory@91100000 {
-                        reg = <0x0 0x91100000 0x0 0x2800000>;
-                        no-map;
-			node_name = "adsp_mem";
-                };
+		ipa_gsi_mem: ipa_gsi_region@93b10000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x93b10000 0x00 0x5000>;
+		};
 
-                wlan_mem: memory@93900000 {
-                        reg = <0x0 0x93900000 0x0 0x200000>;
-                        no-map;
-			node_name = "wlan_mem";
-                };
+		gpu_mem: gpu_region@93b15000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x93b15000 0x00 0x2000>;
+		};
+		
+		mba_mem: mba_mem_region@94400000 {
+			compatible = "shared-dma-pool";
+			reg = <0x0 0x94400000 0x0 0x200000>;
+			no-map;
+		};
+		
+		splash_mem: splash_memory@9c000000 {
+			reg = <0x0 0x9c000000 0x0 0x1700000>;
+			no-map;
+		};
 
-		ipa_fw_mem: memory@93b00000 {
-                        reg = <0x0 0x93b00000 0x0 0x15000>;
-                        no-map;
-			node_name = "ipa_fw_mem";
-                };
-
-                gpu_mem: memory@93b15000 {
-                        reg = <0x0 0x93b15000 0x0 0x2000>;
-                        no-map;
-			node_name = "gpu_mem";
-                };
-
-                mba_mem: memory@94400000 {
-                        reg = <0x0 0x94400000 0x0 0x200000>;
-                        no-map;
-			node_name = "mba_mem";
-                };
-
-		splash_mem: memory@9c000000 {
-                        reg = <0x0 0x9c000000 0x0 0x1700000>;
-                        no-map;
-			node_name = "splash_mem";
-                };
-
-                dfps_data_mem: memory@9d700000 {
-                        reg = <0x0 0x9d700000 0x0 0x100000>;
-                        no-map;
-			node_name = "dfps_data_mem";
-                };
-
-	        ramoops_mem: memory@9d800000 {
+		dfps_data_mem: dfps_data_region@9d700000 {
+			reg = <0x00 0x9d700000 0x00 0x100000>;
+			compatible = "removed-dma-pool";
+			no-map;
+		};
+		
+		ramoops_mem: ramoops@9d800000 {
 			compatible = "ramoops";
-			reg = <0x0 0x9d800000 0x0 0x600000>;
-
-			record-size = <0x80000>;
-	                pmsg-size = <0x200000>;
+			reg = <0x00 0x9d800000 0x00 0x600000>;
 			console-size = <0x100000>;
-			ftrace-size = <0x200000>;
-			//mem-type = <1>;
-			ecc-size = <16>;
-			node_name = "ramoops_mem";
-	        };
+			ftrace-size = <0x200000>;			
+			ecc-size = <0x10>;
+			pmsg-size = <0x200000>;
+			record-size = <0x80000>;
+		};
 
-		qseecom_mem: memory@9e000000 {
-                        reg = <0x0 0x9e000000 0x0 0x1400000>;
-                        no-map;
-			node_name = "qseecom_mem";
-                };
-
-		cdsp_sec_mem: memory@9f400000 {
-                        reg = <0x0 0x9f400000 0x0 0x1e00000>;
-                        no-map;
-			node_name = "cdsp_sec_mem";
-                };
-
-		rmtfs_mem: memory@f5800000 {
-			compatible = "qcom,rmtfs-mem";
-			reg = <0 0xf3901000 0 0x200000>;
+		qseecom_mem: qseecom_region@9e000000 {
+			compatible = "shared-dma-pool";
 			no-map;
+			reg = <0x00 0x9e000000 0x00 0x1400000>;
+		};
+		
+		cdsp_sec_mem: cdsp_sec_regions@9f400000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x00 0x9f400000 0x00 0x1e00000>;
+		};
 
+		linux,cma@f3800000 {
+			compatible = "shared-dma-pool";
+			reg = <0 0xf3800000 0 0x2000000>;
+		};
+		
+		rmtfs_mem: adsp_region@f5800000 {
+			compatible = "qcom,rmtfs-mem", "shared-dma-pool";
+			reg = <0 0xf5800000 0 0x800000>;
+			no-map;
+			
 			qcom,client-id = <1>;
 			qcom,vmid = <15>;
-			node_name = "rmtfs_mem";
 		};
-
+		
+		qseecom_ta_region@f6000000 {
+			compatible = "shared-dma-pool";
+			reg = <0 0xf6000000 0 0x1000000>;
+		};
+		
+		secure_display_region@f7000000 {
+			compatible = "shared-dma-pool";
+			reg = <0 0xf7000000 0 0x8c00000>;
+			
+		};
 	};
 };
 
@@ -1481,7 +1509,7 @@ qseecom_region@9e000000, compatible id shared-dma-pool
 &framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
-/delete-node/ &rmtfs_mem;
+//delete-node/ &rmtfs_mem;
 //&wifi { status = "disabled"; };
 
 //&usb_1 {status = "disabled";};
