@@ -295,12 +295,13 @@
 		};
 		
 		mba_mem: mba_mem_region@94400000 {
-			compatible = "shared-dma-pool";
+			compatible = "removed-dma-pool";
 			reg = <0x0 0x94400000 0x0 0x200000>;
 			no-map;
 		};
 		
 		splash_mem: splash_memory@9c000000 {
+			compatible = "removed-dma-pool";
 			reg = <0x0 0x9c000000 0x0 0x1700000>;
 			no-map;
 		};
@@ -312,7 +313,7 @@
 		};
 		
 		ramoops_mem: ramoops@9d800000 {
-			compatible = "ramoops";
+			compatible = "ramoops", "removed-dma-pool";
 			reg = <0x00 0x9d800000 0x00 0x600000>;
 			console-size = <0x100000>;
 			ftrace-size = <0x200000>;			
@@ -322,7 +323,7 @@
 		};
 
 		qseecom_mem: qseecom_region@9e000000 {
-			compatible = "shared-dma-pool";
+			compatible = "removed-dma-pool";
 			no-map;
 			reg = <0x00 0x9e000000 0x00 0x1400000>;
 		};
