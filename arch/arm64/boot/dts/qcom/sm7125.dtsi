@@ -587,6 +587,14 @@
 		};
 	};
 
+	lpass_cpu {
+		status = "okay";
+	};
+	
+	lpasscc {
+		status = "okay";
+	};
+	
 	sound: sound {
 	};
 
