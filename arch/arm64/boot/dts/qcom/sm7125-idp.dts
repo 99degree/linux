@@ -110,23 +110,23 @@
 
 	gpi_dma0: dma-controller@800000 {
 		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
-                #dma-cells = <3>;
-                status = "disabled";
+		#dma-cells = <3>;
+		status = "disabled";
 	};
 
 	gpi_dma1: dma-controller@a00000 {
 		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
-                #dma-cells = <3>;
-                status = "disabled";
-        };
-
-        remoteproc_adsp: remoteproc@62400000 {
-                compatible = "qcom,sm7125-adsp-pas";
+		#dma-cells = <3>;
 		status = "disabled";
 	};
 
-        remoteproc_cdsp: remoteproc@8300000 {
-                compatible = "qcom,sm7125-cdsp-pas";
+	remoteproc_adsp: remoteproc@62400000 {
+		compatible = "qcom,sm7125-adsp-pas";
+		status = "disabled";
+	};
+
+	remoteproc_cdsp: remoteproc@8300000 {
+		compatible = "qcom,sm7125-cdsp-pas";
 		status = "disabled";
 	};
 
@@ -202,6 +202,7 @@
 [    0.000000] cma: dma_contiguous_reserve(limit 100000000)
 */	
 
+#if 0
 		/* below node will get modified by bootloader, node name can't change. */
 		kernel_mem: memory@80000000 {
 			compatible = "removed-dma-pool";
@@ -232,6 +233,7 @@
 			no-map;
 			reg = <0x00 0x80b00000 0x00 0x3900000>;
 		};
+#endif
 
 		/* below node name can change */
 		mpss_mem: modem_region@86000000 {
@@ -301,7 +303,7 @@
 		};
 		
 		splash_mem: splash_memory@9c000000 {
-			compatible = "removed-dma-pool";
+			compatible = "shared-dma-pool";
 			reg = <0x0 0x9c000000 0x0 0x1700000>;
 			no-map;
 		};
@@ -334,13 +336,15 @@
 			reg = <0x00 0x9f400000 0x00 0x1e00000>;
 		};
 
+#if 0
 		linux,cma@f3800000 {
 			compatible = "shared-dma-pool";
 			reg = <0 0xf3800000 0 0x2000000>;
 		};
+#endif
 		
 		rmtfs_mem: adsp_region@f5800000 {
-			compatible = "qcom,rmtfs-mem", "shared-dma-pool";
+			compatible = "qcom,rmtfs-mem", "removed-dma-pool";
 			reg = <0 0xf5800000 0 0x800000>;
 			no-map;
 			
@@ -349,7 +353,7 @@
 		};
 		
 		qseecom_ta_region@f6000000 {
-			compatible = "shared-dma-pool";
+			compatible = "removed-dma-pool";
 			reg = <0 0xf6000000 0 0x1000000>;
 		};
 		
@@ -693,13 +697,11 @@
 
 &gpi_dma0 {
 	compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
-
 	status = "okay";
 };
 
 &gpi_dma1 {
-        compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
-
+	compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
 	status = "okay";
 };
 
@@ -709,20 +711,20 @@
 
 	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mdt";
 
-        status = "okay";
+	status = "okay";
 };
 
 &mdp {
 	/* sm7125.dtsi override mdp reg, so restore it here */
-        reg = <0 0x0ae01000 0 0x8f000>,
+	reg = <0 0x0ae01000 0 0x8f000>,
 		<0 0x0aeb0000 0 0x2008>,
 		<0 0x0aeac000 0 0x214>;
-        reg-names = "mdp", "vbif", "regdma";
+	reg-names = "mdp", "vbif", "regdma";
 
 	// TODO: check if mdss or mdp hold this memory
 	memory-region = <&splash_mem>;
 
-        /* 
+	/* 
 	   re-arrange lut clk, make it the last one also after 
 	   core clk to enable, thus caan avoid a SError issue
 	*/
@@ -847,14 +849,14 @@
 };
 
 &remoteproc_adsp {
-        compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
+	compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
 	firmware-name = "qcom/sm7125/miatoll/adsp.mdt";
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
-        compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
+	compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
 	firmware-name = "qcom/sm7125/miatoll/cdsp.mdt";
 
 	status = "okay";
@@ -898,20 +900,20 @@
         status = "okay";
 
         //nt36xxx_touch: i2c@
-        touchscreen@0 {
-                compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
-                reg = <0>;
+	touchscreen@0 {
+		compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
+		reg = <0>;
 
-                spi-max-frequency = <4000000>;
+		spi-max-frequency = <4000000>;
 
 		//interrupts = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
 
-                novatek,reset-gpio = <&tlmm 8 0x00>;
-                novatek,irq-gpio = <&tlmm 9 0x2001>;
+		novatek,reset-gpio = <&tlmm 8 0x00>;
+		novatek,irq-gpio = <&tlmm 9 0x2001>;
 
-                /* 672C */
-                novatek,swrst-n8-addr = <0x03F0FE>;
-                novatek,spi-rd-fast-addr = <0x03F310>;
+		/* 672C */
+		novatek,swrst-n8-addr = <0x03F0FE>;
+		novatek,spi-rd-fast-addr = <0x03F310>;
 
 		reset-gpio = <&tlmm 8 0x00>;
 		irq-gpio = <&tlmm 9 0x2001>;
@@ -923,20 +925,19 @@
 		vdd-supply = <0>;
 		vio-supply = <0>;
 
-                status = "okay";
-        };
+		status = "okay";
+	};
 };
 
 &uart3 {
-	status = "okay";
-
 	/delete-property/interrupts;
 	interrupts-extended = <&intc GIC_SPI 604 IRQ_TYPE_LEVEL_HIGH>,
 				<&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
 
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
-
+	status = "okay";
+	
 	bluetooth: wcn3990-bt {
 		compatible = "qcom,wcn3991-bt";
 
@@ -956,31 +957,30 @@
 };
 
 &ufs_mem_hc {
-        vcc-supply = <&vreg_l19a_2p9>;
-        vcc-max-microamp = <600000>;
-        vccq2-supply = <&vreg_l12a_1p8>;
-        vccq2-max-microamp = <600000>;
+	vcc-supply = <&vreg_l19a_2p9>;
+	vcc-max-microamp = <600000>;
+	vccq2-supply = <&vreg_l12a_1p8>;
+	vccq2-max-microamp = <600000>;
 
 	status = "okay";
 };
 
 &ufs_mem_phy {
-        compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
+	compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
 
-        vdda-phy-supply = <&vreg_l4a_0p8>;
-        vdda-pll-supply = <&vreg_l3c_1p2>;
-        vdda-phy-max-microamp = <62900>;
-        vdda-pll-max-microamp = <18300>;
+	vdda-phy-supply = <&vreg_l4a_0p8>;
+	vdda-pll-supply = <&vreg_l3c_1p2>;
+	vdda-phy-max-microamp = <62900>;
+	vdda-pll-max-microamp = <18300>;
 
 	status = "okay";
 };
 
 
 &usb_1 {
-        status = "okay";
-
 	/* brough from sm6375.dtsi */
 	qcom,select-utmi-as-pipe-clk;
+	status = "okay";
 };
 
 &usb_1_dwc3 {
@@ -1019,8 +1019,8 @@
 
 /* reassign nvmem cell */
 &usb_1_hsphy {
-        status = "okay";
-        nvmem-cells = <&qusb2_hstx_trim_new>;
+	status = "okay";
+	nvmem-cells = <&qusb2_hstx_trim_new>;
 
 	vdd-supply = <&vreg_l4a_0p8>;
 	vdda-pll-supply = <&vreg_l11a_1p8>;
@@ -1037,9 +1037,9 @@
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 	memory-region = <&venus_mem>;
 
-        firmware-name = "qcom/sm7125/miatoll/venus.mdt";
+	firmware-name = "qcom/sm7125/miatoll/venus.mdt";
 
-        status = "okay";
+	status = "okay";
 
 	video-firmware {
 		iommus = <&apps_smmu 0x0c42 0x0>;
@@ -1062,21 +1062,21 @@
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
 &pm6150l_gpios {
 	disp_pins: disp-state {
-			pins = "gpio3";
-			function = PMIC_GPIO_FUNC_FUNC1;
-			qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
-			power-source = <0>;
-			bias-disable;
-			output-low;
+		pins = "gpio3";
+		function = PMIC_GPIO_FUNC_FUNC1;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
+		power-source = <0>;
+		bias-disable;
+		output-low;
 	};
 
-        key_vol_up_default: key-vol-state {
-                        pins = "gpio2";
-                        function = "normal";
-                        input-enable;
-                        bias-pull-up;
-                        power-source = <0>;
-        };
+	key_vol_up_default: key-vol-state {
+		pins = "gpio2";
+		function = "normal";
+		input-enable;
+		bias-pull-up;
+		power-source = <0>;
+	};
 };
 
 #if 0
@@ -1102,35 +1102,35 @@
 #endif
 
 &qup_i2c2_default {
-		pins = "gpio15", "gpio16";
-		drive-strength = <2>;
+	pins = "gpio15", "gpio16";
+	drive-strength = <2>;
 
-		/* Has external pullup */
-		bias-disable;
+	/* Has external pullup */
+	bias-disable;
 };
 
 &qup_i2c4_default {
-		pins = "gpio115", "gpio116";
-		drive-strength = <2>;
+	pins = "gpio115", "gpio116";
+	drive-strength = <2>;
 
-		/* Has external pullup */
-		bias-disable;
+	/* Has external pullup */
+	bias-disable;
 };
 
 &qup_i2c7_default {
-		pins = "gpio6", "gpio7";
-		drive-strength = <2>;
+	pins = "gpio6", "gpio7";
+	drive-strength = <2>;
 
-		/* Has external pullup */
-		bias-disable;
+	/* Has external pullup */
+	bias-disable;
 };
 
 &qup_i2c9_default {
-		pins = "gpio46", "gpio47";
-		drive-strength = <2>;
+	pins = "gpio46", "gpio47";
+	drive-strength = <2>;
 
-		/* Has external pullup */
-		bias-disable;
+	/* Has external pullup */
+	bias-disable;
 };
 
 &qup_uart3_cts {
@@ -1203,22 +1203,20 @@
 	bias-disable;
 };
 
-#if 1
 &qup_spi11_spi {
-        drive-strength = <2>;
-        //bias-disable;
+	drive-strength = <2>;
+	//bias-disable;
 };
 
 &qup_spi11_cs {
-        drive-strength = <2>;
-        //bias-disable;
+	drive-strength = <2>;
+	//bias-disable;
 };
 
 &qup_spi11_cs_gpio {
-        drive-strength = <2>;
-        bias-disable;
+	drive-strength = <2>;
+	bias-disable;
 };
-#endif
 
 &tlmm {
 	/* adapt from https://github.com/ungeskriptet/linux/tree/sm7125 */
@@ -1488,7 +1486,7 @@
 //&qfprom0 { status = "disabled" ;};
 //&soc { cpufreq@18323000 { status = "disabled" ;};      };
 
-&watchdog { status = "disabled" ;};
+//&watchdog { status = "disabled" ;};
 
 //&dsi0 { status = "disabled"; };
 //&dsi_phy { status = "disabled"; };
@@ -1501,12 +1499,12 @@
 //&panel0 { status = "disabled"; };
 
 /* all related to display-port here */
-&mdss_dp { status = "disabled"; };
-&mdp { ports { /delete-node/ port@2; }; };
-&dp_in { /delete-property/ remote-endpoint; };
+//&mdss_dp { status = "disabled"; };
+//&mdp { ports { /delete-node/ port@2; }; };
+//&dp_in { /delete-property/ remote-endpoint; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
-&venus { status = "disabled"; };
+//&venus { status = "disabled"; };
 &framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
@@ -1533,3 +1531,6 @@
 
 &pm6150l_labibb { status = "disabled"; };
 &pm6150l_wled { status = "disabled"; };
+
+//&ufs_mem_hc { status = "disabled"; };
+//&ufs_mem_phy { status = "disabled"; };
