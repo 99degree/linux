@@ -33,6 +33,7 @@
 #define NT36XXX_FW_ADDR		0x01
 
 #define NT36XXX_TRANSFER_LEN	(63*1024)
+#define NT36XXX_RAW_TRANSFER_LEN    192 /* can't tx such long bin */
 
 /* due to extra framework layer, the transfer trunk is as small as
  * 128 otherwize dma error happened, all routed to spi_sync()
@@ -66,9 +67,6 @@
  * and original bit 8 and upward are shift to bit 9 resp.
  * also the most significant byte is set to 0xff for 32 bit addressing.
  */
-
-/* this is a temp workaround for bulk transfer that careless to reg addr paging */
-static int nt36xxx_regmap_reg_write(void *context, unsigned int reg, unsigned int val);
 
 /* Main mmap to spi addr */
 enum {
@@ -193,15 +191,15 @@ struct nt36xxx_chip_data {
 	const struct regmap_config *config;
 
 	/* from struct input_id, used to set this struct for further i2c/spi support*/
-	__u16 bustype;
 	const char* fw_name;
 	unsigned int max_x;
 	unsigned int max_y;
 	unsigned int max_button;
+	const struct input_id *id;
 };
 
 enum nt36xxx_chips {
-	NT36525_IC = 0,
+	NT36525_IC = 0x40,
 	NT36672A_IC,
 	NT36676F_IC,
 	NT36772_IC,
@@ -366,6 +364,11 @@ static const u32 nt36675_memory_maps[] = {
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
 
+inline static int nt36xxx_regmap_noinc_write(struct regmap *map, unsigned int reg,
+                      const void *val, size_t len) ;
+inline static int nt36xxx_regmap_noinc_read(struct regmap *map, unsigned int reg,
+                      void *val, size_t len) ;
+
 /**
  * nt36xxx_set_page - Set page number for read/write
  * @ts: Main driver structure
@@ -377,8 +380,8 @@ static int nt36xxx_set_page(struct nt36xxx_ts *ts, u32 pageaddr)
 	u32 data = cpu_to_be32(pageaddr) >> 7;
 	int ret;
 
-	ret = regmap_noinc_write(ts->regmap, NT36XXX_CMD_SET_PAGE,
-				 &data, sizeof(data));
+	ret = nt36xxx_regmap_noinc_write(ts->regmap, NT36XXX_CMD_SET_PAGE,
+				 &data, sizeof(data) - 1);
 	if (ret)
 		return ret;
 
@@ -389,6 +392,7 @@ static int nt36xxx_set_page(struct nt36xxx_ts *ts, u32 pageaddr)
 static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 {
         int ret;
+	u8 val[1] = {0};
 
 	if(!ts) {
                 pr_err("%s %s empty", __func__, "nt36xxx_ts");
@@ -406,8 +410,9 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
         }
 
 	/* HACK to output something without read */
-        ret = regmap_write(ts->regmap, ts->mmap[MMAP_ENG_RST_ADDR],
-                           0x5a);
+	val[0] = 0x5a;
+        ret = nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_ENG_RST_ADDR],
+                           val, 1);
 
         if (ret)
                 return ret;
@@ -429,9 +434,11 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 static int nt36xxx_sw_reset_idle(struct nt36xxx_ts *ts)
 {
 	int ret;
+	u8 val[1] = {0};
 
-	ret = regmap_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
-			   NT36XXX_CMD_SW_RESET);
+	val[0] = NT36XXX_CMD_SW_RESET;
+	ret = nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
+			   val, 1);
 
 	if (ret)
 		return ret;
@@ -450,11 +457,13 @@ static int nt36xxx_sw_reset_idle(struct nt36xxx_ts *ts)
 static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 {
 	int ret = 0;
+	u8 val[1] = {0};
 
 	//in spi version, need to set page to SWRST_N8_ADDR
+	val[0] = NT36XXX_CMD_BOOTLOADER_RESET;
 	if (ts->mmap[MMAP_SWRST_N8_ADDR]) {
-		ret = regmap_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
-			   NT36XXX_CMD_BOOTLOADER_RESET);
+		ret = nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
+			   val, 1);
 	        if (ret)
         	        return ret;
 	} else {
@@ -465,8 +474,9 @@ static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 	/* MCU has to reboot from bootloader: this is the typical boot time */
 	msleep(35);
 
+	val[0] = 0;
 	if (ts->mmap[MMAP_SPI_RD_FAST_ADDR]) {
-                ret = regmap_write(ts->regmap, ts->mmap[MMAP_SPI_RD_FAST_ADDR], 0);
+                ret = nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_SPI_RD_FAST_ADDR], val, 1);
                 if (ret)
                         return ret;
 	}
@@ -490,15 +500,15 @@ static int nt36xxx_check_reset_state(struct nt36xxx_ts *ts,
 	u8 buf[8] = { 0 };
 	int ret = 0, retry = NT36XXX_MAX_FW_RST_RETRY;
 
+	retry = 3;
+
 	do {
-		ret = regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_RESET_COMPLETE,
+		buf[0] = 0;
+		ret = nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_RESET_COMPLETE,
 					buf, 6);
 		if (likely(ret == 0) &&
 		    (buf[1] >= fw_state) &&
 		    (buf[1] <= NT36XXX_STATE_MAX)) {
-
-                print_hex_dump(KERN_INFO, "nvt_check_fw_reset_state ", DUMP_PREFIX_OFFSET,
-                    16, 1, buf, 8, true);
 
 			ret = 0;
 			break;
@@ -528,9 +538,8 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 	u8 point[POINT_DATA_LEN + 1] = { 0 };
 	unsigned int ppos = 0;
 	int i, ret, finger_cnt = 0;
-	uint8_t press_id[TOUCH_MAX_FINGER_NUM] = {0};
 
-	ret = regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR],
+	ret = nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR],
 				point, sizeof(point));
 	if (ret < 0) {
 		dev_err(ts->dev,
@@ -564,9 +573,7 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 				 (point[ppos + 3] & 0xf);
 
 			if ((obj->x > ts->prop.max_x) ||
-			    (obj->y > ts->prop.max_y))// ||
-//			    (obj->x < 0) ||
-//			    (obj->y < 0))
+			    (obj->y > ts->prop.max_y))
 				continue;
 
 			obj->tm = point[ppos + 4];
@@ -583,27 +590,21 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			if (obj->z == 0)
 				obj->z = 1;
 
-			press_id[input_id - 1] = 1;
-
 			input_mt_slot(input, input_id - 1);
 			input_mt_report_slot_state(input,
 						   MT_TOOL_FINGER, true);
-#if 0
 			touchscreen_report_pos(input, &ts->prop, obj->x,
 					       obj->y, true);
-#else
-			input_report_abs(input, ABS_MT_POSITION_X, obj->x);
-			input_report_abs(input, ABS_MT_POSITION_Y, obj->y);
-#endif
+
 			input_report_abs(input, ABS_MT_TOUCH_MAJOR, obj->tm);
 			input_report_abs(input, ABS_MT_PRESSURE, obj->z);
+			dev_info(&input->dev, "x=%d, y=%d, tm=%d\n", obj->x, obj->y, obj->tm);
 
 			finger_cnt++;
 		}
 	}
-#if 0
+
 	input_mt_sync_frame(input);
-#endif
 	input_sync(input);
 
 xfer_error:
@@ -639,7 +640,7 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 //nvt_ts_check_chip_ver_trim
 static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 {
-	u8 buf[7] = { 0 };
+	u8 buf[8] = { 0 };
 	int retry = NT36XXX_MAX_RETRIES;
 	int sz = sizeof(trim_id_table) / sizeof(struct nt36xxx_trim_table);
 	int i, list, mapid, ret;
@@ -651,11 +652,11 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 	}
 
 	do {
-                ret = regmap_noinc_read(ts->regmap, ts->mmap[MMAP_MAGIC_NUMBER_0X1F64E_ADDR], buf, 7);
+                ret = nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_MAGIC_NUMBER_0X1F64E_ADDR], buf, 7);
                 if (ret)
                         continue;
 
-		dev_info(ts->dev, "%s %d, buf[0]=0x%02X, buf[1]=0x%02X, buf[2]=0x%02X, buf[3]=0x%02X, buf[4]=0x%02X, buf[5]=0x%02X, buf[6]=0x%02X\n", 
+		dev_dbg(ts->dev, "%s %d, buf[0]=0x%02X, buf[1]=0x%02X, buf[2]=0x%02X, buf[3]=0x%02X, buf[4]=0x%02X, buf[5]=0x%02X, buf[6]=0x%02X\n", 
 			__func__, __LINE__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
 		/* Compare read chip id with trim list */
@@ -664,7 +665,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 			/* Compare each not masked byte */
 			for (i = 0; i < NT36XXX_ID_LEN_MAX; i++) {
 				if (trim_id_table[list].mask[i] &&
-				    buf[i] != trim_id_table[list].id[i])
+				    buf[i + 1] != trim_id_table[list].id[i]) /* the buf[] is shift by 1 */
 					break;
 			}
 
@@ -675,7 +676,13 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 				ret = 0;
 				ts->carrier_system = trim_id_table[list].carrier_system;
 				ts->hw_crc = trim_id_table[list].hw_crc;
-				dev_info(ts->dev, "ic hw crc support=%d\n", ts->hw_crc);
+
+				if (mapid == 0) {
+					dev_info(ts->dev, "ic hw not found!\n");
+					ret = -ENOENT;
+					goto exit;
+				}
+				dev_info(ts->dev, "ic hw crc support=%d, trim_table_crc=%d\n", ts->hw_crc, trim_id_table[list].hw_crc);
 
 				/* copy the const mmap into drvdata */
 				memcpy(ts->mmap_data, ts->mmap, sizeof(ts->mmap_data));
@@ -690,7 +697,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 
 		usleep_range(10000, 11000);
 	} while (--retry);
-
+exit:
 	return ret;
 }
 
@@ -826,11 +833,18 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	uint32_t list = 0;
 	uint32_t bin_addr, sram_addr, size;
 	struct nvt_ts_bin_map *bin_map = ts->bin_map;
+        u8 *buf;
+
+        buf = kzalloc(NT36XXX_TRANSFER_LEN + 1, GFP_KERNEL | GFP_DMA);
+        if (!buf) {
+		dev_err(ts->dev, "kzalloc with GFP_KERNEL | GFP_DMA fail. %s %d", __func__, __LINE__);
+                return -EIO;
+        }
 
         nt36xxx_bootloader_reset(ts);
 
 	for (list = 0; list < ts->fw_data.partition; list++) {
-		int j;
+		int i, j;
 
 		/* initialize variable */
 		sram_addr = bin_map[list].sram_addr;
@@ -839,28 +853,46 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 
 		/* ignore reserved partition (Reserved Partition size is zero) */
 		if (!size) {
+			bin_map[list].loaded = 0;
 			pr_info("found empty part %d. skipping ", list);
 			continue;
-		} else
-			size = size + 1;
+		} else {
+			//size = size + 1;
+			pr_info("size = 0x%x", size);
+		}
 
 		bin_map[list].loaded = 1;
 
 		if (size / NT36XXX_TRANSFER_LEN)
 			pr_info("%s %d paged write [%s] 0x%x, window 0x%x, residue 0x%x", __func__, __LINE__, bin_map[list].name, size, NT36XXX_TRANSFER_LEN, size % NT36XXX_TRANSFER_LEN);
 
-		for (j = 0; j < size; j += NT36XXX_TRANSFER_LEN) {
+		for (i = 0, j = 0; j < size; j += NT36XXX_TRANSFER_LEN, i++) {
+			int32_t ret;
 			int window_size = ((size - j) / NT36XXX_TRANSFER_LEN) ? NT36XXX_TRANSFER_LEN : ((size - j) % NT36XXX_TRANSFER_LEN);
 
-			/* workaround bulk write without caring reg addr. */
-			nt36xxx_regmap_reg_write(ts->dev, sram_addr + j, j | 0x80);
+dev_info(ts->dev, "%s %d %d 0==> %d\n", __func__, __LINE__, window_size, i);
+			buf[0] = (sram_addr + j) | 0x80;
+			memcpy(&buf[1], &(ts->fw_entry->data[bin_addr + j]), window_size);
 
-			/* try raw write if bulk write supports */
-			regmap_bulk_write(ts->regmap, sram_addr + j, &ts->fw_entry->data[bin_addr + j], window_size);
+			/* for reference */
+			/* regmap_bulk_write(ts->regmap, sram_addr + j, &ts->fw_entry->data[bin_addr + j], window_size); */
+
+dev_info(ts->dev, "%s %d %d ==>\n", __func__, __LINE__, window_size);
+
+			ret = nt36xxx_regmap_noinc_write(ts->regmap, sram_addr + j, &buf[1], window_size);
+
+dev_info(ts->dev, "%s %d <==>\n", __func__, __LINE__);
+
+			if (ret) {
+				dev_err(ts->dev, "%s return=%d", __func__, ret);
+				return ret;
+
+			}
 		}
 
 	}
 
+	kfree(buf);
 	return 0;
 }
 
@@ -879,9 +911,6 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	pr_info("%s %d", __func__, __LINE__);
 
 	//pm_runtime_disable(ts->dev);
-
-	//TODO: workaround something.
-	ts->hw_crc = 2;
 
 	if (ts->fw_entry)
 		goto program_upload;
@@ -919,7 +948,9 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	if (ret)
 		goto release_fw;
 
+	retry = 0;
 program_upload:
+pr_info("%s %d %s", __func__, __LINE__, "0xaabb00");
 	if (ts->hw_crc) {
 		ret = nt36xxx_download_firmware_hw_crc(ts);
 
@@ -936,54 +967,64 @@ program_upload:
 	/* set ilm & dlm reg bank */
 	for (i = 0; i < ts->fw_data.partition; i++) {
 		if (0 == strncmp(ts->bin_map[i].name, "IL", 2) /*["ILM"]*/) {
-			regmap_noinc_write(ts->regmap, ts->mmap[MMAP_ILM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
-			regmap_noinc_write(ts->regmap, ts->mmap[MMAP_ILM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
+			nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_ILM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
+			nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_ILM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
 			/* crc > 1 len = 4, crc = 1, len = 3 */
-			regmap_noinc_write(ts->regmap, ts->mmap[MMAP_G_ILM_CHECKSUM_ADDR], &ts->bin_map[i].crc, sizeof(ts->bin_map[i].crc));
+			nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_G_ILM_CHECKSUM_ADDR], &ts->bin_map[i].crc, sizeof(ts->bin_map[i].crc));
 		}
 		if (0 == strncmp(ts->bin_map[i].name, "DL", 2) /*["DLM"]*/) {
-                        regmap_noinc_write(ts->regmap, ts->mmap[MMAP_DLM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
-                        regmap_noinc_write(ts->regmap, ts->mmap[MMAP_DLM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
+                        nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_DLM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
+                        nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_DLM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
 			/* crc > 1 len = 4, crc = 1, len = 3 */
-                        regmap_noinc_write(ts->regmap, ts->mmap[MMAP_G_DLM_CHECKSUM_ADDR], &ts->bin_map[i].crc, sizeof(ts->bin_map[i].crc));
+                        nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_G_DLM_CHECKSUM_ADDR], &ts->bin_map[i].crc, sizeof(ts->bin_map[i].crc));
 		}
 	}
 
 	/* nvt_bld_crc_enable() */
 	/* crc enable */
-	regmap_noinc_read(ts->regmap, ts->mmap[MMAP_BLD_CRC_EN_ADDR], val, 1);
+	val[0] = 0;
+	nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_BLD_CRC_EN_ADDR], val, 1);
 
-	val[0] = 0xff;
-	regmap_noinc_write(ts->regmap, ts->mmap[MMAP_BLD_CRC_EN_ADDR], val, 1);
+//	val[0] = 0xff;
+	nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_BLD_CRC_EN_ADDR], val, 1);
 
         /* enable fw crc */
         val[0] = 0;
-        regmap_noinc_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x60, val, 1);
+        nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x60, val, 1);
 
 	val[0] = 0xae;
-	regmap_noinc_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x50, val, 1);
+	nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x50, val, 1);
+
+pr_info("%s %d %s", __func__, __LINE__, "0xaabbbb");
 
 	/* nvt_boot_ready() */
 	/* Set Boot Ready Bit */
 	val[0] = 0x1;
-	regmap_noinc_write(ts->regmap, ts->mmap[MMAP_BOOT_RDY_ADDR], val, 1);
+	nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_BOOT_RDY_ADDR], val, 1);
 
 	/* old logic 5ms, retention to 10ms */
 	usleep_range(10000, 11000);
 
+pr_info("%s %d %s", __func__, __LINE__, "0xaabbcc");
+
 	/* nvt_check_fw_reset_state() */
 	ret = nt36xxx_check_reset_state(ts, NT36XXX_STATE_INIT);
-	if (ret)
+	if (ret && retry < 3) {
+		retry++;
+		goto program_upload;
+	} else if (ret && retry >= 3) {
 		goto release_fw_buf;
+	}
 
-#if 0
+pr_info("%s %d %s", __func__, __LINE__, "0xaabbee");
+#if 1
 	/* -----------------*/
 	/* nvt_check_fw_checksum() */
 	WARN_ON(sizeof(val) < ts->fw_data.partition * 4);
 
-	ret = regmap_noinc_read(ts->regmap, ts->mmap[MMAP_R_ILM_CHECKSUM_ADDR], val, ts->fw_data.partition * 4);
+	ret = nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_R_ILM_CHECKSUM_ADDR], val, ts->fw_data.partition * 4);
 	if (ret)
 		goto release_fw_buf;
 
@@ -992,7 +1033,7 @@ program_upload:
 
 	for (i = 0; i < ts->fw_data.partition; i++) {
 		/* ignore reserved partition (Reserved Partition size is zero) */
-		if((ts->bin_map[i].size == 0) || (ts->bin_map[i].loaded != 1)) {
+		if((ts->bin_map[i].size == 0) || (ts->bin_map[i].loaded < 1)) {
 			dev_err(ts->dev, "size zero");
 			continue;
 		}
@@ -1012,7 +1053,7 @@ program_upload:
 	retry = 0;
 check_fw:
 	/* nvt_get_fw_info() */
-	regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_FWINFO, val, 16);
+	nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_FWINFO, val, 16);
 
 	/* set a smaller value */
 	ts->prop.max_x = 0;
@@ -1032,12 +1073,13 @@ check_fw:
 	}
 #if 0
 	/* nvt_read_pid() */
-	regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x80 | 0x1a,
+	nt36xxx_regmap_noinc_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | 0x80 | 0x1a,
                                         val, 3);
 
 	// ts->nvt_pid = (buf[2] << 8) + buf[1];
 	dev_info(ts->dev, "PID=%04X\n", ts->nvt_pid);
 #endif
+	dev_info(ts->dev, "FW loaded and init successfully! \n");
 	goto exit;
 
 release_fw_buf:
@@ -1054,107 +1096,233 @@ exit:
 	return;
 }
 
-/* TODO:change to spi_sync() */
-static int nt36xxx_regmap_bulk_read(void *context, const void *reg_addr, size_t reg_size,
-                    void *val, size_t val_size) {
-        struct device *dev = context;
-        struct spi_device *spi = to_spi_device(dev);
-	int ret;
-	unsigned int reg = (*(unsigned int *)reg_addr) & 0x7f;
+#define SPI_TRANS_PREFIX_LEN	0
+#define REGISTER_WIDTH		4
+#define SPI_READ_DUMMY_LEN	1
+#define SPI_READ_PREFIX_LEN	(SPI_TRANS_PREFIX_LEN + REGISTER_WIDTH + SPI_READ_DUMMY_LEN)
+#define SPI_WRITE_PREFIX_LEN	(SPI_TRANS_PREFIX_LEN + REGISTER_WIDTH)
 
-        ret = spi_write_then_read(spi, &reg, reg_size, val, val_size);
+#define SPI_WRITE_FLAG		0xFF
+#define SPI_READ_FLAG		0xFF
 
-	if(val_size < 0x20 && reg != 0) {
-        	print_hex_dump(KERN_INFO, "nt36xxx_regmap_bulk_read reg: ", DUMP_PREFIX_OFFSET,
-                    16, 1, &reg, (reg_size > 0x20)? 0x20:reg_size % 0x20, true);
+#define pr pr_info("%s %d", __func__, __LINE__);
+#define NVTREAD	0
+#define NVTWRITE 1
+#define DUMMY_BYTES 1
 
-        	print_hex_dump(KERN_INFO, "nt36xxx_regmap_bulk_read val: ", DUMP_PREFIX_OFFSET,
-                    16, 1, val, (val_size > 0x20 )? 0x20 : val_size % 0x20, true);
+static int nt36xxx_spi_write(void *dev, const void *data,
+                                   size_t len)
+{
+	struct spi_device *spi = to_spi_device((struct device *)dev);
+        struct spi_message m;
+        struct spi_transfer t[2];
+        int32_t ret;
+
+        u8 *buf = kmemdup(data, len, GFP_KERNEL | GFP_DMA);
+        if (!buf) {
+		dev_err(dev, "kmemdup fail %d\n ", ret);
+                return -ENOMEM;
 	}
 
+pr_info("%s %d len=0x%lx, reduced addr len=0x%lx", __func__, __LINE__, len, len - 3);
+
+	memset(&t, 0, sizeof(t));
+
+        buf[0] = 0xff;
+        buf[1] = (*(int *)data) >> 15;
+        buf[2] = (*(int *)data) >> 7;
+        buf[3] = (*(int *)data) | 0x80;
+
+if (buf[2] == 0xff && buf[1] == 0xff)
+        WARN_ON(true);
+
+        t[0].tx_buf = buf;
+	t[0].len = 3;
+        t[1].tx_buf = buf + 3;
+        t[1].len = len - 3;
+
+        spi_message_init(&m);
+        spi_message_add_tail(&t[0], &m);
+	spi_message_add_tail(&t[1], &m);
+        ret = spi_sync(spi, &m);
+	if (ret)
+		dev_err(dev, "transfer err %d\n ", ret);
+	else {
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, buf, 3, true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, buf + 3, (len > 0x20) ? 0x20 : len - 3 , true);
+	}
+
+	kfree(buf);
 	return ret;
 }
 
-static inline int32_t spi_bulk_write(struct spi_device *client, uint8_t *buf, size_t len)
+#if 0
+static int nt36xxx_spi_read(void *dev, const void *reg_buf,
+                                  size_t reg_size, void *val_buf,
+                                  size_t val_size)
 {
+        struct spi_device *spi = to_spi_device((struct device *)dev);
         struct spi_message m;
-        struct spi_transfer t = {
-                .len    = len,
-        };
+        struct spi_transfer t[2];
         int32_t ret;
 
-	t.tx_buf = buf;
+//        u8 addr[4] = { 0xff, *(u32 *)reg_buf >> 15, *(u32 *)reg_buf >> 7,  *(u32 *)reg_buf & 0x7f };
+
+	u8 *buf = kzalloc(8 + val_size, GFP_KERNEL | GFP_DMA);
+	if (!buf) {
+		dev_err(dev, "%s %d alloc fail\n", __func__, __LINE__);
+		return -ENOMEM;
+	}
+
+        memset(&t, 0, sizeof(t));
+
+//	memcpy(buf, addr, 4);
+
+	buf[0] = 0xff;
+	buf[1] = *(u32 *)reg_buf >> 15;
+	buf[2] = *(u32 *)reg_buf >> 7;
+	buf[3] = *(u32 *)reg_buf & 0x7f;
+
+        t[0].tx_buf = buf;
+        t[0].len = 3;
+	t[1].tx_buf = buf + 3;
+        t[1].rx_buf = buf + 4;
+        t[1].len = val_size;
 
         spi_message_init(&m);
-        spi_message_add_tail(&t, &m);
-        ret = spi_sync(client, &m);
+        spi_message_add_tail(&t[0], &m);
+        spi_message_add_tail(&t[1], &m);
+	ret = spi_sync(spi, &m);
+
+        if (ret)
+                dev_err(dev, "transfer err %d\n ", ret);
+        else {
+		memcpy(val_buf, &buf[4], val_size);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, buf, 3, true);
+
+	        print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, &buf[3], 1 , true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, val_buf, (val_size > 0x20) ? 0x20 : val_size % 0x20 , true);
+        }
+
+	kfree(buf);
+        return ret;
+}
+
+#else
+
+static int nt36xxx_spi_read(void *dev, const void *reg_buf,
+                                  size_t reg_size, void *val_buf,
+                                  size_t val_size)
+{
+//	        struct device *dev = context;
+        struct spi_device *spi = to_spi_device(dev);
+        int ret;
+	u8 addr[8] = { 0xff, *(u32 *)reg_buf >> 15, *(u32 *)reg_buf >> 7,  *(u32 *)reg_buf & 0x7f };
+
+	ret = spi_write(spi, addr, 3);
+	if (ret) {
+		dev_err(dev, "transfer0 err %s %d ret=%d", __func__, __LINE__, ret);
+		return ret;
+	}
+
+	memset(val_buf, 0, val_size);
+
+        ret = spi_write_then_read(spi, &addr[3] , 1, val_buf, val_size);
+        if (ret) {
+                dev_err(dev, "transfer1 err %s %d ret=%d", __func__, __LINE__, ret);
+                return ret;
+        }
+
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, addr, 3, true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, &addr[3], (val_size) > 0x20 ? 0x20 : val_size % 0x20 , true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                    16, 1, val_buf, (val_size > 0x20) ? 0x20 : val_size % 0x20 , true);
 
         return ret;
 }
 
-static int nt36xxx_bulk_write(void *dev, const void *data, size_t count, bool show_dump) {
+#endif
+
+inline static int nt36xxx_regmap_noinc_write(struct regmap *map, unsigned int reg,
+                      const void *val, size_t len) {
+if (len > 1) {
+	struct device *dev = regmap_get_device(map);
+	struct spi_device *spi = to_spi_device(dev);
+	u8 *buf;
+	int ret;
+
+	buf = kzalloc(8 + len, GFP_KERNEL | GFP_DMA);
+	if (!buf) {
+		dev_info(dev, "%s fail memory alloc 0x%x", __func__, ret);
+		return -ENOMEM;
+	}
+
+	memcpy(buf, &reg, 4);
+	memcpy(buf + 4, val, len);
+
+	ret = nt36xxx_spi_write(spi, buf, len + 4);
+
+	kfree(buf);
+	return ret;
+} else
+	return regmap_noinc_write(map, reg, val, len);
+}
+
+inline static int nt36xxx_regmap_noinc_read(struct regmap *map, unsigned int reg,
+                      void *val, size_t len) {
+	return regmap_noinc_read(map, reg, val, len);
+
+if (len == 0) {
+        struct device *dev = regmap_get_device(map);
         struct spi_device *spi = to_spi_device(dev);
+        u8 *buf;
         int ret;
 
-        ret = spi_bulk_write(spi, (void *)data, count);
+        buf = kzalloc(8 + len, GFP_KERNEL | GFP_DMA);
+        if (!buf) {
+                dev_info(dev, "%s fail memory alloc 0x%x", __func__, ret);
+                return -ENOMEM;
+        }
 
-	if (show_dump)
-	        print_hex_dump(KERN_INFO, "nt36xxx_bulk_write: ", DUMP_PREFIX_OFFSET,
-                    16, 1, data, (count > 0x40) ? 0x60 : count % 0x20, true);
+        memcpy(buf, &reg, 4);
 
-	if (ret)
-		dev_info(dev, "%s 0x%x", __func__, ret);
+        ret = nt36xxx_spi_read(spi, buf, 4, &buf[4], len);
 
+	memcpy(val, &buf[4], len);
+
+        kfree(buf);
 	return ret;
+	}
 }
-
-static int nt36xxx_regmap_bulk_write(void *dev, const void *data, size_t count) {
-        return nt36xxx_bulk_write(dev, data, count, true);
-}
-
-static bool nt36xxx_volatile_reg(struct device *dev, unsigned int reg) {
-	return true;
-}
-
-static bool nt36xxx_writeable_reg(struct device *dev, unsigned int reg) {
-	uint8_t buf[4] = {0};
-
-	buf[0] = 0xFF;
-	buf[1] = (reg >> 15) & 0xFF;
-	buf[2] = (reg >> 7) & 0xFF;
-
-	return !nt36xxx_bulk_write(dev, buf, 3, (0x7f & reg) != 0);
-}
-
-static bool nt36xxx_readable_reg(struct device *dev, unsigned int reg) {
-	return nt36xxx_writeable_reg(dev, reg);
-};
-
-static int nt36xxx_regmap_reg_read(void *dev, unsigned int reg, unsigned int *val) {
-        return nt36xxx_writeable_reg(dev, reg);
-};
-
-static int nt36xxx_regmap_reg_write(void *dev, unsigned int reg, unsigned int val) {
-        return nt36xxx_writeable_reg(dev, reg);
-};
 
 const struct regmap_config nt36xxx_regmap_hw_config = {
 	.name = "nt36xxx_hw",
-        .reg_bits = 8,
-        .val_bits = 8,
-        .max_register = 0xffffffff,
+	.reg_bits = 32,
+	.val_bits = 8,
+	.read = nt36xxx_spi_read,
+	.write = nt36xxx_spi_write,
+
+	.max_raw_read = NT36XXX_TRANSFER_LEN + 50,
+	.max_raw_write = NT36XXX_TRANSFER_LEN + 50,
+	//.use_single_write = true,
+	.zero_flag_mask = true, /* this is needed to make sure addr is not write_masked */
 	.cache_type = REGCACHE_NONE,
-
-	.reg_write = nt36xxx_regmap_reg_write,
-	.reg_read = nt36xxx_regmap_reg_read,
-	.write = nt36xxx_regmap_bulk_write,
-	.read = nt36xxx_regmap_bulk_read,
-	.volatile_reg = nt36xxx_volatile_reg,
-
-	.writeable_reg = nt36xxx_writeable_reg,
-	.readable_reg = nt36xxx_readable_reg,
-
-	.write_flag_mask = 0x80,
+	.write_flag_mask = 0,
+	.read_flag_mask = 0,
 };
 
 static void nt36xxx_disable_regulators(void *data)
@@ -1192,6 +1360,8 @@ static int nt36xxx_ts_probe(struct platform_device *pdev)
 static int nt36xxx_spi_probe(struct spi_device *spi)
 {
         struct nt36xxx_ts *ts;
+	struct regmap_config *regmap_config;
+	int ret;
 
 	ts = devm_kzalloc(&spi->dev, sizeof(*ts), GFP_KERNEL);
         if (!ts)
@@ -1202,12 +1372,39 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 	ts->dev = &spi->dev;
 	ts->irq = spi->irq;
 
-        ts->regmap = devm_regmap_init_spi(spi, &nt36xxx_regmap_hw_config);
+        regmap_config = devm_kmemdup(&spi->dev, &nt36xxx_regmap_hw_config,
+                                     sizeof(*regmap_config), GFP_KERNEL);
+        if (!regmap_config)
+                return -ENOMEM;
+
+        ts->regmap = devm_regmap_init_spi(spi, regmap_config);
         if (IS_ERR(ts->regmap))
                 return PTR_ERR(ts->regmap);
 
+	if (spi->master->flags & SPI_MASTER_HALF_DUPLEX) {
+		dev_err(&spi->dev, "Full duplex not supported by master\n");
+		ret = -EIO;
+		goto err_ckeck_full_duplex;
+	}
+
+	spi->bits_per_word = 8;
+	spi->mode = SPI_MODE_0;
+
+	ret = spi_setup(spi);
+	if (ret < 0) {
+		dev_err(&spi->dev, "Failed to perform SPI setup\n");
+		goto err_spi_setup;
+	}
+
         return nt36xxx_sub_probe(ts);
+
+err_ckeck_full_duplex:
+err_spi_setup:
+	return ret;
 }
+
+static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts,
+                                          const struct input_id *id);
 
 static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 	struct device *dev = ts->dev;
@@ -1219,6 +1416,8 @@ static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 
 	if(!dev)
 		return -EINVAL;
+
+	dev_info(dev, "%s starts!\n", __func__);
 
 	chip_data = of_device_get_match_data(ts->dev);
 	if(!chip_data)
@@ -1241,14 +1440,14 @@ static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 	if (IS_ERR(ts->reset_gpio))
 		return PTR_ERR(ts->reset_gpio);
 
-	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx reset");
+	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx_reset");
 
         ts->irq_gpio = devm_gpiod_get_optional(dev, "irq",
                                                  GPIOD_IN);
         if (IS_ERR(ts->irq_gpio))
                 return PTR_ERR(ts->irq_gpio);
 
-        gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
+        gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx_irq");
 
 	/* These supplies are optional */
 	ts->supplies[0].supply = "vdd";
@@ -1285,9 +1484,42 @@ static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 		return ret;
 	}
 
+	ret = nt36xxx_input_dev_config(ts, ts->data->id);
+        if (ret) {
+                dev_err(dev, "failed set input device: %d\n", ret);
+                return ret;
+        }
+
+	ts->irq = gpiod_to_irq(ts->irq_gpio);
+
+        ret = devm_request_threaded_irq(dev, ts->irq, NULL,
+                                        nt36xxx_irq_handler, /*IRQ_TYPE_EDGE_RISING |*/ IRQF_ONESHOT,
+                                        dev_name(dev), ts);
+        if (ret) {
+                dev_err(dev, "request irq failed: %d\n", ret);
+                return ret;
+        }
+
+        ts->nvt_fw_dl_wq = alloc_ordered_workqueue("nt36xxx_fw_dl_wq", WQ_MEM_RECLAIM);
+
+        INIT_DELAYED_WORK(&ts->nvt_fwu_work, nt36xxx_boot_download_firmware);
+
+        queue_delayed_work(ts->nvt_fw_dl_wq, &ts->nvt_fwu_work, msecs_to_jiffies(50));
+
+        dev_info(dev, "ok probe done!");
+	return 0;
+}
+
+static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id *id)
+{
+	struct device *dev = ts->dev;
+	int ret;
+
         ts->input = devm_input_allocate_device(dev);
         if (!ts->input)
                 return -ENOMEM;
+
+	input_set_drvdata(ts->input, ts);
 
 	ts->input->phys = devm_kasprintf(dev, GFP_KERNEL,
 				     "%s/input0", dev_name(dev));
@@ -1295,45 +1527,45 @@ static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 		return -ENOMEM;
 
 	ts->input->name = "Novatek NT36XXX Touchscreen";
-	ts->input->id.bustype = ts->data->bustype;
 	ts->input->dev.parent = dev;
+	ts->input->id = *id;
 
+        input_set_abs_params(ts->input, ABS_MT_PRESSURE, 0,
+                             TOUCH_MAX_PRESSURE, 0, 0);
+        input_set_abs_params(ts->input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
+
+        input_set_abs_params(ts->input, ABS_MT_POSITION_X, 0,
+                             ts->fw_info.abs_x_max - 1, 0, 0);
+        input_set_abs_params(ts->input, ABS_MT_POSITION_Y, 0,
+                             ts->fw_info.abs_y_max - 1, 0, 0);
+
+        /* Set default fw_ver=18, x_num=16, y_num=36, abs_x_max=1080, abs_y_max=2400, max_button_num=0! */
+        /* this value is obtained after fw loaded, and is expected tobe available after probe. hardcode it atm*/
+        /* TODO: check if touchscreen_parse_properties can be called from other thread */
+
+        ts->prop.max_x = ts->data->max_x;
+        ts->prop.max_y = ts->data->max_y;
+
+        /* Override the firmware defaults, if needed */
+        touchscreen_parse_properties(ts->input, true, &ts->prop);
+
+        /* update according to drvdata*/
+        ts->prop.max_x = ts->data->max_x;
+        ts->prop.max_y = ts->data->max_y;
+
+        dev_info(ts->dev, "default drvdata provided max_x=%d, max_y=%d\n", ts->prop.max_x, ts->prop.max_y);
+
+#if 0
 	__set_bit(EV_KEY, ts->input->evbit);
 	__set_bit(EV_ABS, ts->input->evbit);
 	input_set_capability(ts->input, EV_KEY, BTN_TOUCH);
-
+#endif
 	ret = input_mt_init_slots(ts->input, TOUCH_MAX_FINGER_NUM,
 				  INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
 	if (ret) {
 		dev_err(dev, "Cannot init MT slots (%d)\n", ret);
 		return ret;
 	}
-
-	input_set_abs_params(ts->input, ABS_MT_PRESSURE, 0,
-			     TOUCH_MAX_PRESSURE, 0, 0);
-	input_set_abs_params(ts->input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
-
-	input_set_abs_params(ts->input, ABS_MT_POSITION_X, 0,
-			     ts->fw_info.abs_x_max - 1, 0, 0);
-	input_set_abs_params(ts->input, ABS_MT_POSITION_Y, 0,
-			     ts->fw_info.abs_y_max - 1, 0, 0);
-
-	/* Set default fw_ver=18, x_num=16, y_num=36, abs_x_max=1080, abs_y_max=2400, max_button_num=0! */
-	/* this value is obtained after fw loaded, and is expected tobe available after probe. hardcode it atm*/
-	/* TODO: check if touchscreen_parse_properties can be called from other thread */
-
-        ts->prop.max_x = chip_data->max_x;
-        ts->prop.max_y = chip_data->max_y;
-
-	/* Override the firmware defaults, if needed */
-	touchscreen_parse_properties(ts->input, true, &ts->prop);
-
-	/* update according to drvdata*/
-        ts->prop.max_x = chip_data->max_x;
-        ts->prop.max_y = chip_data->max_y;
-
-	dev_info(ts->dev, "max_x=%d, max_y=%d\n", ts->prop.max_x, ts->prop.max_y);
-	input_set_drvdata(ts->input, ts);
 
 	ret = input_register_device(ts->input);
 	if (ret) {
@@ -1342,23 +1574,6 @@ static int nt36xxx_sub_probe(struct nt36xxx_ts *ts) {
 		return ret;
 	}
 
-	ts->irq = gpiod_to_irq(ts->irq_gpio);
-
-	ret = devm_request_threaded_irq(dev, ts->irq, NULL,
-					nt36xxx_irq_handler, IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT,
-					dev_name(dev), ts);
-	if (ret) {
-		dev_err(dev, "request irq failed: %d\n", ret);
-		return ret;
-	}
-
-	ts->nvt_fw_dl_wq = alloc_ordered_workqueue("nt36xxx_fw_dl_wq", WQ_MEM_RECLAIM);
-
-	INIT_DELAYED_WORK(&ts->nvt_fwu_work, nt36xxx_boot_download_firmware);
-
-	queue_delayed_work(ts->nvt_fw_dl_wq, &ts->nvt_fwu_work, msecs_to_jiffies(50));
-
-	dev_info(dev, "ok probe done!");
 	return 0;
 }
 
@@ -1366,6 +1581,7 @@ static int __maybe_unused nt36xxx_suspend(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret;
+	u8 val[1] = {0};
 
 	disable_irq(ts->irq);
 
@@ -1375,8 +1591,9 @@ static int __maybe_unused nt36xxx_suspend(struct device *dev)
 	/* TODO: destroy workqueue */
 	/* destroy_workqueue(); */
 
+	val[0] = NT36XXX_CMD_ENTER_SLEEP;
         if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
-                ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
+                ret = nt36xxx_regmap_noinc_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], val, 1);
                 if (ret)
                         return ret;
         }
@@ -1423,13 +1640,17 @@ end:
 static SIMPLE_DEV_PM_OPS(nt36xxx_ts_pm,
                          nt36xxx_suspend, nt36xxx_resume);
 
+static const struct input_id nt36xxx_spi_input_id = {
+        .bustype = BUS_SPI,
+};
+
 const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
         .config = &nt36xxx_regmap_hw_config,
 	.mmap = nt36675_memory_maps,
-	.bustype = BUS_SPI,
 	.fw_name = "novatek_ts_tianma_fw.bin",
 	.max_x = 1800,
 	.max_y = 2400,
+	.id = &nt36xxx_spi_input_id,
 };
 
 static const struct of_device_id nt36xxx_ts_of_match[] = {
