@@ -690,8 +690,9 @@ config TOUCHSCREEN_NT36XXX
 	  module will be called nt36xxx.
 
 config TOUCHSCREEN_NT36XXX_SPI
-        tristate "Novatek NT36XXX In-Cell SPI touchscreen controller"
-        depends on SPI
+	tristate "Novatek NT36XXX In-Cell SPI touchscreen controller"
+	depends on SPI_MASTER
+	select REGMAP
         help
           Say Y here if you have a Novatek NT36xxx series In-Cell
           touchscreen connected to your system over SPI.
