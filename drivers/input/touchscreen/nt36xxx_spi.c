@@ -31,6 +31,13 @@
  * 	(b)and the spi_sync itself.
  *
  * we have to choose one and stick together, cross-use otherwise caused problem.
+ * the addressing mode is | 0xff 0xXX 0xYY | 0xZ1 ... data1...| 0xZ2 ...data2... | ...
+ * 	0xXX is bit[23..16]
+ * 	0xYY is bit[15..7]
+ * above describe a 'page select' ops
+ * 	0xZ1 is bit[7..0], addr for read ops
+ *	0xZ2 is bit[7..0] | 0x80, addr for write ops
+ * there is no restriction on the read write order.
 */
 static int nt36xxx_spi_write(void *dev, const void *data,
                                    size_t len)
