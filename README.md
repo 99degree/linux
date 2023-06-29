@@ -33,7 +33,7 @@ Tested good:
 ```
 UFS
 LCD display and its dsi drm controller
-touchscreen
+touchscreen nt36675 of my own written regmap driver, yay! 
 cpufreq
 usb peri/adb shell
 spi/dma
