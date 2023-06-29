@@ -15,6 +15,7 @@ unless there is any dt node missing by sm7125-idp.dts but present in arch/arm64/
 or fail merge, most of the common functionality are paired.
 
 Here are functionality not tested:
+```
 modem
 rmtfs
 slpi(sensors, largely broken, not supported)
@@ -26,8 +27,10 @@ camera(largely broken, not supported)
 pwm
 lcd backlight
 sd card
+```
 
 Tested good:
+```
 UFS
 LCD display and its dsi drm controller
 touchscreen
@@ -35,6 +38,7 @@ cpufreq
 usb peri/adb shell
 spi/dma
 pon/pwr button/vol button
+```
 
 So with vendor nt36xxx_spi driver it is barely meet the requirement to Android/LOS. The success story of mainline similar to 
 xiaomi phone is from Linaro [3] and the overall procedure is compile full Android/LOS by them-selves.
@@ -46,9 +50,9 @@ the sys/vendor/odm/system_ext itself) and lost the dual boot with LOS20 for ramo
 I am sticking with LOS 19 recovery img [4] with the resulting mainline kernel image.gz-dtb by fastboot. The idea is to unpack the recovery
 initrd img and fastboot with the compiled zImage.gz-dtb as result. In addition, I also make use of the vendor bootloader capability
 of concat gz/tar img, simplify the androidboot img as below, and boot script is provided later as named boot_joyeuse.sh by the time.
-
+```
 [androidboot hdr][zImaage.gz-dtb][LOS recovery initrd.img.gz][firmware-mbn-tree.gz]
-
+```
 The repo arrangement is simple too. Basically the branch 'working' is a force pushed workspace. Usually I will leave and branch another
 working-2023xxxx branch for each kernel release or important commit. So if there are leave message, it will got wiped too. Please
 feel free to leave a issue ticket and reference to specific commit from within my tree in case of question and query. I will response 
@@ -62,11 +66,11 @@ It is nice to use my github nickname 99degree as copyright reference (and includ
 
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
 
-[1] https://github.com/torvalds/linux
-[2] https://github.com/map220v/sm7125-mainline
-[3] https://www.linaro.org/blog/aosp-on-pixel3-pocof1-running-aosp-with-mainline-kernel-on-form-factor-devices/
-[4] https://download.lineageos.org/devices/miatoll/builds
-[5] https://github.com/Aarqw12
-[6] https://github.com/99degree
-[7] https://www.youtube.com/@99degree14
-[8] https://twitter.com/99degree2
+ - [1] https://github.com/torvalds/linux
+ - [2] https://github.com/map220v/sm7125-mainline
+ - [3] https://www.linaro.org/blog/aosp-on-pixel3-pocof1-running-aosp-with-mainline-kernel-on-form-factor-devices/
+ - [4] https://download.lineageos.org/devices/miatoll/builds
+ - [5] https://github.com/Aarqw12
+ - [6] https://github.com/99degree
+ - [7] https://www.youtube.com/@99degree14
+ - [8] https://twitter.com/99degree2
