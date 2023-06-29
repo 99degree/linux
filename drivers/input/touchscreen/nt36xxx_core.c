@@ -928,6 +928,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	ts->dev = dev;
 	ts->regmap = regmap;
+	ts->irq = irq;
 
 	ts->data = chip_data;
 	memcpy(ts->mmap_data, chip_data->mmap, sizeof(ts->mmap_data));
@@ -944,10 +945,16 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx reset");
 
-	if (!irq) {
-		ts->irq_gpio = devm_gpiod_get_optional(dev, "irq", GPIOD_IN);
-		if (IS_ERR(ts->irq_gpio))
-			return PTR_ERR(ts->irq_gpio);
+	ts->irq_gpio = devm_gpiod_get_optional(dev, "irq", GPIOD_IN);
+	if (IS_ERR(ts->irq_gpio))
+		return PTR_ERR(ts->irq_gpio);
+
+	if (irq <= 0) {
+		ts->irq = gpiod_to_irq(ts->irq_gpio);
+		if (ts->irq <=0) {
+			dev_err(dev, "either need irq or irq-gpio specified in devicetree node!\n");
+			return -EINVAL;
+		}
 	}
 
 	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
@@ -992,8 +999,6 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			dev_err(dev, "failed set input device: %d\n", ret);
 			return ret;
 	}
-
-	ts->irq = gpiod_to_irq(ts->irq_gpio);
 
 	ret = devm_request_threaded_irq(dev, ts->irq, NULL, nt36xxx_irq_handler,
 			 IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT, dev_name(dev), ts);
