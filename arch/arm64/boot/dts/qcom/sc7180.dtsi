@@ -3070,7 +3070,7 @@
 				operating-points-v2 = <&dsi_opp_table>;
 				power-domains = <&rpmhpd SC7180_CX>;
 
-				phys = <&mdss_dsi0_phy>;
+				phys = <&mdss_dsi0_phy 0>;
 
 				#address-cells = <1>;
 				#size-cells = <0>;
