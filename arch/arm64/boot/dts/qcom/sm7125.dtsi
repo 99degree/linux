@@ -796,8 +796,8 @@
         clocks = <&rpmhcc RPMH_CXO_CLK>,
                  <&gcc GCC_DISP_GPLL0_CLK_SRC>,
                  <&gcc GCC_DISP_GPLL0_DIV_CLK_SRC>,
-                 <&dsi_phy 0>,
-                 <&dsi_phy 1>,
+                 <&mdss_dsi0_phy 0>,
+                 <&mdss_dsi0_phy 1>,
                  <0>,
                  <0>;
 	        clock-names = "bi_tcxo",
