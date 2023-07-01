@@ -611,7 +611,7 @@
         status = "okay";
 };
 
-&dsi0 {
+&mdss_dsi0 {
 	status = "okay";
 
 	vdda-supply = <&vreg_l3c_1p2>;
@@ -657,19 +657,19 @@
 			port@0 {
 				reg = <0>;
 				panel0_in: endpoint {
-					remote-endpoint = <&dsi0_out>;
+					remote-endpoint = <&mdss_dsi0_out>;
 				};
 			};
 		};
 	};
 };
 
-&dsi0_out {
+&mdss_dsi0_out {
         remote-endpoint = <&panel0_in>;
         data-lanes = <0 1 2 3>;
 };
 
-&dsi_phy {
+&mdss_dsi0_phy {
 	status = "okay";
 	vdds-supply = <&vreg_l4a_0p8>;
 };
@@ -1488,8 +1488,8 @@
 
 //&watchdog { status = "disabled" ;};
 
-//&dsi0 { status = "disabled"; };
-//&dsi_phy { status = "disabled"; };
+//&mdss_dsi0 { status = "disabled"; };
+//&mdss_dsi0_phy { status = "disabled"; };
 //&mdp { status = "disabled"; };
 //&mdss { status = "disabled"; };
 //&adreno_smmu { status = "disabled"; };
