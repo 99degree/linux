@@ -600,8 +600,12 @@ static int dsi_phy_get_id(struct msm_dsi_phy *phy)
 	int i;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dsi_phy");
-	if (!res)
-		return -EINVAL;
+	if (!res) {
+		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dsi0_phy");
+		if (!res) {
+			return -EINVAL;
+		}
+	}
 
 	for (i = 0; i < cfg->num_dsi_phy; i++) {
 		if (cfg->io_start[i] == res->start)
@@ -637,6 +641,7 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 	phy->pdev = pdev;
 
 	phy->id = dsi_phy_get_id(phy);
+	phy->id = 0;
 	if (phy->id < 0)
 		return dev_err_probe(dev, phy->id,
 				     "Couldn't identify PHY index\n");
@@ -658,9 +663,12 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 
 	if (phy->cfg->has_phy_lane) {
 		phy->lane_base = msm_ioremap_size(pdev, "dsi_phy_lane", &phy->lane_size);
-		if (IS_ERR(phy->lane_base))
-			return dev_err_probe(dev, PTR_ERR(phy->lane_base),
-					     "Failed to map phy lane base\n");
+		if (IS_ERR(phy->lane_base)) {
+			phy->lane_base = msm_ioremap_size(pdev, "dsi0_phy_lane", &phy->lane_size);
+			if (IS_ERR(phy->lane_base) {
+				return dev_err_probe(dev, PTR_ERR(phy->lane_base),
+			}				     "Failed to map phy lane base\n");
+		}
 	}
 
 	if (phy->cfg->has_phy_regulator) {
