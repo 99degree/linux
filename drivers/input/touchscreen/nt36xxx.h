@@ -133,8 +133,6 @@ struct nt36xxx_trim_table {
 int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			struct regmap *regmap);
 
-void nt36xxx_remove(struct device *dev);
-
 extern const struct dev_pm_ops nt36xxx_pm_ops;
 extern const u32 nt36675_memory_maps[];
 
