@@ -235,10 +235,10 @@
 			<&sleep_clk>,
 			<&gcc GCC_MMSS_GPLL0_CLK>,
 			<&gcc GCC_MMSS_GPLL0_DIV_CLK>,
-			<&dsi0_phy 1>,
-			<&dsi0_phy 0>,
-			<&dsi1_phy 1>,
-			<&dsi1_phy 0>,
+			<&mdss_dsi0_phy 1>,
+			<&mdss_dsi0_phy 0>,
+			<0>,
+			<0>,
 			<0>,
 			<0>;
 };
