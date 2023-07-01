@@ -25,6 +25,8 @@
 #include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
 #include <linux/device.h>
+#include <linux/devm-helpers.h>
+
 #include "nt36xxx.h"
 
 /* Main mmap to spi addr */
@@ -86,8 +88,7 @@ struct nt36xxx_ts {
 	struct nt36xxx_fw_info fw_info;
 	struct nt36xxx_abs_object abs_obj;
 
-	struct workqueue_struct *nvt_fw_dl_wq;
-	struct delayed_work nvt_fwu_work;
+	struct delayed_work work;
 
 	/* this is a duplicate with nt36xxx_chip_data and since the address might
 	 * change in boot/init/download stages so make it a copy of initial map and
@@ -344,7 +345,7 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			break;
 		}
 
-		queue_delayed_work(ts->nvt_fw_dl_wq, &ts->nvt_fwu_work, msecs_to_jiffies(50));
+		schedule_delayed_work(&ts->work, 0);
 		goto xfer_error;
 	}
 
@@ -838,7 +839,7 @@ exit:
 }
 
 static void nt36xxx_boot_download_firmware(struct work_struct *work) {
-        struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, nvt_fwu_work.work);
+        struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 
 	mutex_lock(&ts->lock);
         pm_runtime_disable(ts->dev);
@@ -1007,48 +1008,15 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			return ret;
 	}
 
-	ts->nvt_fw_dl_wq = alloc_ordered_workqueue("nt36xxx_fw_dl_wq", WQ_MEM_RECLAIM);
+	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_boot_download_firmware);
 
-	INIT_DELAYED_WORK(&ts->nvt_fwu_work, nt36xxx_boot_download_firmware);
-
-	queue_delayed_work(ts->nvt_fw_dl_wq, &ts->nvt_fwu_work, msecs_to_jiffies(0));
+	schedule_delayed_work(&ts->work, 0);
 
 	dev_info(dev, "probe ok!");
 	return 0;
 }
 
 EXPORT_SYMBOL_GPL(nt36xxx_probe);
-
-void nt36xxx_remove(struct device *dev)
-{
-        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
-
-        dev_dbg(dev, "Exit");
-
-        if (ts->irq) {
-                disable_irq_nosync(ts->irq);
-        }
-
-	if (ts->nvt_fw_dl_wq) {
-		cancel_delayed_work(&ts->nvt_fwu_work);
-		flush_workqueue(ts->nvt_fw_dl_wq);
-		destroy_workqueue(ts->nvt_fw_dl_wq);
-	}
-
-	mutex_destroy(&ts->lock);
-
-        if (ts->input) {
-                input_unregister_device(ts->input);
-                ts->input = NULL;
-        }
-
-        dev_set_drvdata(dev, NULL);
-
-        ts->mmap = NULL;
-
-        dev_dbg(dev, "Exit ok!");
-}
-EXPORT_SYMBOL_GPL(nt36xxx_remove);
 
 static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 {
@@ -1060,10 +1028,7 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 	mutex_lock(&ts->lock);
 	disable_irq_nosync(ts->irq);
 
-	if (ts->nvt_fw_dl_wq) {
-		cancel_delayed_work(&ts->nvt_fwu_work);
-		flush_workqueue(ts->nvt_fw_dl_wq);
-	}
+	cancel_delayed_work(&ts->work);
 
 	if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
@@ -1083,7 +1048,7 @@ static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 
 	dev_dbg(dev, "resuming\n");
 
-	queue_delayed_work(ts->nvt_fw_dl_wq, &ts->nvt_fwu_work, msecs_to_jiffies(0));
+	schedule_delayed_work(&ts->work, 0);
 
 	return 0;
 }
