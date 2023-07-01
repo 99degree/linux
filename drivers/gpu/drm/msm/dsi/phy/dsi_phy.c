@@ -665,9 +665,10 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 		phy->lane_base = msm_ioremap_size(pdev, "dsi_phy_lane", &phy->lane_size);
 		if (IS_ERR(phy->lane_base)) {
 			phy->lane_base = msm_ioremap_size(pdev, "dsi0_phy_lane", &phy->lane_size);
-			if (IS_ERR(phy->lane_base) {
+			if (IS_ERR(phy->lane_base)) {
 				return dev_err_probe(dev, PTR_ERR(phy->lane_base),
-			}				     "Failed to map phy lane base\n");
+							"Failed to map phy lane base\n");
+			}
 		}
 	}
 
