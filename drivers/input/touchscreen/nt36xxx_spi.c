@@ -161,12 +161,6 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 				   &nt36xxx_spi_input_id, regmap);
 }
 
-static void nt36xxx_spi_remove(struct spi_device *spi)
-{
-	nt36xxx_remove(&spi->dev);
-	return;
-}
-
 const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36675_memory_maps,
@@ -198,7 +192,6 @@ static struct spi_driver nt36xxx_spi_driver = {
 		.pm = pm_sleep_ptr(&nt36xxx_pm_ops),
 	},
 	.probe = nt36xxx_spi_probe,
-	.remove = nt36xxx_spi_remove,
 	.id_table = nt36xxx_spi_ids,
 };
 module_spi_driver(nt36xxx_spi_driver);
