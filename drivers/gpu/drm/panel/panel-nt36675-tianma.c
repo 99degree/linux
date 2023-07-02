@@ -3,6 +3,7 @@
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
 //   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
 
+#include <linux/backlight.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
@@ -17,12 +18,19 @@
 
 #define NT36675_VREG_MAX                3
 
+#define NUM_GAMMA_LEVELS        28
+#define GAMMA_TABLE_COUNT       23
+
+#define MAX_BRIGHTNESS          (NUM_GAMMA_LEVELS - 1)
+
 struct nt36675_tianma {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct gpio_desc *reset_gpio;
 	struct regulator_bulk_data vregs[NT36675_VREG_MAX];
+	struct backlight_device *backlight;
 	bool prepared;
+	bool enabled;
 };
 
 static inline struct nt36675_tianma *to_nt36675_tianma(struct drm_panel *panel)
@@ -69,8 +77,10 @@ static int nt36675_tianma_init_vregs(struct nt36675_tianma *nt, struct device *d
 		static const u8 d[] = { seq };				\
 		int ret;						\
 		ret = mipi_dsi_dcs_write_buffer(dsi, d, ARRAY_SIZE(d));	\
-		if (ret < 0)						\
+		if (ret < 0) {						\
+			dev_err(dev, "%s %d", __func__, __LINE__);	\
 			return ret;					\
+		}							\
 	} while (0)
 
 static void nt36675_tianma_reset(struct nt36675_tianma *ctx)
@@ -209,8 +219,12 @@ static int nt36675_tianma_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
+	//WARN_ON(true);
+
 	if (ctx->prepared)
 		return 0;
+
+	dev_dbg(dev, "%s %d", __func__, __LINE__);
 
 #ifdef ENABLE_REGULATOR
 	//TODO: change value
@@ -229,20 +243,46 @@ static int nt36675_tianma_prepare(struct drm_panel *panel)
 #endif
 	nt36675_tianma_reset(ctx);
 
-	ret = nt36675_tianma_on(ctx);
-	if (ret < 0) {
-		dev_err(dev, "Failed to initialize panel: %d\n", ret);
-		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		return ret;
-	}
-
 	ctx->prepared = true;
 	return 0;
+
 #ifdef ENABLE_REGULATOR
 end:
-#endif
 	regulator_disable(ctx->vregs[0].consumer);
 	return ret;
+#endif
+}
+
+static int nt36675_tianma_enable(struct drm_panel *panel)
+{
+        struct nt36675_tianma *ctx = to_nt36675_tianma(panel);
+        struct device *dev = &ctx->dsi->dev;
+        int ret;
+
+	//WARN_ON(true);
+
+	dev_dbg(dev, "%s %d", __func__, __LINE__);
+
+        if (ctx->enabled)
+                return 0;
+
+        ret = nt36675_tianma_on(ctx);
+        if (ret < 0) {
+                dev_err(dev, "Failed to initialize panel: %d\n", ret);
+                gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+		usleep_range(10000, 11000);
+                return ret;
+        }
+
+        if (ctx->backlight) {
+                ret = backlight_enable(ctx->backlight);
+                if (ret < 0)
+                        dev_err(dev, "backlight enable failed %d\n", ret);
+        }
+
+        ctx->enabled = true;
+
+        return 0;
 }
 
 static int nt36675_tianma_unprepare(struct drm_panel *panel)
@@ -251,18 +291,44 @@ static int nt36675_tianma_unprepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
+	dev_dbg(dev, "%s %d", __func__, __LINE__);
+
 	if (!ctx->prepared)
 		return 0;
 
-	ret = nt36675_tianma_off(ctx);
-	if (ret < 0)
-		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
-
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	usleep_range(10000, 11000);
 
 	ctx->prepared = false;
 	return 0;
 }
+
+static int nt36675_tianma_disable(struct drm_panel *panel)
+{
+        struct nt36675_tianma *ctx = to_nt36675_tianma(panel);
+        struct device *dev = &ctx->dsi->dev;
+        int ret = 0;
+
+	dev_dbg(dev, "%s %d", __func__, __LINE__);
+
+        if (!ctx->enabled)
+                return 0;
+
+        if (ctx->backlight) {
+                ret = backlight_disable(ctx->backlight);
+                if (ret < 0)
+                        dev_err(dev, "backlight disable failed %d\n", ret);
+        }
+
+        ret = nt36675_tianma_off(ctx);
+        if (ret < 0)
+                dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+
+
+        ctx->enabled = false;
+        return 0;
+}
+
 
 static const struct drm_display_mode nt36675_tianma_mode = {
 	.clock = (1080 + 20 + 4 + 22) * (2400 + 10 + 2 + 30) * 60 / 1000,
@@ -297,9 +363,57 @@ static int nt36675_tianma_get_modes(struct drm_panel *panel,
 	return 1;
 }
 
+static int nt36675_set_brightness(struct backlight_device *bdev)
+{
+	struct nt36675_tianma *ctx = bl_get_data(bdev);
+	struct device *dev = &ctx->dsi->dev;
+        struct mipi_dsi_device *dsi = ctx->dsi;
+        int brightness = bdev->props.brightness;
+	int ret;
+
+	dev_dbg(dev, "%s %d %d", __func__, __LINE__, brightness);
+
+        dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+        ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x00b8);
+        if (ret < 0) {
+                dev_err(dev, "Failed to set display brightness: %d\n", ret);
+                return ret;
+        }
+
+        return 0;
+}
+
+static const struct backlight_ops nt36675_backlight_ops = {
+        .update_status  = nt36675_set_brightness,
+};
+
+static int nt36675_backlight_register(struct nt36675_tianma *ctx, u32 max_brightness)
+{
+        struct backlight_properties props = {
+                .type           = BACKLIGHT_RAW,
+                .brightness     = max_brightness,
+                .max_brightness = max_brightness,
+        };
+        struct device *dev = &ctx->dsi->dev;
+        int ret = 0;
+
+        ctx->backlight = devm_backlight_device_register(dev, "panel", dev, ctx,
+                                                     &nt36675_backlight_ops,
+                                                     &props);
+        if (IS_ERR(ctx->backlight)) {
+                ret = PTR_ERR(ctx->backlight);
+                dev_err(dev, "error registering backlight device (%d)\n", ret);
+        }
+
+        return ret;
+}
+
 static const struct drm_panel_funcs nt36675_tianma_panel_funcs = {
 	.prepare = nt36675_tianma_prepare,
 	.unprepare = nt36675_tianma_unprepare,
+	.enable = nt36675_tianma_enable,
+	.disable = nt36675_tianma_disable,
 	.get_modes = nt36675_tianma_get_modes,
 };
 
@@ -307,9 +421,10 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
 	struct nt36675_tianma *ctx;
+	u32 max_brightness;
 	int ret;
 
-	dev_info(dev, "%s", __func__);
+	dev_dbg(dev, "%s", __func__);
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
@@ -318,6 +433,9 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
         if (ret)
                 return dev_err_probe(dev, ret, "Regulator init failure.\n");
 #endif
+
+	/* since reset = 0 is the after reset state, inorder to reduce flickering */
+	/* let reset to be 0 after bootloader is the best choice */
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->reset_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
@@ -346,7 +464,17 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
 		return ret;
 	}
 
-	pr_info("nt36675_tianma_probe ok!\n");
+        ret = device_property_read_u32(dev, "max-brightness", &max_brightness);
+        if (ret)
+                max_brightness = MAX_BRIGHTNESS;
+        if (max_brightness > MAX_BRIGHTNESS) {
+                dev_err(dev, "illegal max brightness specified\n");
+                max_brightness = MAX_BRIGHTNESS;
+        }
+
+	//nt36675_backlight_register(ctx, max_brightness);
+
+	dev_dbg(dev, "nt36675_tianma_probe ok!\n");
 	return 0;
 }
 
