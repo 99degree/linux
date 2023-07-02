@@ -1010,7 +1010,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_boot_download_firmware);
 
-	schedule_delayed_work(&ts->work, 0);
+	schedule_delayed_work(&ts->work, 100000);
 
 	dev_info(dev, "probe ok!");
 	return 0;
