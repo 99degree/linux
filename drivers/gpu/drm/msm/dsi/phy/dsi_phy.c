@@ -641,7 +641,6 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 	phy->pdev = pdev;
 
 	phy->id = dsi_phy_get_id(phy);
-	phy->id = 0;
 	if (phy->id < 0)
 		return dev_err_probe(dev, phy->id,
 				     "Couldn't identify PHY index\n");
