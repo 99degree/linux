@@ -16,18 +16,15 @@
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
 
-#define NT36675_VREG_MAX                3
-
-#define NUM_GAMMA_LEVELS        28
-#define GAMMA_TABLE_COUNT       23
+#define NUM_GAMMA_LEVELS        256
 
 #define MAX_BRIGHTNESS          (NUM_GAMMA_LEVELS - 1)
+#define NORMAL_BRIGHTNESS	0x00b8
 
 struct nt36675_tianma {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
 	struct gpio_desc *reset_gpio;
-	struct regulator_bulk_data vregs[NT36675_VREG_MAX];
 	struct backlight_device *backlight;
 	bool prepared;
 	bool enabled;
@@ -38,40 +35,20 @@ static inline struct nt36675_tianma *to_nt36675_tianma(struct drm_panel *panel)
 	return container_of(panel, struct nt36675_tianma, panel);
 }
 
-#ifdef ENABLE_REGULATOR
-static int nt36675_tianma_init_vregs(struct nt36675_tianma *nt, struct device *dev)
+static int nt36675_tianma_init_vregs(struct device *dev)
 {
         int ret;
+        const char * vregs[] = { "vdda", "vddio" };
 
-        nt->vregs[0].supply = "vddio";
-        nt->vregs[1].supply = "lab";
-        nt->vregs[2].supply = "ibb";
-        ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(nt->vregs),
-                                      nt->vregs);
-        if (ret < 0)
+        ret = devm_regulator_bulk_get_enable(dev, ARRAY_SIZE(vregs),
+                                      vregs);
+        if (ret < 0) {
+		dev_err(dev, "Fail to enable regulators %s and %s", vregs[0], vregs[1]);
                 return ret;
-
-	/* vddio */
-        ret = regulator_is_supported_voltage(nt->vregs[0].consumer,
-                                             1800000, 1904000);
-        if (!ret)
-                return -EINVAL;
-
-	/* lab */
-        ret = regulator_is_supported_voltage(nt->vregs[1].consumer,
-                                             4600000, 6000000);
-        if (!ret)
-                return -EINVAL;
-
-	/* ibb */
-        ret = regulator_is_supported_voltage(nt->vregs[2].consumer,
-                                             4600000, 6000000);
-        if (!ret)
-                return -EINVAL;
+	}
 
         return 0;
 }
-#endif
 
 #define dsi_dcs_write_seq(dsi, seq...) do {				\
 		static const u8 d[] = { seq };				\
@@ -85,10 +62,6 @@ static int nt36675_tianma_init_vregs(struct nt36675_tianma *nt, struct device *d
 
 static void nt36675_tianma_reset(struct nt36675_tianma *ctx)
 {
-//	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-//	usleep_range(10000, 11000);
-//	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
-//	usleep_range(10000, 11000);
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(10000, 11000);
         gpiod_set_value_cansleep(ctx->reset_gpio, 0);
@@ -217,40 +190,16 @@ static int nt36675_tianma_prepare(struct drm_panel *panel)
 {
 	struct nt36675_tianma *ctx = to_nt36675_tianma(panel);
 	struct device *dev = &ctx->dsi->dev;
-	int ret;
-
-	//WARN_ON(true);
 
 	if (ctx->prepared)
 		return 0;
 
 	dev_dbg(dev, "%s %d", __func__, __LINE__);
 
-#ifdef ENABLE_REGULATOR
-	//TODO: change value
-        ret = regulator_enable(ctx->vregs[0].consumer);
-        if (ret)
-                return ret;
-        usleep_range(2000, 5000);
-
-        ret = regulator_enable(ctx->vregs[1].consumer);
-        if (ret)
-                goto end;
-
-        ret = regulator_enable(ctx->vregs[2].consumer);
-        if (ret)
-                goto end;
-#endif
 	nt36675_tianma_reset(ctx);
 
 	ctx->prepared = true;
 	return 0;
-
-#ifdef ENABLE_REGULATOR
-end:
-	regulator_disable(ctx->vregs[0].consumer);
-	return ret;
-#endif
 }
 
 static int nt36675_tianma_enable(struct drm_panel *panel)
@@ -258,8 +207,6 @@ static int nt36675_tianma_enable(struct drm_panel *panel)
         struct nt36675_tianma *ctx = to_nt36675_tianma(panel);
         struct device *dev = &ctx->dsi->dev;
         int ret;
-
-	//WARN_ON(true);
 
 	dev_dbg(dev, "%s %d", __func__, __LINE__);
 
@@ -289,7 +236,6 @@ static int nt36675_tianma_unprepare(struct drm_panel *panel)
 {
 	struct nt36675_tianma *ctx = to_nt36675_tianma(panel);
 	struct device *dev = &ctx->dsi->dev;
-	int ret;
 
 	dev_dbg(dev, "%s %d", __func__, __LINE__);
 
@@ -375,7 +321,7 @@ static int nt36675_set_brightness(struct backlight_device *bdev)
 
         dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-        ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x00b8);
+        ret = mipi_dsi_dcs_set_display_brightness(dsi, brightness);
         if (ret < 0) {
                 dev_err(dev, "Failed to set display brightness: %d\n", ret);
                 return ret;
@@ -392,7 +338,7 @@ static int nt36675_backlight_register(struct nt36675_tianma *ctx, u32 max_bright
 {
         struct backlight_properties props = {
                 .type           = BACKLIGHT_RAW,
-                .brightness     = max_brightness,
+                .brightness     = NORMAL_BRIGHTNESS,
                 .max_brightness = max_brightness,
         };
         struct device *dev = &ctx->dsi->dev;
@@ -428,11 +374,10 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
-#ifdef ENABLE_REGULATOR
-        ret = nt36675_tianma_init_vregs(ctx, dev);
+
+        ret = nt36675_tianma_init_vregs(dev);
         if (ret)
                 return dev_err_probe(dev, ret, "Regulator init failure.\n");
-#endif
 
 	/* since reset = 0 is the after reset state, inorder to reduce flickering */
 	/* let reset to be 0 after bootloader is the best choice */
@@ -472,7 +417,7 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
                 max_brightness = MAX_BRIGHTNESS;
         }
 
-	//nt36675_backlight_register(ctx, max_brightness);
+	nt36675_backlight_register(ctx, max_brightness);
 
 	dev_dbg(dev, "nt36675_tianma_probe ok!\n");
 	return 0;
@@ -492,7 +437,7 @@ static void nt36675_tianma_remove(struct mipi_dsi_device *dsi)
 }
 
 static const struct of_device_id nt36675_tianma_of_match[] = {
-	{ .compatible = "mdss,nt36675-tianma" }, // FIXME
+	{ .compatible = "mdss,nt36675-tianma" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, nt36675_tianma_of_match);
