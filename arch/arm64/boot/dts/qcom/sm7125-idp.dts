@@ -100,6 +100,49 @@
                 };
 
         };
+
+        touch_vdda_1p2: touch_vdda_1p2-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "touch_vdda_1p2";
+
+                vin-supply = <&vreg_l3c_1p2>;
+                regulator-min-microvolt = <1200000>;
+                regulator-max-microvolt = <1200000>;
+
+        };
+
+        touch_vddio_2p8: touch_vddio_2v8-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "touch_vddio_2v8";
+
+                vin-supply = <&vreg_l18a_2p8>;
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+
+		regulator-always-on;
+        };
+
+
+        panel_vdda_1p2: panel_vdda_1p2-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "touch_vdda_1p2";
+
+                vin-supply = <&vreg_l3c_1p2>;
+                regulator-min-microvolt = <1200000>;
+                regulator-max-microvolt = <1200000>;
+
+		regulator-always-on;
+        };
+
+        panel_vddio_2p8: panel_vddio_2v8-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "touch_vddio_2v8";
+
+                vin-supply = <&vreg_l18a_2p8>;
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+        };
+
 };
 
 &soc {
@@ -133,15 +176,6 @@
 	watchdog: watchdog@17c10000 {
 	};
 };
-
-&CPU0 { compatible = "qcom,kryo465"; };
-&CPU1 { compatible = "qcom,kryo465"; };
-&CPU2 { compatible = "qcom,kryo465"; };
-&CPU3 { compatible = "qcom,kryo465"; };
-&CPU4 { compatible = "qcom,kryo465"; };
-&CPU5 { compatible = "qcom,kryo465"; };
-&CPU6 { compatible = "qcom,kryo465"; };
-&CPU7 { compatible = "qcom,kryo465"; };
 
 /*
  * Reserved memory changes
@@ -614,9 +648,9 @@
 &mdss_dsi0 {
 	status = "okay";
 
-	vdda-supply = <&vreg_l3c_1p2>;
-	vddio-supply = <&vreg_l18a_2p8>;
-	vdds-supply = <&vreg_l18a_2p8>;
+	vdda-supply = <&panel_vdda_1p2>;
+	vddio-supply = <&panel_vddio_2p8>;
+	vdds-supply = <&panel_vddio_2p8>;
 
 	panel0: panel@0 {
 		compatible = "mdss,nt36675-tianma", 
@@ -624,9 +658,9 @@
 
 		reg = <0>;
 
-		vdda-supply = <&vreg_l8c_1p8>;
-		vdd3p3-supply = <&vreg_l18a_2p8>;
-		vddio-supply = <&vreg_l18a_2p8>;
+		vdda-supply = <&panel_vdda_1p2>;
+		vdd3p3-supply = <&panel_vddio_2p8>;
+		vddio-supply = <&panel_vddio_2p8>;
 
 		/* display_sde.dtsi
                 vddio-supply = <&L13A>;
@@ -920,10 +954,8 @@
 
                 /* Regulator configuration */
                 //vddio-supply = <&vreg_l18a>;
-                //lab-supply = <&lcdb_ldo_vreg>;
-                //ibb-supply = <&lcdb_ncp_vreg>;
-		vdd-supply = <0>;
-		vio-supply = <0>;
+		vdda-supply = <&touch_vdda_1p2>;
+		vddio-supply = <&touch_vddio_2p8>;
 
 		status = "okay";
 	};
