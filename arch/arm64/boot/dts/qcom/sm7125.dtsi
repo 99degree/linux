@@ -3,6 +3,8 @@
  * Snapdragon 720G (sm7125) specific device tree
  *
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, map220v <https://github.com/map220v>
+ * Copyright (c) 2023, 99degree <https://github.com/99degree>
  */
 
 #include <dt-bindings/dma/qcom-gpi.h>
@@ -830,6 +832,10 @@
 	};
 };
 
+&apps_rsc {
+	power-domains = <&CLUSTER_PD>;
+};
+
 /delete-node/ &gpu_opp_table;
 &gpu {
 	gpu_opp_table: opp-table {
@@ -993,4 +999,15 @@
                 <&gpi_dma1 1 5 QCOM_GPI_SPI>;
 
 	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;	
+};
+
+&remoteproc_mpss {
+	qcom,qmp = <&aoss_qmp>;
+
+	resets = <&aoss_reset AOSS_CC_MSS_RESTART>,
+		 <&pdc_reset PDC_MODEM_SYNC_RESET>;
+	reset-names = "mss_restart", "pdc_reset";
+
+	qcom,halt-regs = <&tcsr_mutex_regs 0x23000 0x25000 0x24000>;
+	qcom,spare-regs = <&tcsr_regs 0xb3e4>;
 };
