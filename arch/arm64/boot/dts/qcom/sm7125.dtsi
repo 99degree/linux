@@ -3,6 +3,8 @@
  * Snapdragon 720G (sm7125) specific device tree
  *
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, map220v <https://github.com/map220v>
+ * Copyright (c) 2023, 99degree <https://github.com/99degree>
  */
 
 #include <dt-bindings/dma/qcom-gpi.h>
@@ -13,13 +15,19 @@
 
 #include "sc7180.dtsi"
 
+/delete-node/ &rmtfs_mem;
+/delete-node/ &ipa_fw_mem;
+
 /* SM7125 uses Kryo 465 instead of Kryo 468 */
 &CPU0 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+	power-domain-names = "psci";
+	power-domains = <&CPU_PD0>;
 };
 
 &L2_0 {
@@ -33,11 +41,14 @@
 };
 
 &CPU1 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD1>;
 };
 
 &L2_100 {
@@ -46,11 +57,14 @@
 };
 
 &CPU2 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD2>;
 };
 
 &L2_200 {
@@ -59,11 +73,14 @@
 };
 
 &CPU3 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD3>;
 };
 
 &L2_300 {
@@ -72,11 +89,14 @@
 };
 
 &CPU4 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD4>;
 };
 
 &L2_400 {
@@ -85,11 +105,14 @@
 };
 
 &CPU5 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x8000>;
 	i-cache-size = <0x8000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD5>;
 };
 
 &L2_500 {
@@ -98,11 +121,14 @@
 };
 
 &CPU6 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x10000>;
 	i-cache-size = <0x10000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD6>;
 };
 
 &L2_600 {
@@ -111,11 +137,14 @@
 };
 
 &CPU7 {
+        ///delete-property/ cpu-idle-states;
 	compatible = "qcom,kryo465";
-	///delete-property/ operating-points-v2;
 
 	d-cache-size = <0x10000>;
 	i-cache-size = <0x10000>;
+
+        power-domain-names = "psci";
+        power-domains = <&CPU_PD7>;
 };
 
 &L2_700 {
@@ -123,14 +152,77 @@
 	cache-level = <2>;
 };
 
-&soc {
-        dummy_lut_clk: dummy_clk {
-                compatible = "fixed-factor-clock";
-                clocks = <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>;
-                #clock-cells = <2>;
-                clock-div = <1>;
-                clock-mult = <1>;
-        };
+/ { 
+	psci {
+                CPU_PD0: cpu0 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD1: cpu1 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD2: cpu2 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD3: cpu3 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD4: cpu4 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD5: cpu5 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&LITTLE_CPU_SLEEP_0
+                                           &LITTLE_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD6: cpu6 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&BIG_CPU_SLEEP_0
+                                           &BIG_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CPU_PD7: cpu7 {
+                        #power-domain-cells = <0>;
+                        power-domains = <&CLUSTER_PD>;
+                        domain-idle-states = <&BIG_CPU_SLEEP_0
+                                           &BIG_CPU_SLEEP_1
+                                           &CLUSTER_SLEEP_0>;
+                };
+
+                CLUSTER_PD: cpu-cluster0 {
+                        #power-domain-cells = <0>;
+                        domain-idle-states = <&CLUSTER_SLEEP_0>;
+                };
+	};
 };
 
 // SC7180 doesn't have UFS yet.
@@ -149,6 +241,7 @@
 		#reset-cells = <1>;
 		resets = <&gcc GCC_UFS_PHY_BCR>;
 		reset-names = "rst";
+		dma-coherent;
 
 		iommus = <&apps_smmu 0xa0 0x0>;
 
@@ -175,7 +268,7 @@
 			<0 0>,
 			<0 0>,
 			<37500000 150000000>,
-			<0 0>,
+			<75000000 300000000>,
 			<0 0>,
 			<0 0>,
 			<0 300000000>;
@@ -185,7 +278,7 @@
 
 	ufs_mem_phy: phy@1d87000 {
 		compatible = "qcom,sm7125-qmp-ufs-phy", "qcom,sdm845-qmp-ufs-phy";
-		reg = <0 0x01d87000 0 0xddc>;
+		reg = <0 0x01d87000 0 0x400>;
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
@@ -593,6 +686,14 @@
 		};
 	};
 
+	lpass_cpu {
+		status = "okay";
+	};
+	
+	lpasscc {
+		status = "okay";
+	};
+	
 	sound: sound {
 	};
 
@@ -731,6 +832,10 @@
 	};
 };
 
+&apps_rsc {
+	power-domains = <&CLUSTER_PD>;
+};
+
 /delete-node/ &gpu_opp_table;
 &gpu {
 	gpu_opp_table: opp-table {
@@ -787,6 +892,26 @@
 	};
 };
 
+&dispcc {
+	/*
+		the 'gcc_disp_gpll0_div_clk_src' clk is not avail in sc7180
+	*/
+        clocks = <&rpmhcc RPMH_CXO_CLK>,
+                 <&gcc GCC_DISP_GPLL0_CLK_SRC>,
+                 <&gcc GCC_DISP_GPLL0_DIV_CLK_SRC>,
+                 <&mdss_dsi0_phy 0>,
+                 <&mdss_dsi0_phy 1>,
+                 <0>,
+                 <0>;
+	        clock-names = "bi_tcxo",
+                              "gcc_disp_gpll0_clk_src",
+                              "gcc_disp_gpll0_div_clk_src",
+                              "dsi0_phy_pll_out_byteclk",
+                              "dsi0_phy_pll_out_dsiclk",
+                              "dp_phy_pll_link_clk",
+                              "dp_phy_pll_vco_div_clk";
+};
+
 &lpasscc {
 	status = "disabled";
 };
@@ -800,18 +925,10 @@
 };
 
 &mdp {
-#if 0
-	reg = <0 0x0ae01000 0 0x8f000>,
-		  <0 0x0aeac000 0 0x214>,
-		  <0 0x0aeb0000 0 0x2008>,
-		  <0 0x0aeb8000 0 0x3000>;
-	reg-names = "mdp", "regdma", "vbif", "vbif_nrt";
-#else
         reg = <0 0x0ae01000 0 0x8f000>,
                   <0 0x0aeac000 0 0x214>,
                   <0 0x0aeb0000 0 0x2008>;
         reg-names = "mdp", "regdma", "vbif";
-#endif
 
         status = "okay";
 
@@ -823,6 +940,42 @@
                  <&dispcc DISP_CC_MDSS_VSYNC_CLK>;
         clock-names = "bus", "iface", "rot", "lut", "core",
                       "vsync";
+
+        assigned-clocks = <&dispcc DISP_CC_MDSS_VSYNC_CLK>,
+                          <&dispcc DISP_CC_MDSS_ROT_CLK>,
+                          <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                          <&dispcc DISP_CC_MDSS_MDP_LUT_CLK>;
+        assigned-clock-rates = <19200000>,
+                               <19200000>,
+                               <19200000>,
+                               <19200000>;
+
+	ports {
+		port@1 {
+			reg = <1>;
+			dsi_out: endpoint {
+			};
+		};
+	};
+
+};
+
+&mdss {
+        clocks = <&gcc GCC_DISP_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_AHB_CLK>,
+                 <&dispcc DISP_CC_MDSS_MDP_CLK>,
+                 <&gcc GCC_DISP_HF_AXI_CLK>;
+        clock-names = "iface", "ahb", "core", "bus";
+};
+
+&mdss_dsi0 {
+	phys = <&mdss_dsi0_phy>;
+};
+
+&mdss_dsi0_phy {
+                                reg-names = "dsi_phy",
+                                            "dsi_phy_lane",
+                                            "dsi_pll";
 };
 
 &venus {
@@ -833,4 +986,28 @@
 	dmas = <&gpi_dma1 0 1 QCOM_GPI_I2C>,
 			<&gpi_dma1 1 1 QCOM_GPI_I2C>;
 	dma-names = "tx", "rx";
+};
+
+&spi11 {
+	/* //from atoll dtsi 
+		dmas = <&gpi_dma1 0 5 1 64 0>,
+		       <&gpi_dma1 1 5 1 64 0>;	
+	*/
+
+	dma-names = "tx", "rx";
+        dmas = <&gpi_dma1 0 5 QCOM_GPI_SPI>,
+                <&gpi_dma1 1 5 QCOM_GPI_SPI>;
+
+	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;	
+};
+
+&remoteproc_mpss {
+	qcom,qmp = <&aoss_qmp>;
+
+	resets = <&aoss_reset AOSS_CC_MSS_RESTART>,
+		 <&pdc_reset PDC_MODEM_SYNC_RESET>;
+	reset-names = "mss_restart", "pdc_reset";
+
+	qcom,halt-regs = <&tcsr_mutex_regs 0x23000 0x25000 0x24000>;
+	qcom,spare-regs = <&tcsr_regs 0xb3e4>;
 };
