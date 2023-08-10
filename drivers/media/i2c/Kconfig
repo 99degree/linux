@@ -34,6 +34,9 @@ config VIDEO_APTINA_PLL
 config VIDEO_CCS_PLL
 	tristate
 
+config OTP_EEPROM
+	tristate
+
 config VIDEO_AR0521
 	tristate "ON Semiconductor AR0521 sensor support"
 	depends on I2C && VIDEO_DEV
@@ -1622,6 +1625,20 @@ config VIDEO_THS7303
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called ths7303.
+
+config VIDEO_GC8034
+        tristate "GC8034 sensor support"
+        depends on OF_GPIO
+        depends on I2C && VIDEO_DEV
+        select VIDEO_V4L2_SUBDEV_API
+        select MEDIA_CONTROLLER
+        select V4L2_FWNODE
+	select OTP_EEPROM
+        help
+          This is a Video4Linux2 sensor driver for the GC8034 camera.
+
+          To compile this driver as a module, choose M here: the
+          module will be called imx335.
 
 endmenu
 
