@@ -14,6 +14,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
 #include "sm7125.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
@@ -32,6 +33,8 @@
 		hsuart0 = &uart3;
 		serial0 = &uart8;
 		wifi0 = &wifi;
+		qupv3_se9_i2c = &i2c9;
+		qupv3_se4_i2c = &i2c4;
 
 		// below alias should move to sm7125.dtsi
                 vreg_s1a = &vreg_s1a_1p1;
@@ -1138,6 +1141,24 @@
 	};
 };
 
+&q6afedai {
+        qi2s@127 {
+                reg = <QUINARY_MI2S_RX>;
+                qcom,sd-lines = <0>;
+        };
+
+        qi2s@128 {
+                reg = <QUINARY_MI2S_TX>;
+                qcom,sd-lines = <1>;
+        };
+};
+
+&q6asmdai {
+        dai@0 {
+                reg = <0>;
+        };
+};
+
 #if 0
 &qspi_clk {
 	pins = "gpio63";
@@ -1190,6 +1211,48 @@
 
 	/* Has external pullup */
 	bias-disable;
+};
+
+&i2c9 {
+        status = "ok";
+
+        qcom,clk-freq-out = <100000>;
+
+        tas2562_r: tas2562@4c {
+                #sound-dai-cells = <0>;
+                compatible = "ti,tas2562";
+                reg = <0x4c>;
+                ti,left-channel = <0x4c>; /* addr */
+                ti,channels = <1>; /* channel number */
+                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
+                ti,reset-gpio = <&tlmm 51 0>;
+                ti,irq-gpio = <&tlmm 33 0>;
+                ti,left-slot = <0>; /* <left slot number> */
+                ti,right-slot = <1>; /* <right slot number> */
+                ti,imon-slot-no = <0>; /* <current sense slot number> */
+                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
+                status = "ok";
+        };
+};
+
+&i2c4 {
+        status = "ok";
+
+        tas2562_l: tas2562@4c {
+                #sound-dai-cells = <0>;
+                compatible = "ti,tas2562";
+                reg = <0x4c>;
+                ti,left-channel = <0x4c>; /* addr */
+                ti,channels = <1>; /* channel number */
+                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
+                ti,reset-gpio = <&tlmm 51 0>;
+                ti,irq-gpio = <&tlmm 33 0>;
+                ti,left-slot = <0>; /* <left slot number> */
+                ti,right-slot = <1>; /* <right slot number> */
+                ti,imon-slot-no = <0>; /* <current sense slot number> */
+                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
+                status = "ok";
+        };
 };
 
 &qup_uart3_cts {
@@ -1276,6 +1339,37 @@
 	drive-strength = <2>;
 	bias-disable;
 };
+
+&sound {
+        compatible = "qcom,sm8250-sndcard";
+        pinctrl-0 = <&i2s2_active>;
+        pinctrl-names = "default";
+        model = "Miatoll";
+
+        mm1-dai-link {
+                link-name = "MultiMedia1";
+                cpu {
+                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+                };
+        };
+
+        i2s-dai-link {
+                link-name = "I2S Playback";
+                cpu {
+			/*TODO: tertery */
+                        sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
+                };
+
+                platform {
+                        sound-dai = <&q6routing>;
+                };
+
+                codec {
+                        sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
+                };
+        };
+};
+
 
 &tlmm {
 	/* adapt from https://github.com/ungeskriptet/linux/tree/sm7125 */
