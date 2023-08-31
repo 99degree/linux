@@ -305,11 +305,8 @@ static const struct adreno_info gpulist[] = {
 		.inactive_period = DRM_MSM_INACTIVE_PERIOD,
 		.quirks = ADRENO_QUIRK_HAS_CACHED_COHERENT,
 		.init = a6xx_gpu_init,
-		.speedbins = ADRENO_SPEEDBINS(
-			{ 0,   0 },
-			{ 169, 1 },
-			{ 174, 2 },
-		),
+		.zapfw = "a615_zap.mdt",
+		.hwcg = a615_hwcg,
 	}, {
 		.machine = "qcom,sm4350",
 		.chip_ids = ADRENO_CHIP_IDS(0x06010900),
@@ -507,6 +504,10 @@ MODULE_FIRMWARE("qcom/a530_zap.b00");
 MODULE_FIRMWARE("qcom/a530_zap.b01");
 MODULE_FIRMWARE("qcom/a530_zap.b02");
 MODULE_FIRMWARE("qcom/a540_gpmu.fw2");
+MODULE_FIRMWARE("qcom/a615_zap.mbt");
+MODULE_FIRMWARE("qcom/a615_zap.b00");
+MODULE_FIRMWARE("qcom/a615_zap.b01");
+MODULE_FIRMWARE("qcom/a615_zap.b02");
 MODULE_FIRMWARE("qcom/a619_gmu.bin");
 MODULE_FIRMWARE("qcom/a630_sqe.fw");
 MODULE_FIRMWARE("qcom/a630_gmu.bin");
@@ -740,7 +741,6 @@ static int adreno_probe(struct platform_device *pdev)
 {
 
 	int ret;
-
 	ret = component_add(&pdev->dev, &a3xx_ops);
 	if (ret)
 		return ret;
