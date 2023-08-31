@@ -1278,6 +1278,11 @@
 	cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;	
 };
 
+&pm6150l_wled {
+	interrupts = <0x5 0xd8 0x1 IRQ_TYPE_EDGE_RISING>;
+	interrupt-names = "ovp";
+};
+
 &remoteproc_mpss {
 	qcom,qmp = <&aoss_qmp>;
 
@@ -1288,3 +1293,4 @@
 	qcom,halt-regs = <&tcsr_mutex_regs 0x23000 0x25000 0x24000>;
 	qcom,spare-regs = <&tcsr_regs 0xb3e4>;
 };
+
