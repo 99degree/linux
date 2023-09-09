@@ -69,6 +69,7 @@
                 vreg_l9c = &vreg_l9c_2p9;
                 vreg_l10c = &vreg_l10c_3p3;
                 vreg_l11c = &vreg_l11c_3p3;
+
 	};
 
         chosen {
@@ -106,48 +107,6 @@
 			debounce-interval = <15>;
                 };
 
-        };
-
-        touch_vdda_1p2: touch_vdda_1p2-regulator {
-                compatible = "regulator-fixed";
-                regulator-name = "touch_vdda_1p2";
-
-                vin-supply = <&vreg_l3c_1p2>;
-                regulator-min-microvolt = <1200000>;
-                regulator-max-microvolt = <1200000>;
-
-        };
-
-        touch_vddio_2p8: touch_vddio_2v8-regulator {
-                compatible = "regulator-fixed";
-                regulator-name = "touch_vddio_2v8";
-
-                vin-supply = <&vreg_l18a_2p8>;
-                regulator-min-microvolt = <2800000>;
-                regulator-max-microvolt = <2800000>;
-
-		regulator-always-on;
-        };
-
-
-        panel_vdda_1p2: panel_vdda_1p2-regulator {
-                compatible = "regulator-fixed";
-                regulator-name = "touch_vdda_1p2";
-
-                vin-supply = <&vreg_l3c_1p2>;
-                regulator-min-microvolt = <1200000>;
-                regulator-max-microvolt = <1200000>;
-
-		regulator-always-on;
-        };
-
-        panel_vddio_2p8: panel_vddio_2v8-regulator {
-                compatible = "regulator-fixed";
-                regulator-name = "touch_vddio_2v8";
-
-                vin-supply = <&vreg_l18a_2p8>;
-                regulator-min-microvolt = <2800000>;
-                regulator-max-microvolt = <2800000>;
         };
 
 };
@@ -683,9 +642,9 @@
 &mdss_dsi0 {
 	status = "okay";
 
-	vdda-supply = <&panel_vdda_1p2>;
-	vddio-supply = <&panel_vddio_2p8>;
-	vdds-supply = <&panel_vddio_2p8>;
+	vdda-supply = <&vreg_l3c_1p2>;
+	vddio-supply = <&vreg_l18a_2p8>;
+	vdds-supply = <&vreg_l18a_2p8>;
 
 	panel0: panel@0 {
 		compatible = "mdss,nt36675-tianma", 
@@ -693,9 +652,9 @@
 
 		reg = <0>;
 
-		vdda-supply = <&panel_vdda_1p2>;
-		vdd3p3-supply = <&panel_vddio_2p8>;
-		vddio-supply = <&panel_vddio_2p8>;
+		vdda-supply = <&vreg_l3c_1p2>;
+		vdd3p3-supply = <&vreg_l18a_2p8>;
+		vddio-supply = <&vreg_l18a_2p8>;
 
 		/* display_sde.dtsi
                 vddio-supply = <&L13A>;
@@ -745,10 +704,13 @@
 
 &gpu {
         compatible = "qcom,adreno-618.0", "qcom,adreno";
+	firmware-name = "qcom/sm7125/miatoll/a615_zap.elf";
+
         status = "okay";
+
         zap-shader {
                 memory-region = <&gpu_mem>;
-                firmware-name = "qcom/sm7125/miatoll/a615_zap.mdt";
+                firmware-name = "qcom/sm7125/miatoll/a615_zap.elf";
         };
 };
 
@@ -761,6 +723,7 @@
                  <&gcc GCC_GPU_MEMNOC_GFX_CLK>;
         clock-names = "ahb", "gmu", "cxo", "axi", "memnoc";
 */
+	firmware-name = "qcom/a618_gmu.bin";
         status = "okay";
 };
 
@@ -860,8 +823,9 @@
 };
 
 &pm6150l_wled {
-        /delete-property/ interrupts;
-        /delete-property/ interrupt-names;
+	interrupts = <0x5 0xd8 0x1 IRQ_TYPE_EDGE_RISING>;
+	interrupt-names = "ovp";
+
         status = "okay";
 };
 
@@ -1006,8 +970,8 @@
 
                 /* Regulator configuration */
                 //vddio-supply = <&vreg_l18a>;
-		vdda-supply = <&touch_vdda_1p2>;
-		vddio-supply = <&touch_vddio_2p8>;
+		vdda-supply = <&vreg_l3c_1p2>;
+		vddio-supply = <&vreg_l18a_2p8>;
 
 		status = "okay";
 	};
@@ -1953,7 +1917,9 @@
 &i2c8      { status = "disabled"; };
 &i2c10     { status = "disabled"; };
 &i2c11     { status = "disabled"; };
+#endif
 
+#if 1
 &uart0    { status = "disabled" ;};
 &uart1    { status = "disabled" ;};
 &uart2    { status = "disabled" ;};
@@ -1981,24 +1947,24 @@
 
 //&watchdog { status = "disabled" ;};
 
-//&mdss_dsi0 { status = "disabled"; };
-//&mdss_dsi0_phy { status = "disabled"; };
-//&mdp { status = "disabled"; };
-//&mdss { status = "disabled"; };
-//&adreno_smmu { status = "disabled"; };
-//&gpu { status = "disabled"; };
-//&gmu { status = "disabled"; };
-//&apps_smmu { status = "disabled"; };
-//&panel0 { status = "disabled"; };
+&mdss_dsi0 { status = "disabled"; };
+&mdss_dsi0_phy { status = "disabled"; };
+&mdp { status = "disabled"; };
+&mdss { status = "disabled"; };
+&adreno_smmu { status = "disabled"; };
+&gpu { status = "disabled"; };
+&gmu { status = "disabled"; };
+&apps_smmu { status = "disabled"; };
+&panel0 { status = "disabled"; };
 
 /* all related to display-port here */
-//&mdss_dp { status = "disabled"; };
-//&mdp { ports { /delete-node/ port@2; }; };
-//&dp_in { /delete-property/ remote-endpoint; };
+&mdss_dp { status = "disabled"; };
+&mdp { ports { /delete-node/ port@2; }; };
+&dp_in { /delete-property/ remote-endpoint; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
 //&venus { status = "disabled"; };
-&framebuffer { status = "disabled"; };
+//framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
 //delete-node/ &rmtfs_mem;
