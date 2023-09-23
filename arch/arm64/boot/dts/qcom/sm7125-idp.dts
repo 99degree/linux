@@ -883,6 +883,9 @@
 		vdda-supply = <&vreg_l3c_1p2>;
 		vddio-supply = <&vreg_l18a_2p8>;
 #endif
+
+		panel = <&panel0>;
+
 		status = "okay";
 	};
 };
