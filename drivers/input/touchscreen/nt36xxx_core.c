@@ -26,6 +26,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/device.h>
 #include <linux/devm-helpers.h>
+#include <drm/drm_panel.h>
 
 #include "nt36xxx.h"
 
@@ -72,6 +73,8 @@ enum {
 	MMAP_MAX_ADDR = MMAP_TOP_ADDR,
 } nt36xxx_ts_mem_map;
 
+static struct drm_panel_follower_funcs nt36xxx_panel_follower_funcs;
+
 struct nt36xxx_ts {
 	struct regmap *regmap;
 
@@ -87,6 +90,8 @@ struct nt36xxx_ts {
 	struct touchscreen_properties prop;
 	struct nt36xxx_fw_info fw_info;
 	struct nt36xxx_abs_object abs_obj;
+
+	struct drm_panel_follower panel_follower;
 
 	struct delayed_work work;
 
@@ -1010,7 +1015,13 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_boot_download_firmware);
 
-	schedule_delayed_work(&ts->work, 100000);
+	if (drm_is_panel_follower(dev)) {
+		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
+		devm_drm_panel_add_follower(dev, &ts->panel_follower);
+	}
+
+	/* follow panel or not shhould init at least once */
+	schedule_delayed_work(&ts->work, 0);
 
 	dev_info(dev, "probe ok!");
 	return 0;
@@ -1018,7 +1029,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 EXPORT_SYMBOL_GPL(nt36xxx_probe);
 
-static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
+static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret = 0;
@@ -1042,7 +1053,15 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 	return 0;
 }
 
-static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
+static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
+{
+	if (drm_is_panel_follower(dev))
+		return 0;
+
+	return nt36xxx_internal_pm_suspend(dev);
+}
+
+static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 
@@ -1053,9 +1072,36 @@ static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 	return 0;
 }
 
+static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
+{
+        if (drm_is_panel_follower(dev))
+                return 0;
+
+	return nt36xxx_internal_pm_resume(dev);
+}
+
 EXPORT_GPL_SIMPLE_DEV_PM_OPS(nt36xxx_pm_ops,
 			     nt36xxx_pm_suspend,
 			     nt36xxx_pm_resume);
+
+static int panel_prepared(struct drm_panel_follower *follower)
+{
+	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
+
+	return nt36xxx_internal_pm_resume(ts->dev);
+}
+
+static int panel_unpreparing(struct drm_panel_follower *follower)
+{
+	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
+
+	return nt36xxx_internal_pm_suspend(ts->dev);
+}
+
+static struct drm_panel_follower_funcs nt36xxx_panel_follower_funcs = {
+	.panel_prepared = panel_prepared,
+	.panel_unpreparing = panel_unpreparing,
+};
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("NT36XXX Touchscreen driver");
