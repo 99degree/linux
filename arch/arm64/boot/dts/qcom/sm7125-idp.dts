@@ -55,7 +55,7 @@
 			height = <2400>;
 			stride = <(1080 * 4)>;
 			format = "a8r8g8b8";
-			
+
 			display = <&panel0>;
 		};
 	};
@@ -1871,7 +1871,7 @@
 //&dp_in { /delete-property/ remote-endpoint; };
 
 /* it stalls 30s for fw loading and prevent gpu fw loading afterward */
-//&venus { status = "disabled"; };
+&venus { status = "disabled"; };
 //framebuffer { status = "disabled"; };
 
 //&ipa { status = "disabled"; };
@@ -1885,6 +1885,7 @@
 /* boot blocking obstacle, atoll soc does not handle this addr as clk */
 //&soc { clock-controller@63000000       { status = "disabled" ;};      };
 &lpass_hm { status = "disabled" ;}; //same as above
+&lpasscc { status = "disabled" ;};
 /**************************/
 
 //&soc { clock-controller@62d00000       { status = "disabled" ;};      };
