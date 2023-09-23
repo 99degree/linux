@@ -653,9 +653,13 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 		phy->cphy_mode = (phy_type == PHY_TYPE_CPHY);
 
 	phy->base = msm_ioremap_size(pdev, "dsi_phy", &phy->base_size);
-	if (IS_ERR(phy->base))
-		return dev_err_probe(dev, PTR_ERR(phy->base),
+	if (IS_ERR(phy->base)) {
+		phy->base = msm_ioremap_size(pdev, "dsi0_phy", &phy->base_size);
+		if (IS_ERR(phy->base)) {
+			return dev_err_probe(dev, PTR_ERR(phy->base),
 				     "Failed to map phy base\n");
+		}
+	}
 
 	phy->pll_base = msm_ioremap_size(pdev, "dsi_pll", &phy->pll_size);
 	if (IS_ERR(phy->pll_base))
