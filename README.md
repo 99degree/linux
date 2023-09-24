@@ -26,17 +26,17 @@ gpu(display comtroller is working, drm)
 camera(largely broken, not supported)
 pwm
 lcd backlight
-sd card
 ```
 
 Tested good:
 ```
 UFS
-LCD display and its dsi drm controller
+sd card
+LCD display and its dsi drm display controller
 touchscreen nt36675 of my own written regmap driver, yay! 
 cpufreq
 usb peri/adb shell
-spi/dma
+spi/dma/i2c
 pon/pwr button/vol button
 ```
 
