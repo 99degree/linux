@@ -849,16 +849,16 @@
 	vqmmc-supply = <&vreg_l6c_2p9>;
 
 	//TODO: check with joyeuse dtb
-	cd-gpios = <&tlmm 69 GPIO_ACTIVE_LOW>;
+	cd-gpios = <&tlmm 69 GPIO_ACTIVE_HIGH>;
 
 	status = "okay";
 };
 
 &spi11 {
 	spi-max-frequency = <4000000>;
-    status = "okay";
+	status = "okay";
 
-    //nt36xxx_touch: i2c@
+	//nt36xxx_touch: i2c@
 	touchscreen@0 {
 		compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
 		reg = <0>;
@@ -876,10 +876,10 @@
 
 		reset-gpio = <&tlmm 8 0x00>;
 		irq-gpio = <&tlmm 9 0x2001>;
-
+#if 0
                 /* Regulator configuration */
                 //vddio-supply = <&vreg_l18a>;
-#if 0
+
 		vdda-supply = <&vreg_l3c_1p2>;
 		vddio-supply = <&vreg_l18a_2p8>;
 #endif

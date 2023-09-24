@@ -433,7 +433,7 @@
 					compatible = "qcom,q6core";
 					qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
 				};
-
+#if 0
 				q6afe: apr-service@4 {
 					compatible = "qcom,q6afe";
 					reg = <APR_SVC_AFE>;
@@ -473,6 +473,7 @@
 						#sound-dai-cells = <0>;
 					};
 				};
+#endif
 			};
 
 			fastrpc {
