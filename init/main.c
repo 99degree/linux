@@ -341,8 +341,13 @@ static int __init xbc_snprint_cmdline(char *buf, size_t size,
 			buf += ret;
 			continue;
 		}
+
 		xbc_array_for_each_value(vnode, val) {
-			ret = snprintf(buf, rest(buf, end), "%s=\"%s\" ",
+			/*
+			 * to workaround for lineageos recovery init that cant
+			 * parse double-quote
+			*/
+			ret = snprintf(buf, rest(buf, end), "%s=%s ",
 				       xbc_namebuf, val);
 			if (ret < 0)
 				return ret;
@@ -617,6 +622,7 @@ static inline void smp_prepare_cpus(unsigned int maxcpus) { }
 static void __init setup_command_line(char *command_line)
 {
 	size_t len, xlen = 0, ilen = 0;
+	char *ret;
 
 	if (extra_command_line)
 		xlen = strlen(extra_command_line);
@@ -644,6 +650,20 @@ static void __init setup_command_line(char *command_line)
 	}
 	strcpy(saved_command_line + xlen, boot_command_line);
 	strcpy(static_command_line + xlen, command_line);
+
+	/*
+	 * Remove all post-pending androidboot prefix keys from bootloader.
+	 * One exception key is drm msm lcm type. which is useless atm.
+	 * Below code will terminate the cmdline early from first found.
+	 * If NO bootconfig found, then skip the truncate operation.
+	*/
+	ret = strstr(saved_command_line + xlen, "androidboot");
+	if (ret && xlen) {
+		memcpy((void *)ret, "", sizeof(""));
+
+		/* adjust len since the cmdline is shorttened */
+		len = ret - saved_command_line - 1;
+	}
 
 	if (ilen) {
 		/*
