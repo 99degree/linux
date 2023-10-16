@@ -293,6 +293,27 @@ static const struct adreno_info gpulist[] = {
 			{ 157, 3 },
 			{ 127, 4 },
 		),
+        }, {
+		.machine = "qcom,sm7125",
+                .chip_ids = ADRENO_CHIP_IDS(0x06010800),
+                .family = ADRENO_6XX_GEN1,
+                .revn = 618,
+                .fw = {
+                        [ADRENO_FW_SQE] = "a630_sqe.fw",
+                        [ADRENO_FW_GMU] = "a618_gmu.bin",
+                },
+                .gmem = SZ_512K,
+                .inactive_period = DRM_MSM_INACTIVE_PERIOD,
+                .quirks = ADRENO_QUIRK_HAS_CACHED_COHERENT,
+                .init = a6xx_gpu_init,
+		.zapfw = "a615_zap.mbn",
+		.hwcg = a615_hwcg,
+                .speedbins = ADRENO_SPEEDBINS(
+                        { 0,   0 },
+                        { 159, 1 },
+                        { 169, 1 },
+                        { 174, 2 },
+                ),
 	}, {
 		.chip_ids = ADRENO_CHIP_IDS(0x06010800),
 		.family = ADRENO_6XX_GEN1,
@@ -539,6 +560,9 @@ MODULE_FIRMWARE("qcom/a530_zap.b00");
 MODULE_FIRMWARE("qcom/a530_zap.b01");
 MODULE_FIRMWARE("qcom/a530_zap.b02");
 MODULE_FIRMWARE("qcom/a540_gpmu.fw2");
+MODULE_FIRMWARE("qcom/a615_zap.mbn");
+MODULE_FIRMWARE("qcom/a618_sqe.fw");
+MODULE_FIRMWARE("qcom/a618_gmu.bin");
 MODULE_FIRMWARE("qcom/a619_gmu.bin");
 MODULE_FIRMWARE("qcom/a630_sqe.fw");
 MODULE_FIRMWARE("qcom/a630_gmu.bin");
