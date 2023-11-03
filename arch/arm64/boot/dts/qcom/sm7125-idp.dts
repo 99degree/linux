@@ -26,10 +26,8 @@
 	model = "Qualcomm Technologies, Inc. SM7125 IDP";
 	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
 	qcom,board-id = <0x50022 0x1>;
-	qcom,msm-id = <QCOM_ID_SM7125 0x0>;
 	qcom,msm-name = "ATOLL-AB";
 	qcom,pmic-name = "PM6150";
-	chassis-type = "handset";
 
 	aliases {
 		bluetooth0 = &bluetooth;
@@ -50,32 +48,6 @@
 		bootargs = "pd_ignore_unused no_console_suspend kpti=off nokaslr ignore_loglevel clk_ignore_unused";
 
 		stdout-path = "serial0:115200n8";
-
-		framebuffer: framebuffer@9c000000 {
-			compatible = "drm-simple-framebuffer", "simple-framebuffer";
-			reg = <0 0x9c000000 0 0x1700000>;
-			width = <1080>;
-			height = <2400>;
-			stride = <(1080 * 4)>;
-			format = "a8r8g8b8";
-
-			display = <&panel0>;
-		};
-	};
-
-	gpio-keys {
-		compatible = "gpio-keys";
-		pinctrl-names = "default";
-		pinctrl-0 = <&key_vol_up_default>;
-
-		status = "okay";
-
-		key-vol-up {
-			label = "Volume Up";
-			linux,code = <KEY_VOLUMEUP>;
-			gpios = <&pm6150l_gpios 2 GPIO_ACTIVE_LOW>;
-			debounce-interval = <15>;
-		};
 	};
 
 };
@@ -660,6 +632,11 @@
 	status = "okay";
 };
 
+&framebuffer {
+        display = <&panel0>;
+        status = "okay";
+};
+
 &gpu {
 	compatible = "qcom,adreno-618.0", "qcom,adreno";
 	firmware-name = "qcom/sm7125/miatoll/a615_zap.mbn";
@@ -841,15 +818,6 @@
 				debounce = <15625>;
 				bias-pull-up;
 				linux,code = <KEY_POWER>;
-				status = "okay";
-                        };
-
-                        pm6150l_resin: resin {
-				compatible = "qcom,pm8941-resin";
-				interrupts = <0x0 0x8 0x1 IRQ_TYPE_EDGE_FALLING>;
-				debounce = <15625>;
-				bias-pull-up;
-				linux,code = <KEY_VOLUMEDOWN>;
 				status = "okay";
                         };
                 };
