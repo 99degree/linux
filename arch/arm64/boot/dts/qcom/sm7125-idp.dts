@@ -868,23 +868,6 @@
         status = "okay";
 };
 
-&sdhc_2 {
-	pinctrl-names = "default","sleep";
-	pinctrl-0 = <&sdc2_on>;
-	pinctrl-1 = <&sdc2_off>;
-
-	/* 
-	 * TODO: there is a doubt about 2p9 or 3p1 since this affect
-	 * the sd card performance and spec.
-	*/
-	vmmc-supply = <&vreg_l9c_3p1>;
-	vqmmc-supply = <&vreg_l6c_3p0>;
-
-	cd-gpios = <&tlmm 69 GPIO_ACTIVE_HIGH>;
-
-	status = "okay";
-};
-
 &spi11 {
 	spi-max-frequency = <4000000>;
 	status = "okay";
