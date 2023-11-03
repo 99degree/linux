@@ -15,9 +15,12 @@
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
-#include "sm7125.dtsi"
+#include "sm7125-xiaomi-common.dtsi"
+#include "sm7125-idp.dtsi"
 #include "pm6150.dtsi"
 #include "pm6150l.dtsi"
+
+/delete-node/ &cont_splash_mem;
 
 / {
 	model = "Qualcomm Technologies, Inc. SM7125 IDP";
@@ -168,14 +171,6 @@
 			reg = <0x00 0x80b00000 0x00 0x3900000>;
 		};
 #endif
-
-		/* below node name can change */
-		mpss_mem: modem_region@86000000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x86000000 0x00 0x8400000>;
-		};
-
 		camera_mem: camera_region@8e400000 {
 			compatible = "removed-dma-pool";
 			no-map;
@@ -188,54 +183,18 @@
 			reg = <0x00 0x8e900000 0x00 0x500000>;
 		};
 
-		venus_mem: pil_video_region@8ee00000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x8ee00000 0x00 0x500000>;
-		};
-		
-		cdsp_mem: cdsp_regions@8f300000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x8f300000 0x00 0x1e00000>;
-		};
-		
-		adsp_mem: pil_adsp_region@91100000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x91100000 0x00 0x2800000>;
-		};
-		
-		wlan_mem: wlan_fw_region@93900000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x93900000 0x00 0x200000>;
-		};
-
-		ipa_fw_mem: ipa_fw_region@93b00000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x93b00000 0x00 0x10000>;
-		};
-
 		ipa_gsi_mem: ipa_gsi_region@93b10000 {
 			compatible = "removed-dma-pool";
 			no-map;
 			reg = <0x00 0x93b10000 0x00 0x5000>;
 		};
 
-		gpu_mem: gpu_region@93b15000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x93b15000 0x00 0x2000>;
-		};
-		
 		mba_mem: mba_mem_region@94400000 {
 			compatible = "removed-dma-pool";
 			reg = <0x0 0x94400000 0x0 0x200000>;
 			no-map;
 		};
-		
+
 		splash_mem: splash_memory@9c000000 {
 			compatible = "shared-dma-pool";
 			reg = <0x0 0x9c000000 0x0 0x1700000>;
@@ -276,27 +235,18 @@
 			reg = <0 0xf3800000 0 0x2000000>;
 		};
 #endif
-		
-		rmtfs_mem: adsp_region@f5800000 {
-			compatible = "qcom,rmtfs-mem", "removed-dma-pool";
-			reg = <0 0xf5800000 0 0x800000>;
-			no-map;
-			
-			qcom,client-id = <1>;
-			qcom,vmid = <15>;
-		};
-		
 		qseecom_ta_region@f6000000 {
 			compatible = "removed-dma-pool";
 			reg = <0 0xf6000000 0 0x1000000>;
 		};
 		
+#if 0
 		secure_display_region@f7000000 {
 			compatible = "shared-dma-pool";
 			reg = <0 0xf7000000 0 0x8c00000>;
 			
 		};
-
+#endif
 		mdata_mem: mpss-metadata {
 			alloc-ranges = <0x0 0xa0000000 0x0 0x20000000>;
 			size = <0x0 0x4000>;
@@ -1796,58 +1746,6 @@
 		pinconf-rclk {
 			pins = "sdc1_rclk";
 			bias-pull-down;
-		};
-	};
-
-	sdc2_on: sdc2-on {
-		pinconf-clk {
-			pins = "sdc2_clk";
-			bias-disable;
-			drive-strength = <16>;
-		};
-
-		pinconf-cmd {
-			pins = "sdc2_cmd";
-			bias-pull-up;
-			drive-strength = <10>;
-		};
-
-		pinconf-data {
-			pins = "sdc2_data";
-			bias-pull-up;
-			drive-strength = <10>;
-		};
-
-		pinconf-sd-cd {
-			pins = "gpio69";
-			bias-pull-up;
-			drive-strength = <2>;
-		};
-	};
-
-	sdc2_off: sdc2-off {
-		pinconf-clk {
-			pins = "sdc2_clk";
-			bias-disable;
-			drive-strength = <2>;
-		};
-
-		pinconf-cmd {
-			pins = "sdc2_cmd";
-			bias-pull-up;
-			drive-strength = <2>;
-		};
-
-		pinconf-data {
-			pins = "sdc2_data";
-			bias-pull-up;
-			drive-strength = <2>;
-		};
-
-		pinconf-sd-cd {
-			pins = "gpio69";
-			bias-pull-up;
-			drive-strength = <2>;
 		};
 	};
 
