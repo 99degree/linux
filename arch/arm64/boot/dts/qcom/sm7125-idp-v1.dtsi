@@ -1,20 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Snapdragon 720G (sm7125) specific device tree
+ *
+ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, map220v <https://github.com/map220v>
+ * Copyright (c) 2023, 99degree <https://github.com/99degree>
+ */
+
+#include <dt-bindings/dma/qcom-gpi.h>
+#include <dt-bindings/soc/qcom,apr.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
 #include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
 #include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
 #include <dt-bindings/clock/qcom,camcc-sc7180.h>
-#include <dt-bindings/dma/qcom-gpi.h>
-#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
-#include <dt-bindings/soc/qcom,apr.h>
-#include <dt-bindings/sound/qcom,q6afe.h>
-#include <dt-bindings/sound/qcom,q6asm.h>
+
+#include "sm7125.dtsi"
+
+/delete-node/ &rmtfs_mem;
+/delete-node/ &ipa_fw_mem;
+
 / {
-
-	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
-
-        firmware: firmware {};
+	firmware: firmware {};
 
         chosen {
                 framebuffer: framebuffer@9c000000 {};
-        };
+	};
 };
 
 // SC7180 doesn't have UFS yet.
@@ -916,7 +926,6 @@
 	};
 };
 
-/* below are override to original sc7180 */
 &dispcc {
 	/*
 		the 'gcc_disp_gpll0_div_clk_src' clk is not avail in sc7180
@@ -937,6 +946,10 @@
 					  "dp_phy_pll_vco_div_clk";
 };
 
+&ipa {
+	qcom,gsi-loader = "self";	
+};
+	
 &mdp {
 	reg = <0 0x0ae01000 0 0x8f000>,
 			  <0 0x0aeac000 0 0x214>,
@@ -966,6 +979,16 @@
 	};
 };
 
+&mdss_dsi0_phy {
+	/*
+		msm dsi phy reg name is ever changing its name so override
+		there instead of sc7180.dtsi 
+	*/
+	reg-names = "dsi_phy",
+				"dsi_phy_lane",
+				"dsi_pll";
+};
+
 &venus {
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 };
@@ -980,6 +1003,8 @@
 	dma-names = "tx", "rx";
 	dmas = <&gpi_dma1 0 5 QCOM_GPI_SPI>,
 			<&gpi_dma1 1 5 QCOM_GPI_SPI>;
+
+	//cs-gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
 };
 
 &remoteproc_mpss {
@@ -1003,3 +1028,11 @@
 	qcom,spare-regs = <&tcsr_regs_2 0xb3e4>;
 };
 
+#if 0
+&firmware {
+	qseecom {
+		compatible = "qcom,qseecom-sc7180", "qcom,qseecom";
+		qcom,scm = <&scm>;
+	};
+};
+#endif
