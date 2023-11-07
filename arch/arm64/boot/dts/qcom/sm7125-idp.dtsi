@@ -1003,3 +1003,26 @@
 	qcom,spare-regs = <&tcsr_regs_2 0xb3e4>;
 };
 
+&qfprom {
+        vcc-supply = <&vdd_qfprom>;
+        status = "okay";
+
+        qusb2_hstx_trim_new: hstx-trim@258 {
+                        reg = <0x258 0x1>;
+                        bits = <25 3>;
+        };
+};
+
+&usb_1_dwc3 {
+        snps,dis_u2_susphy_quirk;
+        snps,dis_enblslpm_quirk;
+        snps,has-lpm-erratum;
+        snps,hird-threshold = /bits/ 8 <0x10>;
+        snps,usb3_lpm_capable;
+        tx-fifo-resize;
+};
+
+/* reassign nvmem cell */
+&usb_1_hsphy {
+        nvmem-cells = <&qusb2_hstx_trim_new>;
+};
