@@ -1013,10 +1013,6 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			return ret;
 	}
 
-	/* some other model might have internal nand thus not need to upload fw */
-	if (ts->data->fw_name == NULL)
-		goto done;
-
 	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_boot_download_firmware);
 
 	if (drm_is_panel_follower(dev)) {
@@ -1027,7 +1023,6 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	/* follow panel or not shhould init at least once */
 	schedule_delayed_work(&ts->work, 0);
 
-done:
 	dev_info(dev, "probe ok!");
 	return 0;
 }
