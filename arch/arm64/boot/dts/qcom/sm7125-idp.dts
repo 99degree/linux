@@ -368,6 +368,12 @@
 	};
 };
 
+&gpu_opp_table {
+	/delete-node/ opp-825000000;
+	/delete-node/ opp-800000000;
+        /delete-node/ opp-650000000;
+};
+
 &gmu {
 	firmware-name = "qcom/a618_gmu.bin";
 	status = "okay";
