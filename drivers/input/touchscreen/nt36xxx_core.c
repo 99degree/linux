@@ -87,6 +87,10 @@ struct nt36xxx_ts {
 
 	struct mutex lock;
 
+#define NT36XXX_TS_STATUS_FW_DOWNLOAD 0x1
+#define NT36XXX_TS_STATUS_SUSPEND 0x2
+	int status;
+
 	struct touchscreen_properties prop;
 	struct nt36xxx_fw_info fw_info;
 	struct nt36xxx_abs_object abs_obj;
@@ -847,6 +851,13 @@ static void nt36xxx_boot_download_firmware(struct work_struct *work) {
         struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 
 	mutex_lock(&ts->lock);
+
+	if (ts->status & (NT36XXX_TS_STATUS_FW_DOWNLOAD | NT36XXX_TS_STATUS_SUSPEND))
+		goto skip;
+
+	ts->status |= NT36XXX_TS_STATUS_FW_DOWNLOAD;
+	mutex_unlock(&ts->lock);
+
         pm_runtime_disable(ts->dev);
 
 	disable_irq_nosync(ts->irq);
@@ -856,6 +867,11 @@ static void nt36xxx_boot_download_firmware(struct work_struct *work) {
         enable_irq(ts->irq);
 
         pm_runtime_enable(ts->dev);
+
+        mutex_lock(&ts->lock);
+        ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD;
+
+skip:
 	mutex_unlock(&ts->lock);
 }
 
@@ -1037,9 +1053,23 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	dev_dbg(dev, "suspending\n");
 
 	mutex_lock(&ts->lock);
+
+	/* to set the flag so it indicates no time gap for extra thread wake up */
+	if (ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD) {
+		ret = -EBUSY;
+		dev_err(ts->dev, "Cannot enter suspend the driver uploading fw!!\n");
+		goto done;
+	}
+
+	ts->status |= NT36XXX_TS_STATUS_SUSPEND;
+
+	mutex_unlock(&ts->lock);
+
 	disable_irq_nosync(ts->irq);
 
 	cancel_delayed_work(&ts->work);
+
+	mutex_lock(&ts->lock);
 
 	if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
@@ -1048,9 +1078,10 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	if (ret)
 		dev_err(ts->dev, "Cannot enter suspend!!\n");
 
+done:
 	mutex_unlock(&ts->lock);
 
-	return 0;
+	return ret;
 }
 
 static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
@@ -1064,6 +1095,21 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+
+        mutex_lock(&ts->lock);
+
+        /* to set the flag so it indicates no time gap for extra thread wake up */
+        if (ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD) {
+                dev_err(ts->dev, "Something wrong, the update tasklet should be idle!!\n");
+
+		/* try to recover */
+		ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD;
+
+        }
+
+        ts->status &= ~NT36XXX_TS_STATUS_SUSPEND;
+
+	mutex_unlock(&ts->lock);
 
 	dev_dbg(dev, "resuming\n");
 
