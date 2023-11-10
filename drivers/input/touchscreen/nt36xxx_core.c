@@ -14,6 +14,7 @@
 #include <asm/unaligned.h>
 #include <linux/delay.h>
 #include <linux/firmware.h>
+#include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/input/mt.h>
 #include <linux/input/touchscreen.h>
@@ -87,8 +88,10 @@ struct nt36xxx_ts {
 
 	struct mutex lock;
 
-#define NT36XXX_TS_STATUS_FW_DOWNLOAD 0x1
-#define NT36XXX_TS_STATUS_SUSPEND 0x2
+#define NT36XXX_TS_STATUS_FW_DOWNLOAD		BIT(0)
+#define NT36XXX_TS_STATUS_SUSPEND 		BIT(1)
+#define NT36XXX_TS_STATUS_REPORTING		BIT(2)
+#define NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE	BIT(3) /* This should often set */
 	int status;
 
 	struct touchscreen_properties prop;
@@ -424,11 +427,22 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 
 	mutex_lock(&ts->lock);
 
+	if (ts->status & ~NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE) {
+		goto done;
+	}
+
+	ts->status |= NT36XXX_TS_STATUS_REPORTING;
+
+	mutex_unlock(&ts->lock);
+
 	disable_irq_nosync(ts->irq);
 
 	nt36xxx_report(ts);
 	enable_irq(ts->irq);
 
+	mutex_lock(&ts->lock);
+	ts->status &= ~NT36XXX_TS_STATUS_REPORTING;
+done:
 	mutex_unlock(&ts->lock);
 
 	return IRQ_HANDLED;
@@ -834,6 +848,11 @@ check_fw:
 	}
 
 	dev_info(ts->dev, "Touch IC fw loaded ok");
+
+	mutex_lock(&ts->lock);
+        ts->status |= NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE;
+	mutex_unlock(&ts->lock);
+
 	goto exit;
 
 release_fw_buf:
@@ -852,8 +871,10 @@ static void nt36xxx_boot_download_firmware(struct work_struct *work) {
 
 	mutex_lock(&ts->lock);
 
-	if (ts->status & (NT36XXX_TS_STATUS_FW_DOWNLOAD | NT36XXX_TS_STATUS_SUSPEND))
+	if (ts->status & (NT36XXX_TS_STATUS_FW_DOWNLOAD | NT36XXX_TS_STATUS_SUSPEND | NT36XXX_TS_STATUS_REPORTING))
 		goto skip;
+
+	WARN_ON(ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE);
 
 	ts->status |= NT36XXX_TS_STATUS_FW_DOWNLOAD;
 	mutex_unlock(&ts->lock);
@@ -870,7 +891,6 @@ static void nt36xxx_boot_download_firmware(struct work_struct *work) {
 
         mutex_lock(&ts->lock);
         ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD;
-
 skip:
 	mutex_unlock(&ts->lock);
 }
@@ -899,7 +919,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 		return -ENOMEM;
 
 	ts->input->name = "Novatek NT36XXX Touchscreen";
-	ts->input->dev.parent = dev;
+//	ts->input->dev.parent = dev;
 	ts->input->id = *id;
 
 	input_set_abs_params(ts->input, ABS_MT_PRESSURE, 0,
@@ -977,9 +997,10 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			dev_err(dev, "either need irq or irq-gpio specified in devicetree node!\n");
 			return -EINVAL;
 		}
+		dev_info(dev, "get irq value = %d\n", ts->irq);
 	}
 
-	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
+	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx_irq");
 
 	/* These supplies are optional, also shared with LCD panel */
 	ts->supplies[0].supply = "vdd";
@@ -1107,7 +1128,7 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 
         }
 
-        ts->status &= ~NT36XXX_TS_STATUS_SUSPEND;
+        ts->status &= ~(NT36XXX_TS_STATUS_SUSPEND | NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE);
 
 	mutex_unlock(&ts->lock);
 
