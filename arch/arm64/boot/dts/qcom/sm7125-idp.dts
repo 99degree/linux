@@ -123,9 +123,11 @@
 			regulator-max-microvolt = <1952000>;
 		};
 
+		/* 3p0 <- 800ohm -> 1p8 */
 		vreg_l13a_1p8: ldo13 {
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
+			regulator-always-on;
 		};
 
 		vreg_l14a_1p8: ldo14 {
@@ -152,6 +154,7 @@
 		vreg_l18a_2p8: ldo18 {
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
+			regulator-always-on;
 		};
 
 		vreg_l19a_2p85: ldo19 {
@@ -368,6 +371,19 @@
 	};
 };
 
+&gpu_opp_table {
+	/* those are too high freq */
+	/delete-node/ opp-825000000;
+	/delete-node/ opp-800000000;
+        /delete-node/ opp-650000000;
+
+	/* those are too slow */
+//        /delete-node/ opp-430000000 ;
+        /delete-node/ opp-355000000 ;
+        /delete-node/ opp-267000000 ;
+        /delete-node/ opp-180000000 ;
+};
+
 &gmu {
 	firmware-name = "qcom/a618_gmu.bin";
 	status = "okay";
@@ -382,6 +398,7 @@
 };
 
 &ipa {
+	qcom,gsi-loader = "self";
 	memory-region = <&ipa_fw_mem>;
 	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mbn";
 
@@ -495,22 +512,54 @@
 
 &remoteproc_adsp {
 	compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
-	firmware-name = "qcom/sm7125/miatoll/adsp.mdt";
+	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
 	compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
-	firmware-name = "qcom/sm7125/miatoll/cdsp.mdt";
+	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_mpss {
-        firmware-name = "qcom/sm7125/miatoll/modem.mdt";
+        firmware-name = "qcom/sm7125/miatoll/modem.mbn";
 		
         status = "okay";
+};
+
+&i2c4 {
+	status = "ok";
+                tas2562_r: codec@4c {
+                        compatible = "ti,tas2562";
+                        reg = <0x4c>;
+                        #sound-dai-cells = <1>;
+                        interrupt-parent = <&tlmm>;
+                        interrupts = <33 0>;
+                        shutdown-gpios = <&tlmm 33 0>;
+			reset-gpio = <&tlmm 51 0>;
+                        sound-name-prefix = "Right"; //??
+                        ti,vmon-slot-no = <2>;
+                        ti,imon-slot-no = <0>;
+                };
+};
+
+&i2c9 {
+	status = "ok";
+                tas2562_l: codec@4c {
+                        compatible = "ti,tas2562";
+                        reg = <0x4c>;
+                        #sound-dai-cells = <1>;
+                        interrupt-parent = <&tlmm>;
+                        interrupts = <33 0>;
+                        shutdown-gpios = <&tlmm 33 0>;
+                        reset-gpio = <&tlmm 51 0>;
+                        sound-name-prefix = "Right"; //??
+                        ti,vmon-slot-no = <2>;
+                        ti,imon-slot-no = <0>;
+                };
 };
 
 &spi11 {
@@ -612,6 +661,8 @@
 	vdd-3.3-ch0-supply = <&vreg_l10c_3p3>;
 	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
 
+	firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
+
         status = "okay";
 /*
 	wifi-firmware {
@@ -648,49 +699,6 @@
 &q6asmdai {
         dai@0 {
                 reg = <0>;
-        };
-};
-
-
-&i2c9 {
-        status = "ok";
-
-        qcom,clk-freq-out = <100000>;
-
-        tas2562_r: tas2562@4c {
-                #sound-dai-cells = <0>;
-                compatible = "ti,tas2562";
-                reg = <0x4c>;
-                ti,left-channel = <0x4c>; /* addr */
-                ti,channels = <1>; /* channel number */
-                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
-                ti,reset-gpio = <&tlmm 51 0>;
-                ti,irq-gpio = <&tlmm 33 0>;
-                ti,left-slot = <0>; /* <left slot number> */
-                ti,right-slot = <1>; /* <right slot number> */
-                ti,imon-slot-no = <0>; /* <current sense slot number> */
-                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
-                status = "ok";
-        };
-};
-
-&i2c4 {
-        status = "ok";
-
-        tas2562_l: tas2562@4c {
-                #sound-dai-cells = <0>;
-                compatible = "ti,tas2562";
-                reg = <0x4c>;
-                ti,left-channel = <0x4c>; /* addr */
-                ti,channels = <1>; /* channel number */
-                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
-                ti,reset-gpio = <&tlmm 51 0>;
-                ti,irq-gpio = <&tlmm 33 0>;
-                ti,left-slot = <0>; /* <left slot number> */
-                ti,right-slot = <1>; /* <right slot number> */
-                ti,imon-slot-no = <0>; /* <current sense slot number> */
-                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
-                status = "ok";
         };
 };
 
@@ -1207,3 +1215,6 @@
 &pm6150_vib {
 	status = "okay";
 };
+
+&ufs_mem_hc { status = "disabled"; };
+&ufs_mem_phy { status = "disabled"; };
