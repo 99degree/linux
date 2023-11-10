@@ -123,9 +123,11 @@
 			regulator-max-microvolt = <1952000>;
 		};
 
+		/* 3p0 <- 800ohm -> 1p8 */
 		vreg_l13a_1p8: ldo13 {
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
+			regulator-always-on;
 		};
 
 		vreg_l14a_1p8: ldo14 {
@@ -152,6 +154,7 @@
 		vreg_l18a_2p8: ldo18 {
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
+			regulator-always-on;
 		};
 
 		vreg_l19a_2p85: ldo19 {
@@ -369,9 +372,16 @@
 };
 
 &gpu_opp_table {
+	/* those are too high freq */
 	/delete-node/ opp-825000000;
 	/delete-node/ opp-800000000;
         /delete-node/ opp-650000000;
+
+	/* those are too slow */
+//        /delete-node/ opp-430000000 ;
+        /delete-node/ opp-355000000 ;
+        /delete-node/ opp-267000000 ;
+        /delete-node/ opp-180000000 ;
 };
 
 &gmu {
