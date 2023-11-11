@@ -14,7 +14,6 @@
 #include <asm/unaligned.h>
 #include <linux/delay.h>
 #include <linux/firmware.h>
-#include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/input/mt.h>
 #include <linux/input/touchscreen.h>
@@ -28,6 +27,7 @@
 #include <linux/device.h>
 #include <linux/devm-helpers.h>
 #include <drm/drm_panel.h>
+#include <linux/irqnr.h>
 
 #include "nt36xxx.h"
 
@@ -88,12 +88,7 @@ struct nt36xxx_ts {
 
 	struct mutex lock;
 
-#define NT36XXX_TS_STATUS_FW_DOWNLOAD		BIT(0)
-#define NT36XXX_TS_STATUS_SUSPEND 		BIT(1)
-#define NT36XXX_TS_STATUS_REPORTING		BIT(2)
-#define NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE	BIT(3) /* This should often set */
-#define NT36XXX_TS_STATUS_FW_MESS_UP		BIT(4)
-	int status;
+	unsigned int status;
 
 	struct touchscreen_properties prop;
 	struct nt36xxx_fw_info fw_info;
@@ -227,6 +222,14 @@ const u32 nt36675_memory_maps[] = {
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
 
+void _debug_irq(struct nt36xxx_ts *ts, int line){
+        struct irq_desc *desc;
+        desc = irq_data_to_desc( irq_get_irq_data(ts->irq));
+        dev_info(ts->dev, "%d irq_desc depth=%d", line, desc->depth );
+}
+
+#define debug_irq(a) _debug_irq(a, __LINE__)
+
 static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 {
 	int ret;
@@ -358,6 +361,8 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			break;
 		}
 
+		cancel_delayed_work(&ts->work);
+		schedule_delayed_work(&ts->work, 100);
 		goto xfer_error;
 	}
 
@@ -421,36 +426,21 @@ xfer_error:
 static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 {
 	struct nt36xxx_ts *ts = dev_id;
-
+        dev_info(ts->dev, "%s enter", __func__);
 	if (!ts->mmap)
-		return IRQ_HANDLED;
-
-	mutex_lock(&ts->lock);
-
-	if (ts->status & ~NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE) {
-		goto done;
-	}
-
-	ts->status |= NT36XXX_TS_STATUS_REPORTING;
-
-	mutex_unlock(&ts->lock);
-
-	disable_irq_nosync(ts->irq);
-
+		goto exit;
+//	mutex_lock(&ts->lock);
+debug_irq(ts);
+	disable_irq(ts->irq);
+debug_irq(ts);
 	nt36xxx_report(ts);
+debug_irq(ts);
 	enable_irq(ts->irq);
+debug_irq(ts);
+//	mutex_unlock(&ts->lock);
 
-	mutex_lock(&ts->lock);
-	ts->status &= ~NT36XXX_TS_STATUS_REPORTING;
-done:
-        if (ts->status & NT36XXX_TS_STATUS_FW_MESS_UP) {
-                cancel_delayed_work(&ts->work);
-                schedule_delayed_work(&ts->work, 4000);
-                ts->status &= ~NT36XXX_TS_STATUS_FW_MESS_UP;
-        }
-
-	mutex_unlock(&ts->lock);
-
+exit:
+	dev_info(ts->dev, "%s exit", __func__);
 	return IRQ_HANDLED;
 }
 
@@ -511,10 +501,6 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 				WARN_ON(ts->hw_crc < 1);
 
 				dev_dbg(ts->dev, "hw crc support=%d\n", ts->hw_crc);
-
-				/* copy the const mmap into drvdata */
-				memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
-				ts->mmap = ts->mmap_data;
 
 				dev_info(ts->dev, "This is NVT touch IC, %06x, mapid %d", *(int*)&buf[4], mapid);
 				return 0;
@@ -854,11 +840,6 @@ check_fw:
 	}
 
 	dev_info(ts->dev, "Touch IC fw loaded ok");
-
-	mutex_lock(&ts->lock);
-        ts->status |= NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE;
-	mutex_unlock(&ts->lock);
-
 	goto exit;
 
 release_fw_buf:
@@ -872,40 +853,34 @@ exit:
 	return;
 }
 
-static void nt36xxx_boot_download_firmware(struct work_struct *work) {
+//yell
+static void nt36xxx_download_firmware(struct work_struct *work) {
         struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
+	int ret;
 
-	mutex_lock(&ts->lock);
-
-	if (ts->status & (NT36XXX_TS_STATUS_FW_DOWNLOAD | NT36XXX_TS_STATUS_SUSPEND | NT36XXX_TS_STATUS_REPORTING))
-		goto skip;
-
-	//WARN_ON(ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE);
-
-	ts->status |= NT36XXX_TS_STATUS_FW_DOWNLOAD;
-	mutex_unlock(&ts->lock);
-
+pr_info("%s enter ", __func__);
         pm_runtime_disable(ts->dev);
 
-	disable_irq_nosync(ts->irq);
+        //cancel_delayed_work_sync(&ts->work);
+
+        ret = nt36xxx_eng_reset_idle(ts);
+        if (ret) {
+                dev_err(ts->dev, "Failed to check chip version\n");
+		goto skip;
+        }
+
+        /* Set memory maps for the specific chip version */
+        ret = nt36xxx_chip_version_init(ts);
+        if (ret) {
+                dev_err(ts->dev, "Failed to check chip version\n");
+		goto skip;
+        }
 
         _nt36xxx_boot_download_firmware(ts);
 
-        enable_irq(ts->irq);
-
-        pm_runtime_enable(ts->dev);
-
-        mutex_lock(&ts->lock);
-        ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD;
 skip:
-	mutex_unlock(&ts->lock);
-
-	/* since this is happening for pmos firmware not ready */
-	if(!(ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE)) {
-		/* really not important if other condition caused reload. */
-		cancel_delayed_work(&ts->work);
-		schedule_delayed_work(&ts->work, 4000);
-	}
+        pm_runtime_enable(ts->dev);
+pr_info("%s exit", __func__);
 }
 
 static void nt36xxx_disable_regulators(void *data)
@@ -932,7 +907,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 		return -ENOMEM;
 
 	ts->input->name = "Novatek NT36XXX Touchscreen";
-//	ts->input->dev.parent = dev;
+	ts->input->dev.parent = dev;
 	ts->input->id = *id;
 
 	input_set_abs_params(ts->input, ABS_MT_PRESSURE, 0,
@@ -1010,41 +985,39 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			dev_err(dev, "either need irq or irq-gpio specified in devicetree node!\n");
 			return -EINVAL;
 		}
-		dev_info(dev, "get irq value = %d\n", ts->irq);
 	}
 
-	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx_irq");
+	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
 
-	if (!drm_is_panel_follower(dev)) {
+	if (drm_is_panel_follower(dev))
+		goto skip_regulators;
 
-		/* These supplies are optional, also shared with LCD panel */
-		ts->supplies[0].supply = "vdd";
-		ts->supplies[1].supply = "vio";
-		/* below are for compatible */
-		ts->supplies[2].supply = "vdda";
-		ts->supplies[3].supply = "vddio";
-		ret = devm_regulator_bulk_get(dev,
-					      NT36XXX_NUM_SUPPLIES,
-					      ts->supplies);
-		if (ret)
-			return dev_err_probe(dev, ret,
-					     "Cannot get supplies: %d\n", ret);
+	/* These supplies are optional, also shared with LCD panel */
+	ts->supplies[0].supply = "vdd";
+	ts->supplies[1].supply = "vio";
+	ret = devm_regulator_bulk_get(dev,
+				      NT36XXX_NUM_SUPPLIES,
+				      ts->supplies);
+	if (ret)
+		return dev_err_probe(dev, ret,
+				     "Cannot get supplies: %d\n", ret);
 
-		ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
-		if (ret)
-			return ret;
+	ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
+	if (ret)
+		return ret;
 
-		usleep_range(10000, 11000);
+	usleep_range(10000, 11000);
 
-		ret = devm_add_action_or_reset(dev, nt36xxx_disable_regulators, ts);
-		if (ret)
-			return ret;
-	}
+	ret = devm_add_action_or_reset(dev, nt36xxx_disable_regulators, ts);
+	if (ret)
+		return ret;
+
+skip_regulators:
 	mutex_init(&ts->lock);
 
 	ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
-                dev_err(dev, "Failed to enter eng reset idle\n");
+                dev_err(dev, "Failed to check chip version\n");
                 return ret;
         }
 
@@ -1055,12 +1028,17 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 		return ret;
 	}
 
+        /* copy the const mmap into drvdata */
+        memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
+        ts->mmap = ts->mmap_data;
+
 	ret = nt36xxx_input_dev_config(ts, ts->data->id);
 	if (ret) {
 			dev_err(dev, "failed set input device: %d\n", ret);
 			return ret;
 	}
 
+        dev_info(dev, "b4 request_irq !");
 	ret = devm_request_threaded_irq(dev, ts->irq, NULL, nt36xxx_irq_handler,
 			 IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT, dev_name(dev), ts);
 	if (ret) {
@@ -1068,16 +1046,18 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			return ret;
 	}
 
-	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_boot_download_firmware);
+	dev_info(dev, "request_irq ok!");
+
+	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
+
+	schedule_delayed_work(&ts->work, 0);
+
+	pm_runtime_enable(ts->dev);
 
 	if (drm_is_panel_follower(dev)) {
 		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
 		devm_drm_panel_add_follower(dev, &ts->panel_follower);
 	}
-
-	/* follow panel or not should init at least once */
-	cancel_delayed_work(&ts->work);
-	schedule_delayed_work(&ts->work, 0);
 
 	dev_info(dev, "probe ok!");
 	return 0;
@@ -1090,27 +1070,9 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret = 0;
 
-	dev_dbg(dev, "suspending\n");
+	dev_info(dev, "suspending\n");
 
-	mutex_lock(&ts->lock);
-
-	/* to set the flag so it indicates no time gap for extra thread wake up */
-	if (ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD) {
-		ret = -EBUSY;
-		dev_err(ts->dev, "Cannot enter suspend the driver uploading fw!!\n");
-		goto done;
-	}
-
-	ts->status |= NT36XXX_TS_STATUS_SUSPEND;
-	ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE;
-
-	mutex_unlock(&ts->lock);
-
-	disable_irq_nosync(ts->irq);
-
-	cancel_delayed_work(&ts->work);
-
-	mutex_lock(&ts->lock);
+	cancel_delayed_work_sync(&ts->work);
 
 	if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
@@ -1118,56 +1080,55 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 
 	if (ret)
 		dev_err(ts->dev, "Cannot enter suspend!!\n");
-
-done:
-	mutex_unlock(&ts->lock);
-
-	return ret;
+        dev_info(dev, "suspending done\n");
+	return 0;
 }
 
 static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 {
+        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+	int ret=0;
+
+dev_info(dev, "pm suspending\n");
 	if (drm_is_panel_follower(dev))
 		return 0;
 
-	return nt36xxx_internal_pm_suspend(dev);
+debug_irq(ts);
+	disable_irq(ts->irq);
+debug_irq(ts);
+
+	ret = nt36xxx_internal_pm_suspend(dev);
+dev_info(dev, "pm suspending done\n");
+	return ret;
 }
 
 static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 
-        mutex_lock(&ts->lock);
+	dev_info(dev, "resuming\n");
 
-        /* to set the flag so it indicates no time gap for extra thread wake up */
-        if (ts->status & NT36XXX_TS_STATUS_FW_DOWNLOAD) {
-                dev_err(ts->dev, "Something wrong, the update tasklet should be idle!!\n");
-
-		/* try to recover */
-		ts->status &= ~NT36XXX_TS_STATUS_FW_DOWNLOAD;
-
-        }
-
-        ts->status &= ~(NT36XXX_TS_STATUS_SUSPEND | NT36XXX_TS_STATUS_FW_DOWNLOAD_COMPLETE);
-
-	mutex_unlock(&ts->lock);
-
-	dev_dbg(dev, "resuming\n");
-
-	/* cancel previously issued work */
-	cancel_delayed_work(&ts->work);
-
-	schedule_delayed_work(&ts->work, 0);
+	if(ts->status)
+		schedule_delayed_work(&ts->work, 0);
 
 	return 0;
 }
 
 static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 {
+        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+	int ret=0;
+        dev_info(dev, "pm resuming\n");
         if (drm_is_panel_follower(dev))
                 return 0;
 
-	return nt36xxx_internal_pm_resume(dev);
+debug_irq(ts);
+	enable_irq(ts->irq);
+debug_irq(ts);
+
+	ret = nt36xxx_internal_pm_resume(dev);
+        dev_info(dev, "pm resuming done \n");
+	return ret;
 }
 
 EXPORT_GPL_SIMPLE_DEV_PM_OPS(nt36xxx_pm_ops,
@@ -1178,6 +1139,8 @@ static int panel_prepared(struct drm_panel_follower *follower)
 {
 	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
 
+	if (ts->status)
+		enable_irq(ts->irq);
 	return nt36xxx_internal_pm_resume(ts->dev);
 }
 
@@ -1185,6 +1148,8 @@ static int panel_unpreparing(struct drm_panel_follower *follower)
 {
 	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
 
+	ts->status = 1;
+	disable_irq(ts->irq);
 	return nt36xxx_internal_pm_suspend(ts->dev);
 }
 
