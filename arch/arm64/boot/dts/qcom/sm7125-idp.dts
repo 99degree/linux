@@ -125,12 +125,8 @@
 
 		/* 3p0 <- 800ohm -> 1p8 */
 		vreg_l13a_1p8: ldo13 {
-			/* make it align with l18a a fixed 1p8 */
-//			regulator-min-microvolt = <1696000>;
-			regulator-min-microvolt = <1832000>;
-//			regulator-max-microvolt = <1904000>;
-			regulator-max-microvolt = <1832000>;
-			regulator-always-on;
+			regulator-min-microvolt = <1696000>;
+			regulator-max-microvolt = <1904000>;
 		};
 
 		vreg_l14a_1p8: ldo14 {
@@ -158,11 +154,8 @@
                         /* 
 			 * make it align with l13a a fixed 1p8 since serial with 2x 200ohm
 			 */
-//                      regulator-min-microvolt = <1696000>;
-                        regulator-min-microvolt = <1832000>;
-//                      regulator-max-microvolt = <1904000>;
-                        regulator-max-microvolt = <1832000>;
-			regulator-always-on;
+			regulator-min-microvolt = <1696000>;
+			regulator-max-microvolt = <1904000>;
 		};
 
 		vreg_l19a_2p85: ldo19 {
