@@ -6,6 +6,7 @@
 #include <linux/clk-provider.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 
 #include <dt-bindings/clock/qcom,videocc-sc7180.h>
@@ -211,10 +212,21 @@ static int video_cc_sc7180_probe(struct platform_device *pdev)
 {
 	struct regmap *regmap;
 	struct alpha_pll_config video_pll0_config = {};
+        int ret;
+
+        ret = devm_pm_runtime_enable(&pdev->dev);
+        if (ret)
+                return ret;
+
+        ret = pm_runtime_resume_and_get(&pdev->dev);
+        if (ret)
+                return ret;
 
 	regmap = qcom_cc_map(pdev, &video_cc_sc7180_desc);
-	if (IS_ERR(regmap))
-		return PTR_ERR(regmap);
+        if (IS_ERR(regmap)) {
+                pm_runtime_put(&pdev->dev);
+                return PTR_ERR(regmap);
+        }
 
 	video_pll0_config.l = 0x1f;
 	video_pll0_config.alpha = 0x4000;
@@ -226,7 +238,11 @@ static int video_cc_sc7180_probe(struct platform_device *pdev)
 	/* Keep VIDEO_CC_XO_CLK ALWAYS-ON */
 	regmap_update_bits(regmap, 0x984, 0x1, 0x1);
 
-	return qcom_cc_really_probe(pdev, &video_cc_sc7180_desc, regmap);
+        ret = qcom_cc_really_probe(pdev, &video_cc_sc7180_desc, regmap);
+
+        pm_runtime_put(&pdev->dev);
+
+        return ret;
 }
 
 static struct platform_driver video_cc_sc7180_driver = {
