@@ -123,6 +123,7 @@
 			regulator-max-microvolt = <1952000>;
 		};
 
+		/* 3p0 <- 800ohm -> 1p8 */
 		vreg_l13a_1p8: ldo13 {
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
@@ -150,6 +151,9 @@
 		};
 
 		vreg_l18a_2p8: ldo18 {
+                        /* 
+			 * make it align with l13a a fixed 1p8 since serial with 2x 200ohm
+			 */
 			regulator-min-microvolt = <1696000>;
 			regulator-max-microvolt = <1904000>;
 		};
@@ -342,10 +346,6 @@
         status = "okay";
 };
 
-&cont_splash_mem {
-//	compatible = "shared-dma-pool";
-};
-
 &dispcc {
 	status = "okay";
 };
@@ -368,6 +368,19 @@
 	};
 };
 
+&gpu_opp_table {
+	/* those are too high freq */
+	/delete-node/ opp-825000000;
+	/delete-node/ opp-800000000;
+        /delete-node/ opp-650000000;
+
+	/* those are too slow */
+//        /delete-node/ opp-430000000 ;
+        /delete-node/ opp-355000000 ;
+        /delete-node/ opp-267000000 ;
+        /delete-node/ opp-180000000 ;
+};
+
 &gmu {
 	firmware-name = "qcom/a618_gmu.bin";
 	status = "okay";
@@ -382,6 +395,7 @@
 };
 
 &ipa {
+	qcom,gsi-loader = "self";
 	memory-region = <&ipa_fw_mem>;
 	firmware-name = "qcom/sm7125/miatoll/ipa_fws.mbn";
 
@@ -453,7 +467,7 @@
 	lab-supply = <&lab>;
 	ibb-supply = <&ibb>;
 #endif
-	//backlight = <&pm6150l_wled>;
+	backlight = <&pm6150l_wled>;
 
 	pinctrl-names = "default", "te_pin"; //TODO: need to figure out how to handle te_pin
 	pinctrl-0 = <&disp_pins>;
@@ -495,36 +509,69 @@
 
 &remoteproc_adsp {
 	compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
-	firmware-name = "qcom/sm7125/miatoll/adsp.mdt";
+	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
 	compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
-	firmware-name = "qcom/sm7125/miatoll/cdsp.mdt";
+	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_mpss {
-        firmware-name = "qcom/sm7125/miatoll/modem.mdt";
+        firmware-name = "qcom/sm7125/miatoll/modem.mbn";
 		
         status = "okay";
 };
 
+&i2c4 {
+	status = "ok";
+                tas2562_r: codec@4c {
+                        compatible = "ti,tas2562";
+                        reg = <0x4c>;
+                        #sound-dai-cells = <1>;
+                        interrupt-parent = <&tlmm>;
+                        interrupts = <33 0>;
+                        shutdown-gpios = <&tlmm 33 0>;
+			reset-gpio = <&tlmm 51 0>;
+                        sound-name-prefix = "Right"; //??
+                        ti,vmon-slot-no = <2>;
+                        ti,imon-slot-no = <0>;
+                };
+};
+
+&i2c9 {
+	status = "ok";
+                tas2562_l: codec@4c {
+                        compatible = "ti,tas2562";
+                        reg = <0x4c>;
+                        #sound-dai-cells = <1>;
+                        interrupt-parent = <&tlmm>;
+                        interrupts = <33 0>;
+                        shutdown-gpios = <&tlmm 33 0>;
+                        reset-gpio = <&tlmm 51 0>;
+                        sound-name-prefix = "Right"; //??
+                        ti,vmon-slot-no = <2>;
+                        ti,imon-slot-no = <0>;
+                };
+};
+
 &spi11 {
-	spi-max-frequency = <4000000>;
 	status = "okay";
 
-	//nt36xxx_touch: i2c@
 	touchscreen@0 {
 		compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
 		reg = <0>;
 
+		/* caught from joyeuse dtb*/
 		spi-max-frequency = <4000000>;
 
-		//interrupts = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
+		/* ts->irq report 194 */
+		/* interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>; */
+		/* interrupt= <&tlmm 13 2>; */ //dtb specified, but GPIO13 is CAM_MCLK0
 
 		novatek,reset-gpio = <&tlmm 8 0x00>;
 		novatek,irq-gpio = <&tlmm 9 0x2001>;
@@ -534,7 +581,17 @@
 		novatek,spi-rd-fast-addr = <0x03F310>;
 
 		reset-gpio = <&tlmm 8 0x00>;
+                /* dtb show <&tlmm 13 2>*/
 		irq-gpio = <&tlmm 9 0x2001>;
+
+/*
+                touch_ibb-supply = <0x241>; //lcdb_ncp
+                touch_lab-supply = <0x240>; //qcom,qpnp-lcdb-regulator ldo
+                touch_vddio-supply = <0x33c>; //pm6150_l18
+*/
+
+		vio-supply = <&vreg_l18a_3p0>;
+		vdd-supply = <&vreg_l18a_3p0>;
 
 		panel = <&panel0>;
 
@@ -612,6 +669,8 @@
 	vdd-3.3-ch0-supply = <&vreg_l10c_3p3>;
 	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
 
+	firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
+
         status = "okay";
 /*
 	wifi-firmware {
@@ -633,6 +692,10 @@
 
 };
 
+&pm6150l_wled {
+	status = "okay";
+};
+
 &q6afedai {
         qi2s@127 {
                 reg = <QUINARY_MI2S_RX>;
@@ -651,49 +714,6 @@
         };
 };
 
-
-&i2c9 {
-        status = "ok";
-
-        qcom,clk-freq-out = <100000>;
-
-        tas2562_r: tas2562@4c {
-                #sound-dai-cells = <0>;
-                compatible = "ti,tas2562";
-                reg = <0x4c>;
-                ti,left-channel = <0x4c>; /* addr */
-                ti,channels = <1>; /* channel number */
-                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
-                ti,reset-gpio = <&tlmm 51 0>;
-                ti,irq-gpio = <&tlmm 33 0>;
-                ti,left-slot = <0>; /* <left slot number> */
-                ti,right-slot = <1>; /* <right slot number> */
-                ti,imon-slot-no = <0>; /* <current sense slot number> */
-                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
-                status = "ok";
-        };
-};
-
-&i2c4 {
-        status = "ok";
-
-        tas2562_l: tas2562@4c {
-                #sound-dai-cells = <0>;
-                compatible = "ti,tas2562";
-                reg = <0x4c>;
-                ti,left-channel = <0x4c>; /* addr */
-                ti,channels = <1>; /* channel number */
-                ti,asi-format = <0>; /* 0, i2S; 1, DSP;  */
-                ti,reset-gpio = <&tlmm 51 0>;
-                ti,irq-gpio = <&tlmm 33 0>;
-                ti,left-slot = <0>; /* <left slot number> */
-                ti,right-slot = <1>; /* <right slot number> */
-                ti,imon-slot-no = <0>; /* <current sense slot number> */
-                ti,vmon-slot-no = <2>; /* <current voltage slot number> */
-                status = "ok";
-        };
-};
-
 &qup_spi11_spi {
 	drive-strength = <2>;
 	//bias-disable;
@@ -707,36 +727,6 @@
 &qup_spi11_cs_gpio {
 	drive-strength = <2>;
 	bias-disable;
-};
-
-&sound {
-        compatible = "qcom,sm8250-sndcard";
-        pinctrl-0 = <&i2s2_active>;
-        pinctrl-names = "default";
-        model = "Miatoll";
-
-        mm1-dai-link {
-                link-name = "MultiMedia1";
-                cpu {
-                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
-                };
-        };
-
-        i2s-dai-link {
-                link-name = "I2S Playback";
-                cpu {
-			/*TODO: tertery */
-                        sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
-                };
-
-                platform {
-                        sound-dai = <&q6routing>;
-                };
-
-                codec {
-                        sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
-                };
-        };
 };
 
 &tlmm {
@@ -1126,7 +1116,7 @@
 				drive-strength = <2>; /* 2 MA */
 			};
 		};
-
+#if 0
         pmx_ts_active {
                 ts_active: ts_active {
                                 mux {
@@ -1186,7 +1176,7 @@
                                 };
                         };
                 };
-
+#endif
         te_gpio: te-default {
                 pins = "gpio10";
                 function = "mdp_vsync";
@@ -1207,3 +1197,6 @@
 &pm6150_vib {
 	status = "okay";
 };
+
+&ufs_mem_hc { status = "disabled"; };
+&ufs_mem_phy { status = "disabled"; };
