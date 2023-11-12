@@ -1,10 +1,6 @@
 #include "sm7125-xiaomi-joyeuse.dts"
 #include "sm7125-idp.dtsi"
 
-/* remove 300mhz freq, too slow */
-/delete-node/ &cpu6_opp1;
-/delete-node/ &cpu0_opp1;
-
 / {
 	chosen {
 		#address-cells = <2>;
