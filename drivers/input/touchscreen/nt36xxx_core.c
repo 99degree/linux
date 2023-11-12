@@ -891,7 +891,7 @@ skip:
 
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
 		cancel_delayed_work(&ts->work);
-		schedule_delayed_work(&ts->work, 0);
+		schedule_delayed_work(&ts->work, 4000);
 	}
 }
 
