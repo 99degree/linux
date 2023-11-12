@@ -905,6 +905,24 @@
 				};
 
 				/* note: secure cb9 in downstream */
+
+                                compute-cb@10 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <10>;
+                                        iommus = <&apps_smmu 0x1003 0x0>;
+                                };
+
+                                compute-cb@11 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <11>;
+                                        iommus = <&apps_smmu 0x1004 0x0>;
+                                };
+
+                                compute-cb@12 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <12>;
+                                        iommus = <&apps_smmu 0x1005 0x0>;
+                                };
 			};
 		};
 	};
