@@ -2,11 +2,12 @@
 /* Copyright (c) 2015, Sony Mobile Communications, AB.
  */
 
+#include <linux/backlight.h>
 #include <linux/delay.h>
+#include <linux/devm-helpers.h>
 #include <linux/interrupt.h>
 #include <linux/ktime.h>
 #include <linux/kernel.h>
-#include <linux/backlight.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -294,7 +295,8 @@ static void wled_ovp_work(struct work_struct *work)
 {
 	struct wled *wled = container_of(work,
 					 struct wled, ovp_work.work);
-	enable_irq(wled->ovp_irq);
+
+	dev_info(wled->dev, "over voltage protection happened, should do something....");
 }
 
 static int wled_module_enable(struct wled *wled, int val)
@@ -1596,7 +1598,7 @@ static int wled_configure_ovp_irq(struct wled *wled,
 	}
 
 	rc = devm_request_threaded_irq(wled->dev, wled->ovp_irq, NULL,
-				       wled_ovp_irq_handler, IRQF_ONESHOT,
+				       wled_ovp_irq_handler, IRQF_ONESHOT | IRQ_TYPE_EDGE_RISING,
 				       "wled_ovp_irq", wled);
 	if (rc < 0) {
 		dev_err(wled->dev, "Unable to request ovp_irq (err:%d)\n",
@@ -1604,6 +1606,8 @@ static int wled_configure_ovp_irq(struct wled *wled,
 		wled->ovp_irq = 0;
 		return 0;
 	}
+
+	devm_delayed_work_autocancel(wled->dev, &wled->ovp_work, wled_ovp_work);
 
 	rc = regmap_read(wled->regmap, wled->ctrl_addr +
 			 WLED3_CTRL_REG_MOD_EN, &val);
@@ -1693,8 +1697,6 @@ static int wled_probe(struct platform_device *pdev)
 		dev_err(wled->dev, "Invalid WLED version\n");
 		break;
 	}
-
-	INIT_DELAYED_WORK(&wled->ovp_work, wled_ovp_work);
 
 	rc = wled_configure_short_irq(wled, pdev);
 	if (rc < 0)
