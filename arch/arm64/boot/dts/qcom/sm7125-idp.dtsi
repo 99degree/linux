@@ -816,7 +816,7 @@
 	};
 
 	remoteproc_cdsp: remoteproc@8300000 {
-		compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
+		compatible = "qcom,sm7125-cdsp-pas", "qcom,sm6350-cdsp-pas";
 		reg = <0 0x08300000 0 0x10000>;
 
 		interrupts-extended = <&intc GIC_SPI 578 IRQ_TYPE_LEVEL_HIGH>,
@@ -905,6 +905,24 @@
 				};
 
 				/* note: secure cb9 in downstream */
+
+                                compute-cb@10 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <10>;
+                                        iommus = <&apps_smmu 0x1003 0x0>;
+                                };
+
+                                compute-cb@11 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <11>;
+                                        iommus = <&apps_smmu 0x1004 0x0>;
+                                };
+
+                                compute-cb@12 {
+                                        compatible = "qcom,fastrpc-compute-cb";
+                                        reg = <12>;
+                                        iommus = <&apps_smmu 0x1005 0x0>;
+                                };
 			};
 		};
 	};
@@ -970,17 +988,137 @@
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 };
 
+//i2c@880000
+&i2c0 {
+	dmas = <&gpi_dma0 0 0 QCOM_GPI_I2C>,
+		<&gpi_dma0 1 0 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+};
+
+//i2c@884000
+&i2c1 {
+                dmas = <&gpi_dma0 0 1 QCOM_GPI_I2C>,
+                        <&gpi_dma0 1 1 QCOM_GPI_I2C>;
+                dma-names = "tx", "rx";
+};
+
+//i2c@888000
+&i2c2 {
+                dmas = <&gpi_dma0 0 2 QCOM_GPI_I2C>,
+                        <&gpi_dma0 1 2 QCOM_GPI_I2C>;
+                dma-names = "tx", "rx";
+};
+
+//i2c@88c000
+&i2c3 {
+                dmas = <&gpi_dma0 0 3 QCOM_GPI_I2C>,
+                        <&gpi_dma0 1 3 QCOM_GPI_I2C>;
+                dma-names = "tx", "rx";
+};
+
+//i2c@890000
+&i2c4 {
+	dmas = <&gpi_dma0 0 4 QCOM_GPI_I2C>,
+		<&gpi_dma0 1 4 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+};
+
+&i2c5 {
+	dmas = <&gpi_dma0 0 5 QCOM_GPI_I2C>,
+		<&gpi_dma0 1 5 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+};
+
+//i2c@a84000
 &i2c7 {
 	dmas = <&gpi_dma1 0 1 QCOM_GPI_I2C>,
 			<&gpi_dma1 1 1 QCOM_GPI_I2C>;
 	dma-names = "tx", "rx";
 };
 
+//i2c@a8c000
+&i2c9 {
+	dmas = <&gpi_dma1 0 3 QCOM_GPI_I2C>,
+		<&gpi_dma1 1 3 QCOM_GPI_I2C>;
+		dma-names = "tx", "rx";
+};
+
+//se10_i2c: i2c@a90000
+&i2c10 {
+	dmas = <&gpi_dma1 0 4 QCOM_GPI_I2C>,
+                <&gpi_dma1 1 4 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+};
+
+//se11_i2c: i2c@a94000
+&i2c11 {
+	dmas = <&gpi_dma1 0 5 QCOM_GPI_I2C>,
+		<&gpi_dma1 1 5 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+};
+
+//spi@880000
+&spi0 {
+	dmas = <&gpi_dma0 0 0 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 0 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@884000
+&spi1 {
+	dmas = <&gpi_dma0 0 1 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 1 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+//spi@88c000
+&spi3 {
+	dmas = <&gpi_dma0 0 3 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 3 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@88c000
+&spi3 {
+	dmas = <&gpi_dma0 0 3 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 3 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@894000
+&spi5 {
+        dmas = <&gpi_dma0 0 5 QCOM_GPI_SPI>,
+                <&gpi_dma0 1 5 QCOM_GPI_SPI>;
+        dma-names = "tx", "rx";
+};
+
+//spi@a80000
+&spi6 {
+	dmas = <&gpi_dma1 0 0 QCOM_GPI_SPI>,
+		<&gpi_dma1 1 0 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@a88000
+&spi8 {
+	dmas = <&gpi_dma1 0 2 QCOM_GPI_SPI>,
+		<&gpi_dma1 1 2 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@a90000
+&spi10 {
+                dmas = <&gpi_dma1 0 4 QCOM_GPI_SPI>,
+                        <&gpi_dma1 1 4 QCOM_GPI_SPI>;
+};
+
+//spi@a94000
 &spi11 {
 	dma-names = "tx", "rx";
 	dmas = <&gpi_dma1 0 5 QCOM_GPI_SPI>,
 			<&gpi_dma1 1 5 QCOM_GPI_SPI>;
 };
+
+
 
 &remoteproc_mpss {
 	/* from sc7180-idp.dts */
@@ -1011,6 +1149,128 @@
                         reg = <0x258 0x1>;
                         bits = <25 3>;
         };
+};
+
+&sound {
+	compatible = "qcom,sm8250-sndcard";
+#if 0
+                audio-routing = "Headphone Jack\0HPOL\0Headphone Jack\0HPOR";
+                #address-cells = <0x01>;
+                #size-cells = <0x00>;
+                model = "sc7180-rt5682-max98357a-2mic";
+                pinctrl-names = "default";
+                pinctrl-0 = <0x114>;
+                dmic-gpios = <0x36 0x56 0x00>;
+
+#endif
+
+	audio-routing =
+		"AMIC1", "MIC BIAS1",
+		"MIC BIAS1", "Analog Mic1",
+		"AMIC2", "MIC BIAS2",
+		"MIC BIAS2", "Analog Mic2",
+		"AMIC3", "MIC BIAS3",
+		"MIC BIAS3", "Analog Mic3",
+		"TX DMIC0", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic0",
+		"TX DMIC1", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic1",
+		"TX DMIC2", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic2",
+		"TX DMIC3", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic3",
+		"IN1_HPHL", "HPHL_OUT",
+		"IN2_HPHR", "HPHR_OUT",
+		"IN3_AUX", "AUX_OUT",
+		"TX SWR_ADC0", "ADC1_OUTPUT",
+		"TX SWR_ADC2", "ADC2_OUTPUT",
+		"TX SWR_DMIC0", "DMIC1_OUTPUT",
+		"TX SWR_DMIC1", "DMIC2_OUTPUT",
+		"TX SWR_DMIC2", "DMIC3_OUTPUT",
+		"TX SWR_DMIC3", "DMIC4_OUTPUT",
+		"TX SWR_DMIC4", "DMIC5_OUTPUT",
+		"TX SWR_DMIC5", "DMIC6_OUTPUT",
+		"TX SWR_DMIC6", "DMIC7_OUTPUT",
+		"TX SWR_DMIC7", "DMIC8_OUTPUT",
+		"WSA SRC0_INP", "SRC0",
+		"WSA_TX DEC0_INP", "TX DEC0 MUX",
+		"WSA_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC0_INP", "TX DEC0 MUX",
+		"RX_TX DEC1_INP", "TX DEC1 MUX",
+		"RX_TX DEC2_INP", "TX DEC2 MUX",
+		"RX_TX DEC3_INP", "TX DEC3 MUX",
+		"SpkrLeft IN", "WSA_SPK1 OUT",
+		"SpkrRight IN", "WSA_SPK2 OUT",
+		"VA_AIF1 CAP", "VA_SWR_CLK",
+		"VA_AIF2 CAP", "VA_SWR_CLK",
+		"VA_AIF3 CAP", "VA_SWR_CLK",
+		"VA MIC BIAS1", "Digital Mic0",
+		"VA MIC BIAS1", "Digital Mic1",
+		"VA MIC BIAS3", "Digital Mic2",
+		"VA MIC BIAS3", "Digital Mic3",
+		"VA DMIC0", "VA MIC BIAS1",
+		"VA DMIC1", "VA MIC BIAS1",
+		"VA DMIC2", "VA MIC BIAS3",
+		"VA DMIC3", "VA MIC BIAS3",
+		"VA SWR_ADC0", "VA_SWR_CLK",
+		"VA SWR_ADC1", "VA_SWR_CLK",
+		"VA SWR_ADC2", "VA_SWR_CLK",
+		"VA SWR_ADC3", "VA_SWR_CLK",
+		"VA SWR_MIC0", "VA_SWR_CLK",
+		"VA SWR_MIC1", "VA_SWR_CLK",
+		"VA SWR_MIC2", "VA_SWR_CLK",
+		"VA SWR_MIC3", "VA_SWR_CLK",
+		"VA SWR_MIC4", "VA_SWR_CLK",
+		"VA SWR_MIC5", "VA_SWR_CLK",
+		"VA SWR_MIC6", "VA_SWR_CLK",
+		"VA SWR_MIC7", "VA_SWR_CLK",
+		"VA SWR_ADC0", "ADC1_OUTPUT",
+		"VA SWR_ADC2", "ADC2_OUTPUT",
+		"VA SWR_MIC0", "DMIC1_OUTPUT",
+		"VA SWR_MIC1", "DMIC2_OUTPUT",
+		"VA SWR_MIC2", "DMIC3_OUTPUT",
+		"VA SWR_MIC3", "DMIC4_OUTPUT",
+		"VA SWR_MIC4", "DMIC5_OUTPUT",
+		"VA SWR_MIC5", "DMIC6_OUTPUT",
+		"VA SWR_MIC6", "DMIC7_OUTPUT",
+		"VA SWR_MIC7", "DMIC8_OUTPUT";
+
+        mm1-dai-link {
+                link-name = "MultiMedia1";
+                cpu {
+                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+                };
+        };
+
+        mm2-dai-link {
+                link-name = "MultiMedia2";
+                cpu {
+                        sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA2>;
+                };
+        };
+
+        mm3-dai-link {
+                link-name = "MultiMedia3";
+                cpu {
+                        sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA3>;
+                };
+	};
+
+        i2s-dai-link {
+                link-name = "I2S Playback";
+                cpu {
+                        sound-dai = <&q6afedai QUINARY_MI2S_RX>;
+                };
+
+                platform {
+                        sound-dai = <&q6routing>;
+                };
+
+                codec {
+                        sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
+                };
+        };
+
 };
 
 &usb_1_dwc3 {
