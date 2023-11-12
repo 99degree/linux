@@ -1,6 +1,10 @@
 #include "sm7125-xiaomi-joyeuse.dts"
 #include "sm7125-idp.dtsi"
 
+/* remove 300mhz freq, too slow */
+/delete-node/ &cpu6_opp1;
+/delete-node/ &cpu0_opp1;
+
 / {
 	chosen {
 		#address-cells = <2>;
@@ -125,8 +129,11 @@
 
 		/* 3p0 <- 800ohm -> 1p8 */
 		vreg_l13a_1p8: ldo13 {
-			regulator-min-microvolt = <1696000>;
-			regulator-max-microvolt = <1904000>;
+			/* make it align with l18a a fixed 1p8 */
+//			regulator-min-microvolt = <1696000>;
+			regulator-min-microvolt = <1832000>;
+//			regulator-max-microvolt = <1904000>;
+			regulator-max-microvolt = <1832000>;
 			regulator-always-on;
 		};
 
@@ -152,8 +159,13 @@
 		};
 
 		vreg_l18a_2p8: ldo18 {
-			regulator-min-microvolt = <1696000>;
-			regulator-max-microvolt = <1904000>;
+                        /* 
+			 * make it align with l13a a fixed 1p8 since serial with 2x 200ohm
+			 */
+//                      regulator-min-microvolt = <1696000>;
+                        regulator-min-microvolt = <1832000>;
+//                      regulator-max-microvolt = <1904000>;
+                        regulator-max-microvolt = <1832000>;
 			regulator-always-on;
 		};
 
@@ -343,10 +355,6 @@
 
 &cci {
         status = "okay";
-};
-
-&cont_splash_mem {
-//	compatible = "shared-dma-pool";
 };
 
 &dispcc {
@@ -584,6 +592,9 @@
 
 		reset-gpio = <&tlmm 8 0x00>;
 		irq-gpio = <&tlmm 9 0x2001>;
+
+		vio-supply = <&vreg_l18a_3p0>;
+		vdd-supply = <&vreg_l18a_3p0>;
 
 		panel = <&panel0>;
 
