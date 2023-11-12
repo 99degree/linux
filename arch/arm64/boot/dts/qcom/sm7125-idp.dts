@@ -573,7 +573,7 @@
 
 		spi-max-frequency = <4000000>;
 
-		//interrupts = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
+		//interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>;
 
 		novatek,reset-gpio = <&tlmm 8 0x00>;
 		novatek,irq-gpio = <&tlmm 9 0x2001>;
@@ -1134,7 +1134,7 @@
 				drive-strength = <2>; /* 2 MA */
 			};
 		};
-
+#if 0
         pmx_ts_active {
                 ts_active: ts_active {
                                 mux {
@@ -1194,7 +1194,7 @@
                                 };
                         };
                 };
-
+#endif
         te_gpio: te-default {
                 pins = "gpio10";
                 function = "mdp_vsync";

@@ -88,6 +88,9 @@ struct nt36xxx_ts {
 
 	struct mutex lock;
 
+#define NT36XXX_STATUS_SUSPEND			BIT(0)
+#define NT36XXX_STATUS_DOWNLOAD_COMPLETE	BIT(1)
+#define NT36XXX_STATUS_DOWNLOAD_RECOVER		BIT(2)
 	unsigned int status;
 
 	struct touchscreen_properties prop;
@@ -426,21 +429,22 @@ xfer_error:
 static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 {
 	struct nt36xxx_ts *ts = dev_id;
-        dev_info(ts->dev, "%s enter", __func__);
+
 	if (!ts->mmap)
 		goto exit;
-//	mutex_lock(&ts->lock);
-debug_irq(ts);
-	disable_irq(ts->irq);
-debug_irq(ts);
+
+	disable_irq_nosync(ts->irq);
+
 	nt36xxx_report(ts);
-debug_irq(ts);
+
 	enable_irq(ts->irq);
-debug_irq(ts);
-//	mutex_unlock(&ts->lock);
 
 exit:
-	dev_info(ts->dev, "%s exit", __func__);
+	if (ts->status & NT36XXX_STATUS_DOWNLOAD_RECOVER) {
+		ts->status &= ~NT36XXX_STATUS_DOWNLOAD_RECOVER;
+		schedule_delayed_work(&ts->work, 40000);
+	}
+
 	return IRQ_HANDLED;
 }
 
@@ -840,6 +844,8 @@ check_fw:
 	}
 
 	dev_info(ts->dev, "Touch IC fw loaded ok");
+
+	ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
 	goto exit;
 
 release_fw_buf:
@@ -853,15 +859,16 @@ exit:
 	return;
 }
 
-//yell
+/*yell*/
 static void nt36xxx_download_firmware(struct work_struct *work) {
         struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 	int ret;
 
-pr_info("%s enter ", __func__);
         pm_runtime_disable(ts->dev);
 
-        //cancel_delayed_work_sync(&ts->work);
+	disable_irq_nosync(ts->irq);
+
+        cancel_delayed_work(&ts->work);
 
         ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
@@ -879,8 +886,13 @@ pr_info("%s enter ", __func__);
         _nt36xxx_boot_download_firmware(ts);
 
 skip:
+	enable_irq(ts->irq);
         pm_runtime_enable(ts->dev);
-pr_info("%s exit", __func__);
+
+	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
+		cancel_delayed_work(&ts->work);
+		schedule_delayed_work(&ts->work, 4000);
+	}
 }
 
 static void nt36xxx_disable_regulators(void *data)
@@ -985,6 +997,8 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			dev_err(dev, "either need irq or irq-gpio specified in devicetree node!\n");
 			return -EINVAL;
 		}
+
+		dev_info(ts->dev, "irq %d", ts->irq);
 	}
 
 	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
@@ -995,6 +1009,8 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	/* These supplies are optional, also shared with LCD panel */
 	ts->supplies[0].supply = "vdd";
 	ts->supplies[1].supply = "vio";
+	ts->supplies[2].supply = "vio";
+	ts->supplies[3].supply = "vio";
 	ret = devm_regulator_bulk_get(dev,
 				      NT36XXX_NUM_SUPPLIES,
 				      ts->supplies);
@@ -1038,7 +1054,6 @@ skip_regulators:
 			return ret;
 	}
 
-        dev_info(dev, "b4 request_irq !");
 	ret = devm_request_threaded_irq(dev, ts->irq, NULL, nt36xxx_irq_handler,
 			 IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT, dev_name(dev), ts);
 	if (ret) {
@@ -1046,13 +1061,9 @@ skip_regulators:
 			return ret;
 	}
 
-	dev_info(dev, "request_irq ok!");
-
 	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
 
 	schedule_delayed_work(&ts->work, 0);
-
-	pm_runtime_enable(ts->dev);
 
 	if (drm_is_panel_follower(dev)) {
 		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
@@ -1070,7 +1081,7 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret = 0;
 
-	dev_info(dev, "suspending\n");
+	ts->status |= NT36XXX_STATUS_SUSPEND;
 
 	cancel_delayed_work_sync(&ts->work);
 
@@ -1079,8 +1090,7 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	}
 
 	if (ret)
-		dev_err(ts->dev, "Cannot enter suspend!!\n");
-        dev_info(dev, "suspending done\n");
+		dev_err(ts->dev, "Cannot enter suspend!\n");
 	return 0;
 }
 
@@ -1089,16 +1099,12 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
         struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret=0;
 
-dev_info(dev, "pm suspending\n");
 	if (drm_is_panel_follower(dev))
 		return 0;
 
-debug_irq(ts);
-	disable_irq(ts->irq);
-debug_irq(ts);
+	disable_irq_nosync(ts->irq);
 
 	ret = nt36xxx_internal_pm_suspend(dev);
-dev_info(dev, "pm suspending done\n");
 	return ret;
 }
 
@@ -1106,10 +1112,11 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 {
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 
-	dev_info(dev, "resuming\n");
-
-	if(ts->status)
+	/* some how reduced some kind of cpu, but remove checking should no harm */
+	if(ts->status & NT36XXX_STATUS_SUSPEND)
 		schedule_delayed_work(&ts->work, 0);
+
+	ts->status &= ~NT36XXX_STATUS_SUSPEND;
 
 	return 0;
 }
@@ -1118,16 +1125,13 @@ static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 {
         struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret=0;
-        dev_info(dev, "pm resuming\n");
+
         if (drm_is_panel_follower(dev))
                 return 0;
 
-debug_irq(ts);
 	enable_irq(ts->irq);
-debug_irq(ts);
 
 	ret = nt36xxx_internal_pm_resume(dev);
-        dev_info(dev, "pm resuming done \n");
 	return ret;
 }
 
@@ -1139,8 +1143,13 @@ static int panel_prepared(struct drm_panel_follower *follower)
 {
 	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
 
-	if (ts->status)
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
 		enable_irq(ts->irq);
+
+	/* supposed to clear the flag, but leave to internal_pm_resume
+	for greater purpose */
+	/* ts->status &= ~NT36XXX_STATUS_SUSPEND; */
+
 	return nt36xxx_internal_pm_resume(ts->dev);
 }
 
@@ -1148,8 +1157,10 @@ static int panel_unpreparing(struct drm_panel_follower *follower)
 {
 	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
 
-	ts->status = 1;
+	ts->status |= NT36XXX_STATUS_SUSPEND;
+
 	disable_irq(ts->irq);
+
 	return nt36xxx_internal_pm_suspend(ts->dev);
 }
 
