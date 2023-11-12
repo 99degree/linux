@@ -1134,6 +1134,18 @@
 };
 
 &sound {
+	compatible = "qcom,sm8250-sndcard";
+#if 0
+                audio-routing = "Headphone Jack\0HPOL\0Headphone Jack\0HPOR";
+                #address-cells = <0x01>;
+                #size-cells = <0x00>;
+                model = "sc7180-rt5682-max98357a-2mic";
+                pinctrl-names = "default";
+                pinctrl-0 = <0x114>;
+                dmic-gpios = <0x36 0x56 0x00>;
+
+#endif
+
 	audio-routing =
 		"AMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Analog Mic1",
