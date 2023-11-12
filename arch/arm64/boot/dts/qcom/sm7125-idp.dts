@@ -567,7 +567,7 @@
 		reg = <0>;
 
 		/* caught from joyeuse dtb*/
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <4000000>;
 
 		/* ts->irq report 194 */
 		/* interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>; */
