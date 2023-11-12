@@ -560,17 +560,18 @@
 };
 
 &spi11 {
-	spi-max-frequency = <4000000>;
 	status = "okay";
 
-	//nt36xxx_touch: i2c@
 	touchscreen@0 {
 		compatible = "novatek,NVT-ts-spi", "novatek,NVT-ts-spi", "novatek,nt36675-spi";
 		reg = <0>;
 
-		spi-max-frequency = <4000000>;
+		/* caught from joyeuse dtb*/
+		spi-max-frequency = <8000000>;
 
-		//interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>;
+		/* ts->irq report 194 */
+		/* interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>; */
+		/* interrupt= <&tlmm 13 2>; */ //dtb specified, but GPIO13 is CAM_MCLK0
 
 		novatek,reset-gpio = <&tlmm 8 0x00>;
 		novatek,irq-gpio = <&tlmm 9 0x2001>;
@@ -580,7 +581,14 @@
 		novatek,spi-rd-fast-addr = <0x03F310>;
 
 		reset-gpio = <&tlmm 8 0x00>;
+                /* dtb show <&tlmm 13 2>*/
 		irq-gpio = <&tlmm 9 0x2001>;
+
+/*
+                touch_ibb-supply = <0x241>; //lcdb_ncp
+                touch_lab-supply = <0x240>; //qcom,qpnp-lcdb-regulator ldo
+                touch_vddio-supply = <0x33c>; //pm6150_l18
+*/
 
 		vio-supply = <&vreg_l18a_3p0>;
 		vdd-supply = <&vreg_l18a_3p0>;
@@ -719,36 +727,6 @@
 &qup_spi11_cs_gpio {
 	drive-strength = <2>;
 	bias-disable;
-};
-
-&sound {
-        compatible = "qcom,sm8250-sndcard";
-        pinctrl-0 = <&i2s2_active>;
-        pinctrl-names = "default";
-        model = "Miatoll";
-
-        mm1-dai-link {
-                link-name = "MultiMedia1";
-                cpu {
-                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
-                };
-        };
-
-        i2s-dai-link {
-                link-name = "I2S Playback";
-                cpu {
-			/*TODO: tertery */
-                        sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
-                };
-
-                platform {
-                        sound-dai = <&q6routing>;
-                };
-
-                codec {
-                        sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
-                };
-        };
 };
 
 &tlmm {
