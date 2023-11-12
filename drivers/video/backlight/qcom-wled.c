@@ -201,8 +201,12 @@ struct wled {
 	int short_irq;
 	int ovp_irq;
 
+#define WLED_STATUS_CHECKING_FAULT	BIT(0)
+	int status;	/* store the low-half of irq handler */
+
 	struct wled_config cfg;
 	struct delayed_work ovp_work;
+	struct delayed_work fault_work;
 
 	/* Configures the brightness. Applicable for wled3, wled4 and wled5 */
 	int (*wled_set_brightness)(struct wled *wled, u16 brightness);
@@ -291,7 +295,6 @@ static int wled5_set_brightness(struct wled *wled, u16 brightness)
 	return rc;
 }
 
-/*yell*/
 static void wled_ovp_work(struct work_struct *work)
 {
 	struct wled *wled = container_of(work,
@@ -870,14 +873,33 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 			int_sts, fault_sts);
 
 	if (fault_sts & WLED3_CTRL_REG_OVP_FAULT_BIT) {
-		if (wled->wled_auto_detection_required(wled)) {
-			mutex_lock(&wled->lock);
-			wled_auto_string_detection(wled);
-			mutex_unlock(&wled->lock);
-		}
+		if (wled->wled_auto_detection_required(wled))
+			schedule_delayed_work(&wled->fault_work, 0);
 	}
 
 	return IRQ_HANDLED;
+}
+
+static void wled_fault_ovp_work(struct work_struct *work) {
+	struct wled *wled = container_of(work,
+                                         struct wled, fault_work.work);
+
+	mutex_lock(&wled->lock);
+
+	if (!(wled->status & WLED_STATUS_CHECKING_FAULT))
+		wled->status |= WLED_STATUS_CHECKING_FAULT;
+	else
+		goto exit;
+
+	mutex_unlock(&wled->lock);
+
+	wled_auto_string_detection(wled);
+
+	mutex_lock(&wled->lock);
+
+	wled->status &= ~WLED_STATUS_CHECKING_FAULT;
+exit:
+	mutex_unlock(&wled->lock);
 }
 
 static int wled3_setup(struct wled *wled)
@@ -1617,10 +1639,13 @@ static int wled_configure_ovp_irq(struct wled *wled,
 
 	devm_delayed_work_autocancel(wled->dev, &wled->ovp_work, wled_ovp_work);
 
+	devm_delayed_work_autocancel(wled->dev, &wled->fault_work, wled_fault_ovp_work);
+
 	rc = regmap_read(wled->regmap, wled->ctrl_addr +
 			 WLED3_CTRL_REG_MOD_EN, &val);
 	if (rc < 0)
 		return rc;
+
 
 	return 0;
 }
