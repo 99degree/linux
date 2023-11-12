@@ -851,12 +851,14 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 	int rc;
 	u32 int_sts, fault_sts;
 
+	disable_irq(wled->ovp_irq);
+
 	rc = regmap_read(wled->regmap,
 			 wled->ctrl_addr + WLED3_CTRL_REG_INT_RT_STS, &int_sts);
 	if (rc < 0) {
 		dev_err(wled->dev, "Error in reading WLED3_INT_RT_STS rc=%d\n",
 			rc);
-		return IRQ_HANDLED;
+		goto exit;
 	}
 
 	rc = regmap_read(wled->regmap, wled->ctrl_addr +
@@ -864,7 +866,7 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 	if (rc < 0) {
 		dev_err(wled->dev, "Error in reading WLED_FAULT_STATUS rc=%d\n",
 			rc);
-		return IRQ_HANDLED;
+		goto exit;
 	}
 
 	if (fault_sts & (WLED3_CTRL_REG_OVP_FAULT_BIT |
@@ -876,6 +878,9 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 		if (wled->wled_auto_detection_required(wled))
 			schedule_delayed_work(&wled->fault_work, 0);
 	}
+
+exit:
+        enable_irq(wled->ovp_irq);
 
 	return IRQ_HANDLED;
 }
