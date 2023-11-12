@@ -474,7 +474,7 @@
 	lab-supply = <&lab>;
 	ibb-supply = <&ibb>;
 #endif
-	//backlight = <&pm6150l_wled>;
+	backlight = <&pm6150l_wled>;
 
 	pinctrl-names = "default", "te_pin"; //TODO: need to figure out how to handle te_pin
 	pinctrl-0 = <&disp_pins>;
@@ -689,6 +689,10 @@
 		output-low;
 	};
 
+};
+
+&pm6150l_wled {
+	status = "okay";
 };
 
 &q6afedai {
