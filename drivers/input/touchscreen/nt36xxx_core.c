@@ -364,8 +364,7 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			break;
 		}
 
-		cancel_delayed_work(&ts->work);
-		schedule_delayed_work(&ts->work, 100);
+		ts->status |= NT36XXX_STATUS_DOWNLOAD_RECOVER;
 		goto xfer_error;
 	}
 
