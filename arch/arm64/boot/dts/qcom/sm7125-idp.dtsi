@@ -816,7 +816,7 @@
 	};
 
 	remoteproc_cdsp: remoteproc@8300000 {
-		compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
+		compatible = "qcom,sm7125-cdsp-pas", "qcom,sm6350-cdsp-pas";
 		reg = <0 0x08300000 0 0x10000>;
 
 		interrupts-extended = <&intc GIC_SPI 578 IRQ_TYPE_LEVEL_HIGH>,
