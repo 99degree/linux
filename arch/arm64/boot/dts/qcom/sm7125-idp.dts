@@ -508,23 +508,24 @@
 };
 
 &remoteproc_adsp {
-	compatible = "qcom,sm7125-adsp-pas", "qcom,sc7280-adsp-pas";
 	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
+	memory-region = <&adsp_mem>;
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
-	compatible = "qcom,sm7125-cdsp-pas", "qcom,sc7280-cdsp-pas";
 	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
+	memory-region = <&cdsp_mem>;
 
 	status = "okay";
 };
 
 &remoteproc_mpss {
-        firmware-name = "qcom/sm7125/miatoll/modem.mbn";
-		
-        status = "okay";
+	firmware-name = "qcom/sm7125/miatoll/modem.mbn";
+	memory-region = <&mpss_mem>;
+
+	status = "okay";
 };
 
 &i2c4 {
@@ -606,21 +607,8 @@
 
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
+
 	status = "okay";
-	
-	bluetooth: bluetooth {
-		compatible = "qcom,wcn3991-bt";
-
-		//TODO: add firmware support here
-		//firmware-name = "qcom/sm7125/crnv21.bin";
-
-		vddio-supply = <&vreg_l10a_1p8>;
-		vddxo-supply = <&vreg_l1c_1p8>;
-		vddrf-supply = <&vreg_l2c_1p3>;
-		vddch0-supply = <&vreg_l10c_3p3>;
-		max-speed = <3200000>;
-		status = "okay";
-	};
 };
 
 &uart8 {
