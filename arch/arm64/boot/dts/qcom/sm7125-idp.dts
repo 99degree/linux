@@ -35,6 +35,7 @@
 	};
 };
 
+#if 0
 &apps_rsc {
 	regulators-0 {	
 		vdd-s1-supply = <&vph_pwr>;
@@ -260,6 +261,7 @@
 		};
 	};
 };
+#endif
 
 &reserved_memory {
 		camera_mem: camera_region@8e400000 {
@@ -491,6 +493,9 @@
 	};
 };
 
+&qfprom {
+	status = "okay";
+};
 
 &qspi {
 	pinctrl-names = "default";
@@ -608,11 +613,11 @@
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
 
-	status = "okay";
+	status = "disabled";
 };
 
 &uart8 {
-	status = "okay";
+	status = "disabled";
 };
 
 
@@ -658,13 +663,9 @@
 	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
 
 	firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
+	qcom,ath10k-calibration-variant = "joyeuse";
 
         status = "okay";
-/*
-	wifi-firmware {
-		iommus = <&apps_smmu 0xc2 0x1>;
-	};
-*/
 };
 
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
