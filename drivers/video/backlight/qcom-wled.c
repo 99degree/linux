@@ -203,6 +203,7 @@ struct wled {
 
 	struct wled_config cfg;
 	struct delayed_work ovp_work;
+	struct delayed_work fault_work;
 
 	/* Configures the brightness. Applicable for wled3, wled4 and wled5 */
 	int (*wled_set_brightness)(struct wled *wled, u16 brightness);
@@ -291,7 +292,6 @@ static int wled5_set_brightness(struct wled *wled, u16 brightness)
 	return rc;
 }
 
-/*yell*/
 static void wled_ovp_work(struct work_struct *work)
 {
 	struct wled *wled = container_of(work,
@@ -848,12 +848,14 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 	int rc;
 	u32 int_sts, fault_sts;
 
+	disable_irq(wled->ovp_irq);
+
 	rc = regmap_read(wled->regmap,
 			 wled->ctrl_addr + WLED3_CTRL_REG_INT_RT_STS, &int_sts);
 	if (rc < 0) {
 		dev_err(wled->dev, "Error in reading WLED3_INT_RT_STS rc=%d\n",
 			rc);
-		return IRQ_HANDLED;
+		goto exit;
 	}
 
 	rc = regmap_read(wled->regmap, wled->ctrl_addr +
@@ -861,7 +863,7 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 	if (rc < 0) {
 		dev_err(wled->dev, "Error in reading WLED_FAULT_STATUS rc=%d\n",
 			rc);
-		return IRQ_HANDLED;
+		goto exit;
 	}
 
 	if (fault_sts & (WLED3_CTRL_REG_OVP_FAULT_BIT |
@@ -871,13 +873,26 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 
 	if (fault_sts & WLED3_CTRL_REG_OVP_FAULT_BIT) {
 		if (wled->wled_auto_detection_required(wled)) {
-			mutex_lock(&wled->lock);
-			wled_auto_string_detection(wled);
-			mutex_unlock(&wled->lock);
+			cancel_delayed_work(&wled->fault_work);
+			schedule_delayed_work(&wled->fault_work, 0);
 		}
 	}
 
+exit:
+        enable_irq(wled->ovp_irq);
+
 	return IRQ_HANDLED;
+}
+
+static void wled_fault_ovp_work(struct work_struct *work) {
+	struct wled *wled = container_of(work,
+                                         struct wled, fault_work.work);
+
+	mutex_lock(&wled->lock);
+
+	wled_auto_string_detection(wled);
+
+	mutex_unlock(&wled->lock);
 }
 
 static int wled3_setup(struct wled *wled)
@@ -1617,10 +1632,13 @@ static int wled_configure_ovp_irq(struct wled *wled,
 
 	devm_delayed_work_autocancel(wled->dev, &wled->ovp_work, wled_ovp_work);
 
+	devm_delayed_work_autocancel(wled->dev, &wled->fault_work, wled_fault_ovp_work);
+
 	rc = regmap_read(wled->regmap, wled->ctrl_addr +
 			 WLED3_CTRL_REG_MOD_EN, &val);
 	if (rc < 0)
 		return rc;
+
 
 	return 0;
 }
