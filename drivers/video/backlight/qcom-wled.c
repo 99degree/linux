@@ -201,9 +201,6 @@ struct wled {
 	int short_irq;
 	int ovp_irq;
 
-#define WLED_STATUS_CHECKING_FAULT	BIT(0)
-	int status;	/* store the low-half of irq handler */
-
 	struct wled_config cfg;
 	struct delayed_work ovp_work;
 	struct delayed_work fault_work;
@@ -875,8 +872,10 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 			int_sts, fault_sts);
 
 	if (fault_sts & WLED3_CTRL_REG_OVP_FAULT_BIT) {
-		if (wled->wled_auto_detection_required(wled))
+		if (wled->wled_auto_detection_required(wled)) {
+			cancel_delayed_work(&wled->fault_work);
 			schedule_delayed_work(&wled->fault_work, 0);
+		}
 	}
 
 exit:
@@ -891,19 +890,8 @@ static void wled_fault_ovp_work(struct work_struct *work) {
 
 	mutex_lock(&wled->lock);
 
-	if (!(wled->status & WLED_STATUS_CHECKING_FAULT))
-		wled->status |= WLED_STATUS_CHECKING_FAULT;
-	else
-		goto exit;
-
-	mutex_unlock(&wled->lock);
-
 	wled_auto_string_detection(wled);
 
-	mutex_lock(&wled->lock);
-
-	wled->status &= ~WLED_STATUS_CHECKING_FAULT;
-exit:
 	mutex_unlock(&wled->lock);
 }
 
