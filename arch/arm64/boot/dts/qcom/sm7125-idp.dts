@@ -8,7 +8,7 @@
 		ranges;
 
 		//TODO: remove unneeded once all sorta out.
-		bootargs = "pd_ignore_unused no_console_suspend kpti=off nokaslr ignore_loglevel clk_ignore_unused";
+		bootargs = "no_console_suspend kpti=off nokaslr ignore_loglevel";
 
 		stdout-path = "serial0:115200n8";
 	};
@@ -501,7 +501,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&qspi_clk &qspi_cs0 &qspi_data0 &qspi_data1>;
 	
-	status = "okay";
+	status = "disabled";
 };
 
 &qupv3_id_0 {
@@ -516,14 +516,14 @@
 	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
 	memory-region = <&adsp_mem>;
 
-	status = "okay";
+//	status = "okay";
 };
 
 &remoteproc_cdsp {
 	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
 	memory-region = <&cdsp_mem>;
 
-	status = "okay";
+//	status = "okay";
 };
 
 &remoteproc_mpss {
@@ -662,8 +662,8 @@
 	vdd-3.3-ch0-supply = <&vreg_l10c_3p3>;
 	vdd-3.3-ch1-supply = <&vreg_l11c_3p3>;
 
-	firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
-	qcom,ath10k-calibration-variant = "joyeuse";
+	//firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
+	qcom,ath10k-calibration-variant = "";
 
         status = "okay";
 };
@@ -1172,6 +1172,14 @@
                 drive-strength = <2>;   /* 2 mA */
                 bias-pull-down;         /* PULL DOWN */
         };
+
+	tert_i2s: tert_i2s {
+                pins = "gpio63", "gpio64", "gpio65", "gpio66";
+                function = "mi2s_2";
+                drive-strength = <8>;
+		bias-disable;
+		output-high;
+	};
 };
 
 /* override later by pm6150.dtsi */
@@ -1185,6 +1193,12 @@
 
 &pm6150_vib {
 	status = "okay";
+};
+
+&sound {
+	pinctrl-names = "default";
+	pinctrl-0 = <&tert_i2s>;
+
 };
 
 &ufs_mem_hc { status = "disabled"; };

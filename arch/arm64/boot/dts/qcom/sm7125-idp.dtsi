@@ -15,6 +15,15 @@
         chosen {
                 framebuffer: framebuffer@9c000000 {};
         };
+
+        smp2p-mpss {
+                smp2p_wlan_1_in: qcom,smp2p-wlan-1-in {
+                        qcom,entry-name = "wlan";
+                        interrupt-controller;
+                        #interrupt-cells = <2>;
+                };
+
+        };
 };
 
 // SC7180 doesn't have UFS yet.
@@ -866,8 +875,16 @@
 	};
 };
 
-&venus {
-	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
+&q6afedai {
+        qi2s@20 {
+                reg = <TERTIARY_MI2S_RX>;
+		qcom,sd-lines = <0>;
+        };
+
+        qi2s@21 {
+                reg = <TERTIARY_MI2S_TX>;
+		qcom,sd-lines = <1>;
+	};
 };
 
 //i2c@880000
@@ -1011,7 +1028,7 @@
 };
 
 &remoteproc_adsp {
-	compatible = "qcom,sm7125-adsp-pas", "qcom,sm6350-adsp-pas";
+	//compatible = "qcom,sm7125-adsp-pas", "qcom,sm6350-adsp-pas";
 };
 
 /* this is temp dup node, once sc7180.dtsi added, then above cdsp node can remove */
@@ -1019,12 +1036,64 @@
 	compatible = "qcom,sm7125-cdsp-pas", "qcom,sm6350-cdsp-pas";
 };
 
+&remoteproc_adsp {
+        glink-edge {
+                apr {
+		//	status = "disabled";
+		};
+	};
+};
 &remoteproc_mpss {
-        compatible = "qcom,sm7125-mpss-pas", "qcom,sm6350-mpss-pas";
+	/* sc7180.dtsi have 1 more domain but is not necessary */
+        //compatible = "qcom,sm7125-mpss-pas", "qcom,sm6350-mpss-pas";
+	power-domains = <&rpmhpd SC7180_CX>,
+                        <&rpmhpd SC7180_MSS>;
+	power-domain-names = "cx", "mss";
+
+	status = "disabled";
+
+	glink-edge {
+		apr {
+			compatible = "qcom,apr-v2";
+			qcom,glink-channels = "apr_modem_svc";
+			qcom,domain = <APR_DOMAIN_MODEM>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+                        service@33 {
+                                compatible = "qcom,pd-mapper";
+                                reg = <APR_SVC_ADSP_CORE>;
+                                qcom,protection-domain = "kernel/elf_loader", "msm/modem/wlan_pd";
+                        };
+		};
+
+                fastrpc {
+                                        compatible = "qcom,fastrpc";
+                                        qcom,glink-channels = "fastrpcglink-apps-dsp";
+                                        label = "mpss";
+                                        #address-cells = <1>;
+                                        #size-cells = <0>;
+                                        compute-cb@0 {
+                                                compatible = "qcom,fastrpc-compute-cb";
+                                                reg = <0>;
+                                                iommus = <&apps_smmu 0x441 0x0>;
+                                        };
+
+		};
+
+	};	
 };
 
 &sound {
 	compatible = "qcom,sm8250-sndcard";
+        model = "Miatoll";
+	#address-cells = <0x01>;
+	#size-cells = <0x00>;
+
+        pinctrl-0 = <&ter_mi2s_active>;
+        pinctrl-names = "default";
+
+        audio-routing = "Headphone Jack\0HPOL\0Headphone Jack\0HPOR";
+
 #if 0
                 audio-routing = "Headphone Jack\0HPOL\0Headphone Jack\0HPOR";
                 #address-cells = <0x01>;
@@ -1036,7 +1105,7 @@
 
 #endif
 
-	audio-routing =
+	_audio-routing =
 		"AMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Analog Mic1",
 		"AMIC2", "MIC BIAS2",
@@ -1109,29 +1178,30 @@
 
         mm1-dai-link {
                 link-name = "MultiMedia1";
+
                 cpu {
                         sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
                 };
         };
-
+#if 0
         mm2-dai-link {
                 link-name = "MultiMedia2";
                 cpu {
-                        sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA2>;
+                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
                 };
         };
 
         mm3-dai-link {
                 link-name = "MultiMedia3";
                 cpu {
-                        sound-dai = <&q6asmdai  MSM_FRONTEND_DAI_MULTIMEDIA3>;
+                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
                 };
 	};
-
+#endif
         i2s-dai-link {
                 link-name = "I2S Playback";
                 cpu {
-                        sound-dai = <&q6afedai QUINARY_MI2S_RX>;
+                        sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
                 };
 
                 platform {
@@ -1139,7 +1209,7 @@
                 };
 
                 codec {
-                        sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
+                        sound-dai = <&tas2562_r>, <&tas2562_l>;
                 };
         };
 
@@ -1193,3 +1263,26 @@
 &usb_1_hsphy {
         nvmem-cells = <&qusb2_hstx_trim_new>;
 };
+
+#if 0
+&wifi {
+        interrupts-extended =
+                                <&intc GIC_SPI 414 IRQ_TYPE_LEVEL_HIGH /* CE0 */ >,
+                                <&intc GIC_SPI 415 IRQ_TYPE_LEVEL_HIGH /* CE1 */ >,
+                                <&intc GIC_SPI 416 IRQ_TYPE_LEVEL_HIGH /* CE2 */ >,
+                                <&intc GIC_SPI 417 IRQ_TYPE_LEVEL_HIGH /* CE3 */ >,
+                                <&intc GIC_SPI 418 IRQ_TYPE_LEVEL_HIGH /* CE4 */ >,
+                                <&intc GIC_SPI 419 IRQ_TYPE_LEVEL_HIGH /* CE5 */ >,
+                                <&intc GIC_SPI 420 IRQ_TYPE_LEVEL_HIGH /* CE6 */ >,
+                                <&intc GIC_SPI 421 IRQ_TYPE_LEVEL_HIGH /* CE7 */ >,
+                                <&intc GIC_SPI 422 IRQ_TYPE_LEVEL_HIGH /* CE8 */ >,
+                                <&intc GIC_SPI 423 IRQ_TYPE_LEVEL_HIGH /* CE9 */ >,
+                                <&intc GIC_SPI 424 IRQ_TYPE_LEVEL_HIGH /* CE10 */>,
+                                <&intc GIC_SPI 425 IRQ_TYPE_LEVEL_HIGH /* CE11 */>;
+				<&smp2p_wlan_1_in 0 0>;
+				<&smp2p_wlan_1_in 0 1>;
+
+	interrupt-naame = "CE0", "CE1","CE2","CE3","CE4","CE5",
+		"CE6","CE7","CE8","CE9","CE10","CE11", "fatal", "crash";
+};
+#endif
