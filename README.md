@@ -10,8 +10,9 @@ This repo have a simple philosophy, which is basically minimal change to mainlin
 dts changes from mainly map220v [2] and the sm7125.dtsi within, together with my local changes aimed 
 to sc7180.dtsi after all (assumed the great commonality of sc7180 and sm7125). I really limited the change to sc7180.dtsi 
 and to archeive, i rather choose to override the value/node in sm7125.dtsi instead. the effective main dts is named as 
-sm7125-idp.dts and comtaining all machine specific node (the difference between redmi note 9 pro and smasung A72/A52), 
-unless there is any dt node missing by sm7125-idp.dts but present in arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts 
+sm7125-idp.dts as result. Later Joyeuse changes (redminote 9 pro) upstreamed, so all local modified dts changes are put into
+sm7125-idp.dtsi and inherit all machine specific node from upstream. There is no more rely on smasung A72/A52 tree from
+map220v. Unless there is any dt node missing by sm7125-idp.dts but present in arch/arm64/boot/dts/qcom/sm7125-samsung-a52q.dts 
 or fail merge, most of the common functionality are paired.
 
 Here are functionality not tested:
@@ -40,12 +41,15 @@ spi/dma/i2c
 pon/pwr button/vol button
 ```
 
-So with vendor nt36xxx_spi driver it is barely meet the requirement to Android/LOS. The success story of mainline similar to 
-xiaomi phone is from Linaro [3] and the overall procedure is compile full Android/LOS by them-selves.
+So with my rewrite of nt36xxx_spi driver, it is barely meet the requirement to Android/LOS/PostmarketOS. The success story of 
+mainline similar to xiaomi phone is from Linaro [3] and the overall procedure is compile full Android/LOS by them-selves.
 
-Currently the most mainline kernel friendly OS, postmarketOS, is not support with dynamic partition/virtual A/B scheme so the idea
-of flashing the rootfs into data partition is no-op unless flashing to super partition (the dynamic partition and wipe all 
-the sys/vendor/odm/system_ext itself) and lost the dual boot with LOS20 for ramoops reboot debug.
+Most of mainline kernel friendly OS, postmarketOS, is not support with dynamic partition/virtual A/B scheme so the idea
+of flashing the rootfs into data partition is no-op unless; flashing to super partition (the dynamic partition and wipe all 
+the sys/vendor/odm/system_ext itself) and lost the dual boot with LOS20 for ramoops reboot debug. After some iteration, there 
+is one more option raised, which is external sdcard bringup in mainline. Such that a dual boot Lineageos and postmarketos is 
+available for Joyeuse[9]. Further trial of booting Android out of sdcard is under attempt, but failed as result boot media
+not found in first-stage-init.
 
 I am sticking with LOS 19 recovery img [4] with the resulting mainline kernel image.gz-dtb by fastboot. The idea is to unpack the recovery
 initrd img and fastboot with the compiled zImage.gz-dtb as result. In addition, I also make use of the vendor bootloader capability
@@ -74,3 +78,4 @@ Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 po
  - [6] https://github.com/99degree
  - [7] https://www.youtube.com/@99degree14
  - [8] https://twitter.com/99degree2
+ - [9] https://www.youtube.com/watch?v=fz7Zj4eY4iY
