@@ -26,7 +26,6 @@ sound/mic/headphone/ampifier dai
 gpu(display comtroller is working, drm)
 camera(largely broken, not supported)
 pwm
-lcd backlight
 ```
 
 Tested good:
@@ -39,6 +38,7 @@ cpufreq
 usb peri/adb shell
 spi/dma/i2c
 pon/pwr button/vol button
+lcd backlight
 ```
 
 So with my rewrite of nt36xxx_spi driver, it is barely meet the requirement to Android/LOS/PostmarketOS. The success story of 
@@ -48,8 +48,8 @@ Most of mainline kernel friendly OS, postmarketOS, is not support with dynamic p
 of flashing the rootfs into data partition is no-op unless; flashing to super partition (the dynamic partition and wipe all 
 the sys/vendor/odm/system_ext itself) and lost the dual boot with LOS20 for ramoops reboot debug. After some iteration, there 
 is one more option raised, which is external sdcard bringup in mainline. Such that a dual boot Lineageos and postmarketos is 
-available for Joyeuse[9]. Further trial of booting Android out of sdcard is under attempt, but failed as result boot media
-not found in first-stage-init.
+available for Joyeuse[9]. And the pmOS binary release is at here[10] for download. Further trial of booting Android out 
+of sdcard is under attempt, but failed as result boot media not found in first-stage-init.
 
 I am sticking with LOS 19 recovery img [4] with the resulting mainline kernel image.gz-dtb by fastboot. The idea is to unpack the recovery
 initrd img and fastboot with the compiled zImage.gz-dtb as result. In addition, I also make use of the vendor bootloader capability
@@ -79,3 +79,4 @@ Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 po
  - [7] https://www.youtube.com/@99degree14
  - [8] https://twitter.com/99degree2
  - [9] https://www.youtube.com/watch?v=fz7Zj4eY4iY
+ - [10] https://github.com/99degree/postmarket-nightly-builds/actions
