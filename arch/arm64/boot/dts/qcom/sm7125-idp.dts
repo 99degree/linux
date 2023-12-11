@@ -14,6 +14,15 @@
 	};
 
 	//reserved_memory: reserved_memory {};
+
+	/* place-holder incase need a new fixed clk */
+	clocks: clocks {
+	        clk_titan_gdsc {
+			compatible = "fixed-clock";
+			clock-frequency = <38400000>;
+			#clock-cells = <0>;
+	        };
+	};
 };
 
 &soc {
@@ -33,6 +42,139 @@
 		regulator-always-on;
 		vin-supply = <&vph_pwr>;
 	};
+
+	wide_ldo_avdd0_regulator: gpio-regulator@99 { //AVDD0 2.9V //AVDD0_2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x00 0x00>;
+                regulator-name = "wide_ldo_avdd0_regulator";
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&pm6150l_gpios 4 0>; /* schematic not connected */
+                vin-supply = <&vreg_bob>;
+        };
+
+        wide_ldo_avdd1_regulator: gpio-regulator@0 { //AVDD1 2.9V //AVDD0_2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x00 0x00>;
+                regulator-name = "wide_ldo_avdd1_regulator";
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&pm6150l_gpios 9 0>; 
+		/* 
+		 * another gpio4 called avdd1_2p8 but schematic not connected 
+		 * and the name is swapped to avdd0 accordingly.
+		*/
+                vin-supply = <&vreg_bob>;
+        };
+
+        wide_ldo_avdd2_regulator: gpio-regulator@1 { //AVDD2 1.8V //2M_DVDDIO_1.8V?
+                compatible = "regulator-fixed";
+                //reg = <0x01 0x00>;
+                regulator-name = "wide_ldo_avdd2_regulator";
+                regulator-min-microvolt = <1800000>;
+                regulator-max-microvolt = <1800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&pm6150l_gpios 12 0>; //for P0,demo is tlmm 63 //TODO
+                vin-supply = <&vreg_bob>; //TODO
+        };
+
+        wide_ldo_dvdd_regulator: gpio-regulator@2 { //DVDD 1.2V
+                compatible = "regulator-fixed";
+                //reg = <0x02 0x00>;
+                regulator-name = "wide_ldo_dvdd_regulator";
+                regulator-min-microvolt = <1200000>;
+                regulator-max-microvolt = <1200000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&tlmm 42 0>;
+                vin-supply = <&vreg_s5a>;//48M pm6150_s5
+        };
+
+        wide_ldo_dvdd2_regulator: gpio-regulator@7 { //DVDD2 1.05V
+                compatible = "regulator-fixed";
+                //reg = <0x07 0x00>;
+                regulator-name = "wide_ldo_dvdd2_regulator";
+                regulator-min-microvolt = <1050000>;
+                regulator-max-microvolt = <1050000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&tlmm 42 0>;
+                vin-supply = <&vreg_s8c>;//64M pm6150l_s8 + pm6150_s5a
+        };
+
+        depth_ldo_avdd_regulator: gpio-regulator@3 { //depth AVDD 2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x03 0x00>;
+                regulator-name = "depth_ldo_avdd_regulator";
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&tlmm 43 0>;
+                vin-supply = <&vreg_bob>;
+        };
+
+        ultra_ldo_avdd_regulator: gpio-regulator@4 { //ultra AVDD 2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x04 0x00>;
+                regulator-name = "ultra_ldo_avdd_regulator";
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&pm6150l_gpios 8 0>;//for p0 main band
+                vin-supply = <&vreg_bob>;
+        };
+
+        ultra_ldo_dvdd_regulator: gpio-regulator@5 { //ultra DVDD 2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x05 0x00>;
+                regulator-name = "ultra_ldo_dvdd_regulator";
+                regulator-min-microvolt = <1200000>;
+                regulator-max-microvolt = <1200000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&tlmm 72 0>;
+                vin-supply = <&vreg_s5a>;
+        };
+
+        wide_ldo_afvdd_regulator: gpio-regulator@6 { //AFVDD 2.8V
+                compatible = "regulator-fixed";
+                //reg = <0x06 0x00>;
+                regulator-name = "wide_ldo_afvdd_regulator";
+                regulator-min-microvolt = <2800000>;
+                regulator-max-microvolt = <2800000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&pm6150l_gpios 6 0>;
+                vin-supply = <&vreg_bob>; //TODO
+        };
+
+        front_ldo_dvdd_regulator: gpio-regulator@8 { //dvdd1.1v-20
+                compatible = "regulator-fixed";
+                //reg = <0x08 0x00>;
+                regulator-name = "front_ldo_dvdd_regulator";
+                regulator-min-microvolt = <1050000>;
+                regulator-max-microvolt = <1050000>;
+                regulator-enable-ramp-delay = <100>;
+                enable-active-high;
+                gpio = <&tlmm 117 0>;
+                vin-supply = <&vreg_s5a>;
+        };
+
+        clk_titan_gdsc: gpio-regulator@100 { //dummy gdsc
+                compatible = "regulator-fixed";
+                //reg = <0x08 0x00>;
+                regulator-name = "clk_titan_gdsc";
+                regulator-min-microvolt = <1050000>;
+                regulator-max-microvolt = <1050000>;
+                regulator-enable-ramp-delay = <100>;
+        };
 };
 
 &apps_rsc {
@@ -48,6 +190,7 @@
 			regulator-max-microvolt = <1120000>;
 		};
 
+		vreg_s5a:
 		vreg_s5a_2p0: smps5 {
 			regulator-min-microvolt = <1744000>;
 			regulator-max-microvolt = <2040000>;
@@ -179,6 +322,7 @@
 			regulator-max-microvolt = <1200000>;
 		};
 
+		vreg_s8c:
 		vreg_s8c_1p35: smps8 {
 			regulator-min-microvolt = <1120000>;
 			regulator-max-microvolt = <1408000>;
@@ -332,18 +476,88 @@
 
 	ports {
 		port@0 {
-#if 0
 			csiphy0_ep: endpoint {
 				data-lanes = <0 1 2 3>;
-				//remote-endpoint = <&ov8856_ep>;
+				remote-endpoint = <&ov16a1q_ep>;
 			};
-#endif
 		};
 	};
 };
 
 &cci {
         status = "okay";
+};
+
+#if 0
+[   18.731285] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:0,slave_addr:0x7a,sensor_id:0x971
+[   18.954235] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:2,slave_addr:0x20,sensor_id:0x1641
+[   19.064560] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:1,slave_addr:0x6e,sensor_id:0x2e0
+[   19.162159] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:3,slave_addr:0x6e,sensor_id:0x8044
+[   19.296172] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:4,slave_addr:0x5a,sensor_id:0x559b
+
+ CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0x0
+ CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0x6E
+ CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0xA0
+ CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0xA2
+ CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0xA8
+
+[   47.248726] CAM_DBG: CAM-ACTUATOR: cam_actuator_slaveInfo_pkt_parser: 237: Slave addr: 0x18 Freq Mode: 1
+#endif
+
+&cci_i2c0 {
+	status = "okay";
+
+	ov16a1q: camera@20 {
+		compatible = "ovti,ov16a1q";
+                reg = <0x20>;
+
+		/*
+		  gpios = <&tlmm 13 0>,//cam_sensor_mclk0_active
+		   <&tlmm 32 0>, //reset-gpio
+		   <&pm6150l_gpios 4 0>; //wide_ldo_avdd0_regulator
+		  gpio-reset = <1>;
+		  gpio-vana = <2>;
+		  gpio-req-tbl-num = <0 1 2>;
+		  gpio-req-tbl-flags = <1 0 0>;
+		  gpio-req-tbl-label = "CAMIF_MCLK0",
+		     "CAM_RESET2",
+		     "CAM_AVDD"; //goto fixed regulator avdd
+		*/
+
+                reset-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&cam_sensor_mclk0_active /*&regulator_gpio42_default*/>; //well, try to define also gpio42
+
+		//power-domains = <&camcc TITAN_TOP_GDSC>;
+
+		/* GPIO[13..16]->MCLK[0..3] */
+
+                clocks = <&camcc CAM_CC_MCLK0_CLK>;
+                clock-names = "xvclk";
+                clock-frequency = <19200000>;
+
+		cam_vio-supply = <&vreg_l13a_1p8>;
+		cam_vana-supply = <&ultra_ldo_avdd_regulator>;
+		cam_vdig-supply = <&ultra_ldo_dvdd_regulator>;
+		cam_v_custom1-supply = <&wide_ldo_dvdd2_regulator>;
+		cam_v_custom2-supply = <&front_ldo_dvdd_regulator>;
+		cam_clk-supply = <&clk_titan_gdsc>;
+		cam_avdd-supply = <&wide_ldo_avdd0_regulator>;
+		//regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
+		//"cam_clk", "cam_avdd";
+
+		status = "okay";
+
+                port {
+                        ov16a1q_ep: endpoint {
+                                link-frequencies = /bits/ 64
+                                        <360000000 180000000>;
+                                data-lanes = <1 2 3 4>;
+                                remote-endpoint = <&csiphy0_ep>;
+                        };
+                };
+        };
 };
 
 &dispcc {
@@ -638,16 +852,9 @@
 &venus {
 	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
 	memory-region = <&venus_mem>;
-
 	firmware-name = "qcom/sm7125/miatoll/venus.mbn";
 
 	status = "okay";
-#if 0
-	video-firmware {
-		iommus = <&apps_smmu 0x0c42 0x0>;
-		firmware-name = "qcom/sm7125/miatoll/venus.mbn";
-	};
-#endif
 };
 
 &wifi {
@@ -660,11 +867,6 @@
 	firmware-name = "qcom/sm7125/miatoll/wlanmdsp.mbn";
 
         status = "okay";
-/*
-	wifi-firmware {
-		iommus = <&apps_smmu 0xc2 0x1>;
-	};
-*/
 };
 
 /* PINCTRL - additions to nodes defined in sc7180.dtsi */
@@ -684,6 +886,7 @@
 	status = "okay";
 };
 
+#if 1
 &q6afedai {
         qi2s@127 {
                 reg = <QUINARY_MI2S_RX>;
@@ -701,6 +904,7 @@
                 reg = <0>;
         };
 };
+#endif
 
 &qup_spi11_spi {
 	drive-strength = <2>;
@@ -718,6 +922,11 @@
 };
 
 &tlmm {
+        regulator_gpio42_default: regulator-default-state {
+                pins = "gpio42";
+                function = "gpio";
+        };
+
 	qup_uart3_sleep: qup-uart3-sleep {
 		pinmux {
 			pins = "gpio38", "gpio39",

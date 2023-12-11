@@ -4,6 +4,7 @@
 #include <dt-bindings/dma/qcom-gpi.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/soc/qcom,apr.h>
+#include <dt-bindings/soc/qcom,gpr.h>
 #include <dt-bindings/sound/qcom,q6afe.h>
 #include <dt-bindings/sound/qcom,q6asm.h>
 / {
@@ -186,6 +187,7 @@
 		power-domains = <&camcc IFE_0_GDSC>,
 			<&camcc IFE_1_GDSC>,
 			<&camcc TITAN_TOP_GDSC>;
+		required-opps = <&rpmhpd_opp_low_svs>;
 
 		clocks = <&camcc CAM_CC_CAMNOC_AXI_CLK>,
 			<&camcc CAM_CC_CPAS_AHB_CLK>,
@@ -1035,7 +1037,6 @@
                 dmic-gpios = <0x36 0x56 0x00>;
 
 #endif
-
 	audio-routing =
 		"AMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Analog Mic1",
@@ -1142,7 +1143,6 @@
                         sound-dai = <&tas2562_r 0>, <&tas2562_l 0>;
                 };
         };
-
 };
 
 &uart3 {
