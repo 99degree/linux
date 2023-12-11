@@ -322,6 +322,13 @@ config VIDEO_OV13B10
 	  This is a Video4Linux2 sensor driver for the OmniVision
 	  OV13B10 camera.
 
+config VIDEO_OV16A1X
+        tristate "OmniVision OV16A1[0Q] sensor support"
+	default y
+        help
+          This is a Video4Linux2 sensor driver for the OmniVision
+          OV16A1[0Q] camera.
+
 config VIDEO_OV2640
 	tristate "OmniVision OV2640 sensor support"
 	help
