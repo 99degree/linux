@@ -720,7 +720,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	 * pm_resume need to re-upload fw for NT36675 IC
 	 *
 	 */
-	data = ts->fw_entry.data = kmemdup(ts->dev, fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
+	data = ts->fw_entry.data = kmemdup(fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
 	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
@@ -774,7 +774,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	 * thus there is no more allocate bunch of mem incase of issue
 	 * happened between fw load and parsing error
 	 */
-	ts->fw_entry.data = devm_kmemdup(ts->dev, ts->fw_entry->data, ts->fw_entry->size, GFP_KERNEL | GFP_DMA);
+	ts->fw_entry.data = devm_kmemdup(ts->dev, ts->fw_entry.data, ts->fw_entry.size, GFP_KERNEL | GFP_DMA);
 	kfree(data);
 
 upload:
@@ -896,7 +896,7 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 
         _nt36xxx_boot_download_firmware(ts);
 skip:
-        pm_runtime_put(&pdev->dev);
+        pm_runtime_put(ts->dev);
 exit:
 	enable_irq(ts->irq);
 
