@@ -1023,6 +1023,22 @@
 
 &remoteproc_mpss {
         compatible = "qcom,sm7125-mpss-pas", "qcom,sm6350-mpss-pas";
+        glink-edge {
+		gpr {
+			compatible = "qcom,gpr";
+			qcom,glink-channels = "apr_audio_svc";
+			qcom,domain = <APR_DOMAIN_APPS>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+#if 0
+                                        service@3 {
+                                                compatible = "qcom,q6core";
+                                                reg = <APR_SVC_ADSP_CORE>;
+                                                qcom,protection-domain = "avs/audio", "msm/adsp/audio_pd";
+                                        };
+#endif
+		};
+	};
 };
 
 &sound {

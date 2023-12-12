@@ -547,6 +547,8 @@
 		//regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
 		//"cam_clk", "cam_avdd";
 
+		//lens-focus = <&ak7375>;
+
 		status = "okay";
 
                 port {
