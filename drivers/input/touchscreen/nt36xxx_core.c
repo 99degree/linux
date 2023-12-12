@@ -699,6 +699,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	int i, ret, retry = 0;
 	size_t fw_need_write_size = 0;
         const struct firmware *fw_entry;
+	void *data;
 	u8 val[8 * 4] = {0};
 
 	WARN_ON(ts->hw_crc != 2);
@@ -719,10 +720,8 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	 * pm_resume need to re-upload fw for NT36675 IC
 	 *
 	 */
-        ts->fw_entry.data = devm_kmemdup(ts->dev, fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
-
-        release_firmware(fw_entry);
-
+	data = ts->fw_entry.data = kmemdup(ts->dev, fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
+	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
                 goto exit;
@@ -764,8 +763,19 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	if (ret) {
 		if(ret != -ENOMEM)
 			goto release_fw_buf;
+
+		/* really dont let the tasklet re-enter since no needed for broken fw data */
+		ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
 		goto release_fw;
 	}
+
+	/*
+	 * dup mem again for devm remove
+	 * thus there is no more allocate bunch of mem incase of issue
+	 * happened between fw load and parsing error
+	 */
+	ts->fw_entry.data = devm_kmemdup(ts->dev, ts->fw_entry->data, ts->fw_entry->size, GFP_KERNEL | GFP_DMA);
+	kfree(data);
 
 upload:
 	if (ts->hw_crc) {
@@ -863,11 +873,13 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
         struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 	int ret;
 
-        pm_runtime_disable(ts->dev);
-
 	disable_irq_nosync(ts->irq);
 
         cancel_delayed_work(&ts->work);
+
+        ret = pm_runtime_resume_and_get(ts->dev);
+        if (ret)
+                goto exit;
 
         ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
@@ -883,10 +895,10 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
         }
 
         _nt36xxx_boot_download_firmware(ts);
-
 skip:
+        pm_runtime_put(&pdev->dev);
+exit:
 	enable_irq(ts->irq);
-        pm_runtime_enable(ts->dev);
 
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
 		cancel_delayed_work(&ts->work);
