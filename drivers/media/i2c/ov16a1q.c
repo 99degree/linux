@@ -44,10 +44,10 @@
 
 #define RKMODULE_MAX_SENSOR_NUM         8
 
-#define RKMODULE_CAMERA_MODULE_INDEX    "rockchip,camera-module-index"
-#define RKMODULE_CAMERA_MODULE_FACING   "rockchip,camera-module-facing"
-#define RKMODULE_CAMERA_MODULE_NAME     "rockchip,camera-module-name"
-#define RKMODULE_CAMERA_LENS_NAME       "rockchip,camera-module-lens-name"
+//#define RKMODULE_CAMERA_MODULE_INDEX    "rockchip,camera-module-index"
+//#define RKMODULE_CAMERA_MODULE_FACING   "rockchip,camera-module-facing"
+//#define RKMODULE_CAMERA_MODULE_NAME     "rockchip,camera-module-name"
+//#define RKMODULE_CAMERA_LENS_NAME       "rockchip,camera-module-lens-name"
 
 #define RKMODULE_CAMERA_SYNC_MODE       "rockchip,camera-module-sync-mode"
 #define RKMODULE_INTERNAL_MASTER_MODE   "internal_master"
@@ -2139,7 +2139,7 @@ static int ov16a1q_probe(struct i2c_client *client)
 		return -EINVAL;
 	}
 
-	ov16a1q->power_gpio = devm_gpiod_get(dev, "power", GPIOD_OUT_LOW);
+	ov16a1q->power_gpio = devm_gpiod_get_optional(dev, "power", GPIOD_OUT_LOW);
 	if (IS_ERR(ov16a1q->power_gpio))
 		dev_warn(dev, "Failed to get power-gpios, maybe no use\n");
 
@@ -2147,7 +2147,7 @@ static int ov16a1q_probe(struct i2c_client *client)
 	if (IS_ERR(ov16a1q->reset_gpio))
 		dev_warn(dev, "Failed to get reset-gpios\n");
 
-	ov16a1q->pwdn_gpio = devm_gpiod_get(dev, "pwdn", GPIOD_OUT_LOW);
+	ov16a1q->pwdn_gpio = devm_gpiod_get_optional(dev, "pwdn", GPIOD_OUT_LOW);
 	if (IS_ERR(ov16a1q->pwdn_gpio))
 		dev_warn(dev, "Failed to get pwdn-gpios\n");
 
