@@ -113,6 +113,7 @@ struct nt36xxx_ts {
 
 	uint8_t hw_crc;
 
+	const char * fw_name;
 	struct firmware fw_entry; /* containing request fw data */
 	const struct nt36xxx_chip_data *data;
 };
@@ -443,7 +444,7 @@ exit:
 		ts->status &= ~NT36XXX_STATUS_DOWNLOAD_RECOVER;
 		/* TODO: other builtin eeprom model might have another reset
 		 * approach other than download, might add here afterward */
-		if (ts->data.fw_name)
+		if (ts->fw_name)
 			schedule_delayed_work(&ts->work, 40000);
 	}
 
@@ -711,9 +712,9 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	if (ts->fw_entry.data)
 		goto upload;
 
-	ret = request_firmware(&fw_entry, ts->data->fw_name, ts->dev);
+	ret = request_firmware(&fw_entry, ts->fw_name, ts->dev);
 	if (ret) {
-		dev_err(ts->dev, "request fw fail name=%s\n", ts->data->fw_name);
+		dev_err(ts->dev, "request fw fail name=%s\n", ts->fw_name);
 		goto exit;
 	}
 
@@ -723,7 +724,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	 * pm_resume need to re-upload fw for NT36675 IC
 	 *
 	 */
-	data = ts->fw_entry.data = kmemdup(fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
+	ts->fw_entry.data = data = kmemdup(fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
 	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
@@ -875,16 +876,19 @@ exit:
 
 /*yell*/
 static void nt36xxx_download_firmware(struct work_struct *work) {
-        struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
+	struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 	int ret;
 
-	disable_irq_nosync(ts->irq);
+	cancel_delayed_work(&ts->work);
 
-        cancel_delayed_work(&ts->work);
+	/* so the pm resume might have code to enable regulators. */
+	ret = pm_runtime_resume_and_get(ts->dev);
+	if (ret) {
+		dev_err(ts->dev, "%s resume fail 0x%x", __func__, ret);
+		goto exit;
+	}
 
-        ret = pm_runtime_resume_and_get(ts->dev);
-        if (ret)
-                goto exit;
+        disable_irq_nosync(ts->irq);
 
         ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
@@ -899,11 +903,11 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 		goto skip;
         }
 
-        _nt36xxx_boot_download_firmware(ts);
+	_nt36xxx_boot_download_firmware(ts);
 skip:
-        pm_runtime_put(ts->dev);
-exit:
 	enable_irq(ts->irq);
+exit:
+	pm_runtime_put(ts->dev);
 
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
 		cancel_delayed_work(&ts->work);
@@ -1078,18 +1082,26 @@ skip_regulators:
 		return ret;
 	}
 
+	/* init with default name */
+	ts->fw_name = ts->data->fw_name;
 	/* support overriding fw name */
 	of_property_read_string_index(ts->dev->of_node, "firmware-name", 0, &signed_fwname);
 	if (signed_fwname)
-		ts->data.fw_name = signed_fwname;
+		ts->fw_name = signed_fwname;
 
 	if (drm_is_panel_follower(dev)) {
 		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
 		devm_drm_panel_add_follower(dev, &ts->panel_follower);
-	} else if (ts->data.fw_name) {
-		/* devm_drm_panel_add_follower will call into internal resume ops so kick
-		 * start schedule task and normal case will need to kick here.Other builtin
-		 * eeprom model wont need this download process */
+	}
+
+	pm_runtime_enable(dev);
+
+	/* have to make sure this is first time schedule work, if devm_drm_panel_add_follower
+	 * called into internal resume with schedule_delay_work, then block it over there */
+	if (ts->fw_name) {
+		/* make the driver sleep while waiting tasklet fw download */
+		pm_runtime_suspend(dev);
+
         	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
 	        schedule_delayed_work(&ts->work, 0);
 	}
@@ -1120,7 +1132,7 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 
 static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 {
-        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret=0;
 
 	if (drm_is_panel_follower(dev))
@@ -1138,7 +1150,7 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 
 	/* some how reduced some kind of cpu, but remove checking should no harm */
 	if(ts->status & NT36XXX_STATUS_SUSPEND)
-		if (ts->data.fw_name)
+		if (ts->fw_name)
 			schedule_delayed_work(&ts->work, 0);
 
 	ts->status &= ~NT36XXX_STATUS_SUSPEND;
@@ -1148,7 +1160,7 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 
 static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 {
-        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret=0;
 
         if (drm_is_panel_follower(dev))
@@ -1184,7 +1196,7 @@ static int panel_unpreparing(struct drm_panel_follower *follower)
 
 	ts->status |= NT36XXX_STATUS_SUSPEND;
 
-	disable_irq(ts->irq);
+	disable_irq_nosync(ts->irq);
 
 	return nt36xxx_internal_pm_suspend(ts->dev);
 }
