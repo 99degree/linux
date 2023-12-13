@@ -149,3 +149,4 @@ obj-$(CONFIG_VIDEO_WM8775) += wm8775.o
 
 obj-$(CONFIG_VIDEO_OV16A1X) += ov16a1q.o
 obj-$(CONFIG_VIDEO_S5K5E9) += s5k5e9.o
+obj-$(CONFIG_VIDEO_GC8034) += gc8034.o
