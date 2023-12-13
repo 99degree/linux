@@ -441,7 +441,10 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 exit:
 	if (ts->status & NT36XXX_STATUS_DOWNLOAD_RECOVER) {
 		ts->status &= ~NT36XXX_STATUS_DOWNLOAD_RECOVER;
-		schedule_delayed_work(&ts->work, 40000);
+		/* TODO: other builtin eeprom model might have another reset
+		 * approach other than download, might add here afterward */
+		if (ts->data.fw_name)
+			schedule_delayed_work(&ts->work, 40000);
 	}
 
 	return IRQ_HANDLED;
@@ -699,7 +702,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	int i, ret, retry = 0;
 	size_t fw_need_write_size = 0;
         const struct firmware *fw_entry;
-	void *data;
+	void *data, *data2;
 	u8 val[8 * 4] = {0};
 
 	WARN_ON(ts->hw_crc != 2);
@@ -766,6 +769,7 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 
 		/* really dont let the tasklet re-enter since no needed for broken fw data */
 		ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
+		dev_err(ts->dev, "Parsing fw error, stop re-loading fw now on, ret=0x%x!", ret);
 		goto release_fw;
 	}
 
@@ -774,7 +778,8 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	 * thus there is no more allocate bunch of mem incase of issue
 	 * happened between fw load and parsing error
 	 */
-	ts->fw_entry.data = devm_kmemdup(ts->dev, ts->fw_entry.data, ts->fw_entry.size, GFP_KERNEL | GFP_DMA);
+	data2 = devm_kmemdup(ts->dev, ts->fw_entry.data, ts->fw_entry.size, GFP_KERNEL | GFP_DMA);
+	ts->fw_entry.data = data2;
 	kfree(data);
 
 upload:
@@ -967,6 +972,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			struct regmap *regmap)
 {
 	const struct nt36xxx_chip_data *chip_data;
+	const char *signed_fwname = NULL;
 	int ret;
 
 	struct nt36xxx_ts *ts = devm_kzalloc(dev, sizeof(struct nt36xxx_ts), GFP_KERNEL);
@@ -996,7 +1002,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	if (IS_ERR(ts->reset_gpio))
 		return PTR_ERR(ts->reset_gpio);
 
-	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx reset");
+	gpiod_set_consumer_name(ts->reset_gpio, "nt36xxx_reset");
 
 	ts->irq_gpio = devm_gpiod_get_optional(dev, "irq", GPIOD_IN);
 	if (IS_ERR(ts->irq_gpio))
@@ -1012,7 +1018,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 		dev_info(ts->dev, "irq %d", ts->irq);
 	}
 
-	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx irq");
+	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx_irq");
 
 	if (drm_is_panel_follower(dev))
 		goto skip_regulators;
@@ -1020,8 +1026,8 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	/* These supplies are optional, also shared with LCD panel */
 	ts->supplies[0].supply = "vdd";
 	ts->supplies[1].supply = "vio";
-	ts->supplies[2].supply = "vio";
-	ts->supplies[3].supply = "vio";
+	ts->supplies[2].supply = "vio2";
+	ts->supplies[3].supply = "vio3";
 	ret = devm_regulator_bulk_get(dev,
 				      NT36XXX_NUM_SUPPLIES,
 				      ts->supplies);
@@ -1061,24 +1067,31 @@ skip_regulators:
 
 	ret = nt36xxx_input_dev_config(ts, ts->data->id);
 	if (ret) {
-			dev_err(dev, "failed set input device: %d\n", ret);
-			return ret;
+		dev_err(dev, "failed set input device: %d\n", ret);
+		return ret;
 	}
 
 	ret = devm_request_threaded_irq(dev, ts->irq, NULL, nt36xxx_irq_handler,
-			 IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT, dev_name(dev), ts);
+			IRQ_TYPE_EDGE_RISING | IRQF_ONESHOT, dev_name(dev), ts);
 	if (ret) {
-			dev_err(dev, "request irq failed: %d\n", ret);
-			return ret;
+		dev_err(dev, "request irq failed: %d\n", ret);
+		return ret;
 	}
 
-	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
-
-	schedule_delayed_work(&ts->work, 0);
+	/* support overriding fw name */
+	of_property_read_string_index(ts->dev->of_node, "firmware-name", 0, &signed_fwname);
+	if (signed_fwname)
+		ts->data.fw_name = signed_fwname;
 
 	if (drm_is_panel_follower(dev)) {
 		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
 		devm_drm_panel_add_follower(dev, &ts->panel_follower);
+	} else if (ts->data.fw_name) {
+		/* devm_drm_panel_add_follower will call into internal resume ops so kick
+		 * start schedule task and normal case will need to kick here.Other builtin
+		 * eeprom model wont need this download process */
+        	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
+	        schedule_delayed_work(&ts->work, 0);
 	}
 
 	dev_info(dev, "probe ok!");
@@ -1125,7 +1138,8 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 
 	/* some how reduced some kind of cpu, but remove checking should no harm */
 	if(ts->status & NT36XXX_STATUS_SUSPEND)
-		schedule_delayed_work(&ts->work, 0);
+		if (ts->data.fw_name)
+			schedule_delayed_work(&ts->work, 0);
 
 	ts->status &= ~NT36XXX_STATUS_SUSPEND;
 
