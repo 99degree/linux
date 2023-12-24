@@ -1140,6 +1140,8 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 
 	disable_irq_nosync(ts->irq);
 
+	regulator_bulk_disable(NT36XXX_NUM_SUPPLIES, ts->supplies);
+
 	ret = nt36xxx_internal_pm_suspend(dev);
 	return ret;
 }
@@ -1167,6 +1169,8 @@ static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
                 return 0;
 
 	enable_irq(ts->irq);
+
+	regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 
 	ret = nt36xxx_internal_pm_resume(dev);
 	return ret;

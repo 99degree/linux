@@ -161,6 +161,17 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 				   &nt36xxx_spi_input_id, regmap);
 }
 
+/* do not need to fw download */
+const struct nt36xxx_chip_data default_config = {
+        .config = &nt36xxx_regmap_config_32bit,
+        .mmap = nt36675_memory_maps,
+        .max_x = 1080,
+        .max_y = 2400,
+        .abs_x_max = 1080,
+        .abs_y_max = 2400,
+        .id = &nt36xxx_spi_input_id,
+};
+
 const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36675_memory_maps,
@@ -181,6 +192,7 @@ MODULE_DEVICE_TABLE(spi, nt36xxx_spi_ids);
 static const struct of_device_id nt36xxx_spi_of_match[] = {
 	{ .compatible = "novatek,nt36675-spi", .data = &miatoll_tianma_nt36675, },
 	{ .compatible = "novatek,NVT-ts-spi", .data = &miatoll_tianma_nt36675, },
+        { .compatible = "novatek,NVT-default-spi", .data = &default_config, },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, nt36xxx_spi_of_match);
