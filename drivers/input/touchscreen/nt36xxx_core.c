@@ -119,7 +119,6 @@ struct nt36xxx_ts {
 };
 
 static const struct nt36xxx_trim_table trim_id_table[] = {
-#if 0
 	/* TODO: port and test all related module */
 	{
 		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
@@ -181,7 +180,6 @@ static const struct nt36xxx_trim_table trim_id_table[] = {
 		.mask = { 0, 0, 0, 1, 1, 1 },
 		.mapid = NT36676F_IC,
 	},
-#endif
 	{
 		.id = { 0xFF, 0xFF, 0xFF, 0x75, 0x66, 0x03},
 		.mask = { 0, 0, 0, 1, 1, 1 },
