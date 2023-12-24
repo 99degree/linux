@@ -923,7 +923,7 @@ static void s5k5e9_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id s5k5e9_of_match[] = {
-	{ .compatible = "ovti,s5k5e9" },
+	{ .compatible = "samsung,s5k5e9" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, s5k5e9_of_match);
@@ -944,7 +944,7 @@ static struct i2c_driver s5k5e9_i2c_driver = {
 
 module_i2c_driver(s5k5e9_i2c_driver);
 
-MODULE_DESCRIPTION("ovti s5k5e9 Camera driver");
+MODULE_DESCRIPTION("samsung s5k5e9 Camera driver");
 MODULE_AUTHOR("Ricardo Ribalda <ribalda@kernel.org>");
 MODULE_AUTHOR("99degree <https://github.com/99degree>");
 MODULE_LICENSE("GPL v2");
