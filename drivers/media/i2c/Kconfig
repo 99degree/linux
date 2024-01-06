@@ -50,6 +50,15 @@ config VIDEO_AR0521
 	  To compile this driver as a module, choose M here: the
 	  module will be called ar0521.
 
+config VIDEO_GC02M1
+        tristate "Samsung gc02m1 support"
+        help
+          This is a Video4Linux2 sensor driver for the Samsung
+	  gc02m1 camera.
+
+          To compile this driver as a module, choose M here: the
+          module will be called gc02m1.
+
 config VIDEO_GC8034
         tristate "GlaxyCore GC8034 sensor support"
         help

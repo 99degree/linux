@@ -27,7 +27,25 @@
 #define S5K5E9_FPS 30
 #define S5K5E9_MBUS_CODE MEDIA_BUS_FMT_SRGGB10_1X10
 
-#define S5K5E9_REG_FRAMECNT		0x0005
+#define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC	61053
+
+#define S5K5E9_REG_SENSOR_ID_L			0x0000
+#define S5K5E9_REG_SENSOR_ID_H			0x0001
+#define S5K5E9_SENSOR_ID_VAL			0x487B
+
+#define S5K5E9_REG_FRAMECNT			0x0005
+
+#define S5K5E9_REG_GAIN_H				0x0204
+#define S5K5E9_REG_GAIN_L				0x0205
+#define S5K5E9_REG_GAIN_BIT_SHIFT		0x1
+
+#define S5K5E9_REG_UPDATE_DUMMY			0x3200
+#define S5K5E9_REG_UPDATE_DUMMY_VAL		0x00
+
+#define S5K5E9_REG_TEST_PATTERN			0x0601
+#define S5K5E9_REG_TEST_PATTERN_ENABLE	0x02
+#define S5K5E9_REG_TEST_PATTERN_DISABLE	0x00
+
 
 static const char * const s5k5e9_supply_name[] = {
 	"vdda",
@@ -53,7 +71,7 @@ struct s5k5e9 {
 	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *unit_size;
 
-	struct regulator_bulk_data	supplies[S5K5E9_NUM_SUPPLIES];
+//	struct regulator_bulk_data	supplies[S5K5E9_NUM_SUPPLIES];
 
 	struct gpio_desc *enable_gpio;
 
@@ -260,26 +278,29 @@ static const struct reg_8 mode_table_common[] = {
 static const struct s5k5e9_mode {
 	u32 width;
 	u32 height;
+	u32 linelength;
+	u32 framelength;
 	const struct reg_8 *reg_table;
 } s5k5e9_modes[] = {
 	{
 		.width = 2592,
 		.height = 1940,
+		.linelength = 3112,
+		.framelength = 2030,
 		.reg_table = mode_2592x1940,
 	},
-	#if 0
-	//disable atm since array empty
-	{
-		.width = 1920,
-		.height = 1080,
-		.reg_table = mode_1920x1080,
-	},
-	#endif
+#if 0
+	/* this is depending on framelength and linelength, and is not support yet */
 	{
 		.width = 1280,
 		.height = 720,
+		/* TODO: find out real framelength and linelength */
+		.linelength = 3112,
+		.framelength = 2030,
+		
 		.reg_table = mode_1280x720,
 	},
+#endif
 };
 
 static inline struct s5k5e9 *to_s5k5e9(struct v4l2_subdev *sd)
@@ -292,9 +313,10 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
-	int ret;
+	int ret, i;
 
-	ret = regulator_bulk_enable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
+	dev_info(dev, "%s enter", __func__);
+	ret = devm_regulator_bulk_get_enable(dev, S5K5E9_NUM_SUPPLIES, s5k5e9_supply_name);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "failed to enable regulators: %d\n", ret);
 		return ret;
@@ -304,7 +326,6 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 
 	ret = clk_prepare_enable(s5k5e9->xclk);
 	if (ret < 0) {
-		regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 		dev_err(s5k5e9->dev, "clk prepare enable failed\n");
 		return ret;
 	}
@@ -325,7 +346,7 @@ static int __maybe_unused s5k5e9_power_off(struct device *dev)
 
 	clk_disable_unprepare(s5k5e9->xclk);
 
-	regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
+	//regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 	usleep_range(10, 20);
 
 	return 0;
@@ -524,22 +545,60 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
 #if 0
-		/* set framelength */
-		if(ctrl->val > 61053)
-			vals[1] = 0xff;
-			vals[0] = 0x70;			
-		} else /* long exposure */ {
-			vals[1] = 0x0b;
-			vals[0] = 0x9c;				
+		if(ctrl->val > 61053) {
+			wr_pair[0] =
+				{0x0340, ((ctrl->val + 5) >> 8 ) & 0xff }; //frame_h
+			wr_pair[1] =
+				{0x0341, (ctrl->val + 5) & 0xff}; //frame_l
+                        wr_pair[2] =
+				{0x0342, 0xFF}; //line_h
+                        wr_pair[3] =
+				{0x0343, 0XFC}; //line_l
+                        wr_pair[4] =
+				{0x0200, 0xFF};
+                        wr_pair[5] =
+				{0x0201, 0X70};
+                        wr_pair[6] =
+				{0x0202, (ctrl->val >> 8 ) & 0xff };
+                        wr_pair[7] =
+				{0x0203, ctrl->val & 0xff};
+			};
+#endif
+
+		regmap_write(s5k5e9->regmap, 0x0340, (s5k5e9_modes[0].framelength >> 8 ) & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0341, s5k5e9_modes[0].framelength & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0342, (s5k5e9_modes[0].linelength >> 8 ) & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0343, s5k5e9_modes[0].linelength & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0200, 0xff);
+		regmap_write(s5k5e9->regmap, 0x0201, 0x70);
+		regmap_write(s5k5e9->regmap, 0x0202, (ctrl->val >> 8 ) & 0xff);
+		ret = regmap_write(s5k5e9->regmap, 0x0203, ctrl->val & 0xff);
+
+		if (ret < 0) {
+			dev_err(s5k5e9->dev, "Error %d\n", ret);
+			break;
 		}
-		ret = regmap_bulk_write(s5k5e9->regmap, 0x200, vals, 2);
+
+		ret = 0;
+		break;
+
+	case V4L2_CID_GAIN:
+		vals[1] = (ctrl->val >> S5K5E9_REG_GAIN_BIT_SHIFT) & 0xff; /* valid bits 0x1fff*/
+		vals[0] = (ctrl->val >> (8 + S5K5E9_REG_GAIN_BIT_SHIFT)) & 0xff;
+		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_GAIN_H, vals, 2);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
-#endif
-		/* shutter */
-		vals[1] = ctrl->val;
-		vals[0] = ctrl->val >> 8;
-		ret = regmap_bulk_write(s5k5e9->regmap, 0x202, vals, 2);
+		ret = 0;
+		break;
+
+	case V4L2_CID_TEST_PATTERN: /* this is not the */
+		vals[0] = S5K5E9_REG_TEST_PATTERN_ENABLE;
+		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, vals, 1);
+		if (ret < 0)
+			dev_err(s5k5e9->dev, "Error %d\n", ret);
+
+		vals[0] = 0;
+		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_UPDATE_DUMMY, vals, 1);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
 		ret = 0;
@@ -731,12 +790,18 @@ static const struct regmap_config sensor_regmap_config = {
 static int s5k5e9_get_regulators(struct device *dev, struct s5k5e9 *s5k5e9)
 {
 	unsigned int i;
+	int ret;
 
+	return 0;
+#if 0
 	for (i = 0; i < S5K5E9_NUM_SUPPLIES; i++)
 		s5k5e9->supplies[i].supply = s5k5e9_supply_name[i];
 
-	return devm_regulator_bulk_get(dev, S5K5E9_NUM_SUPPLIES,
+	ret = devm_regulator_bulk_get(dev, S5K5E9_NUM_SUPPLIES,
 				       s5k5e9->supplies);
+#endif
+	dev_info(dev, "%s done.", __func__);
+	return ret;
 }
 
 static int s5k5e9_parse_fwnode(struct device *dev)
@@ -788,7 +853,7 @@ static int s5k5e9_probe(struct i2c_client *client)
 		.width = 1120,
 		.height = 1120,
 	};
-	int ret;
+	int ret, id[2];
 
 	ret = s5k5e9_parse_fwnode(dev);
 	if (ret)
@@ -831,13 +896,22 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return PTR_ERR(s5k5e9->regmap);
 	}
 
-	v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
+	i2c_set_clientdata(client, s5k5e9);
 
 	/*
 	 * Enable power initially, to avoid warnings
 	 * from clk_disable on power_off
 	 */
 	s5k5e9_power_on(s5k5e9->dev);
+
+	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
+	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
+	if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
+                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
+                return -EIO;
+	}
+
+        v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
 
 	pm_runtime_set_active(s5k5e9->dev);
 	pm_runtime_enable(s5k5e9->dev);
@@ -895,6 +969,7 @@ static int s5k5e9_probe(struct i2c_client *client)
 		goto free_entity;
 	}
 
+	dev_info(dev, "probe successed!");
 	return 0;
 
 free_entity:
