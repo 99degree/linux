@@ -1,5 +1,9 @@
-#include "sm7125-xiaomi-joyeuse.dts"
-#include "sm7125-idp.dtsi"
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include "sm7125-xiaomi-joyeuse-overlay.dtsi"
 
 / {
 	chosen {
@@ -858,9 +862,6 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
 &mdss_dsi0 {
 	vdda-supply = <&vreg_l3c_1p23>;
 	status = "okay";
-
-	panel0: panel@0 {
-	};
 };
 
 &mdss_dsi0_out {

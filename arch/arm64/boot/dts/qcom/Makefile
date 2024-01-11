@@ -208,7 +208,6 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sm6125-xiaomi-laurel-sprout.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm6350-sony-xperia-lena-pdx213.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm6375-sony-xperia-murray-pdx225.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-xiaomi-joyeuse.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-idp.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm7225-fairphone-fp4.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm8150-hdk.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm8150-microsoft-surface-duo.dtb
@@ -233,5 +232,6 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sm8450-sony-xperia-nagara-pdx224.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm8550-mtp.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm8550-qrd.dtb
 
-
 dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-samsung-a72q.dtb
+sm7125-xiaomi-joyeuse-overlay-dtbs := sm7125-xiaomi-joyeuse.dtb sm7125-xiaomi-joyeuse-overlay.dtbo
+dtb-$(CONFIG_ARCH_QCOM)	+= sm7125-xiaomi-joyeuse-overlay.dtbo
