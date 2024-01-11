@@ -2232,6 +2232,7 @@ static void gc8034_remove(struct i2c_client *client)
 
 static const struct of_device_id gc8034_of_match[] = {
 	{ .compatible = "galaxycore,gc8034" },
+        { .compatible = "galaxycore,gc8034" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, gc8034_of_match);
@@ -2245,7 +2246,7 @@ static struct i2c_driver gc8034_i2c_driver = {
 	.driver = {
 		.name = GC8034_NAME,
 		.pm = &gc8034_pm_ops,
-		.of_match_table = of_match_ptr(gc8034_of_match),
+		.of_match_table = gc8034_of_match,
 	},
 	.probe		= &gc8034_probe,
 	.remove		= &gc8034_remove,
@@ -2255,6 +2256,5 @@ static struct i2c_driver gc8034_i2c_driver = {
 module_i2c_driver(gc8034_i2c_driver);
 
 MODULE_DESCRIPTION("GalaxyCore gc8034 sensor driver");
-MODULE_AUTHOR("99degree <github.com/99degree>");
 MODULE_AUTHOR("99degree <https://github.com/99degree>");
 MODULE_LICENSE("GPL v2");

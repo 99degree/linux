@@ -296,7 +296,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg = <0 0x0ac4a000 0 0x4000>;
+		reg = <0 0x0ac4a000 0 0x1000>;
 		interrupts = <GIC_SPI 468 IRQ_TYPE_EDGE_RISING>;
 		power-domains = <&camcc TITAN_TOP_GDSC>;
 
@@ -345,7 +345,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg = <0 0x0ac4b000 0 0x4000>;
+		reg = <0 0x0ac4b000 0 0x1000>;
 		interrupts = <GIC_SPI 462 IRQ_TYPE_EDGE_RISING>;
 		power-domains = <&camcc TITAN_TOP_GDSC>;
 
@@ -367,8 +367,8 @@
 		assigned-clock-rates = <80000000>, <37500000>;
 
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&cci1_active>;
-		pinctrl-1 = <&cci1_suspend>;
+		pinctrl-0 = <&cci2_active>;
+		pinctrl-1 = <&cci2_suspend>;
 
 		status = "disabled";
 
@@ -378,13 +378,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-
+#if 0
 		cci1_i2c1: i2c-bus@1 {
 			reg = <1>;
 			clock-frequency = <1000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+#endif
 	};
 
 	rxmacro: rxmacro@62600000 {
@@ -1024,7 +1025,7 @@
 &remoteproc_mpss {
         compatible = "qcom,sm7125-mpss-pas", "qcom,sm6350-mpss-pas";
         glink-edge {
-		gpr {
+		mpss_gpr: gpr {
 			compatible = "qcom,gpr";
 			qcom,glink-channels = "apr_audio_svc";
 			qcom,domain = <APR_DOMAIN_APPS>;

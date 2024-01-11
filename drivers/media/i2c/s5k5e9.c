@@ -330,7 +330,7 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 		return ret;
 	}
 
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
+	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
 	usleep_range(12000, 15000);
 
 	return 0;
@@ -908,8 +908,28 @@ static int s5k5e9_probe(struct i2c_client *client)
 	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
 	if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
                 dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
-                return -EIO;
+//                return -EIO;
 	}
+
+        gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
+        usleep_range(12000, 15000);
+
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
+        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
+                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
+//                return -EIO;
+        }
+
+        gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+        usleep_range(12000, 15000);
+
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
+        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
+                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
+                return -EIO;
+        }
 
         v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
 

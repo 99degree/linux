@@ -2292,4 +2292,5 @@ static struct i2c_driver ov16a1q_i2c_driver = {
 module_i2c_driver(ov16a1q_i2c_driver);
 
 MODULE_DESCRIPTION("OmniVision ov16a1q sensor driver");
-MODULE_LICENSE("GPL");
+MODULE_AUTHOR("99degree <https://github.com/99degree>");
+MODULE_LICENSE("GPL v2");
