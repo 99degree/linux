@@ -27,6 +27,8 @@
 #define S5K5E9_FPS				30
 #define S5K5E9_MBUS_CODE 			MEDIA_BUS_FMT_SRGGB10_1X10
 #define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC		61053
+#define S5K5E9_INT_MAX				5
+
 
 #define S5K5E9_REG_SENSOR_ID_L			0x0000
 #define S5K5E9_REG_SENSOR_ID_H			0x0001
@@ -97,7 +99,7 @@ struct s5k5e9 {
 	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *unit_size;
 
-	struct gpio_desc *enable_gpio[5];
+	struct gpio_desc *enable_gpio[S5K5E9_INT_MAX];
 
 	/*
 	 * Serialize control access, get/set format, get selection
@@ -349,7 +351,7 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 		return ret;
 	}
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < S5K5E9_INT_MAX; i++) {
 	/* it is an CAM0_RST_N gpio pin */
 		if (!IS_ERR(s5k5e9->enable_gpio[i])) {
 			gpiod_set_value_cansleep(s5k5e9->enable_gpio[i], 0);
@@ -370,13 +372,14 @@ static int __maybe_unused s5k5e9_power_off(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
+	int i;
 
-	if (!IS_ERR(s5k5e9->enable_gpio))
-		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-
+	for (i = 0; i < S5K5E9_INT_MAX; i++) {
+		if (!IS_ERR(s5k5e9->enable_gpio))
+			gpiod_set_value_cansleep(s5k5e9->enable_gpio[i], 0);
+	}
 	clk_disable_unprepare(s5k5e9->xclk);
 
-	//regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 	usleep_range(10, 20);
 
 	return 0;
