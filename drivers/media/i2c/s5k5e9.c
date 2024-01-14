@@ -21,17 +21,12 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
-#define S5K5E9_REG_MODE_SELECT		0x0100
-#define S5K5E9_MODE_STANDBY		0x00
-#define S5K5E9_MODE_STREAMING		0x01
-
-#define S5K5E9_DEFAULT_CLK_FREQ	24000000
-#define S5K5E9_DEFAULT_LINK_FREQ 480000000
-#define S5K5E9_DEFAULT_PIXEL_RATE ((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
-#define S5K5E9_FPS 30
-#define S5K5E9_MBUS_CODE MEDIA_BUS_FMT_SRGGB10_1X10
-
-#define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC	61053
+#define S5K5E9_DEFAULT_CLK_FREQ			24000000
+#define S5K5E9_DEFAULT_LINK_FREQ		480000000
+#define S5K5E9_DEFAULT_PIXEL_RATE 		((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
+#define S5K5E9_FPS				30
+#define S5K5E9_MBUS_CODE 			MEDIA_BUS_FMT_SRGGB10_1X10
+#define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC		61053
 
 #define S5K5E9_REG_SENSOR_ID_L			0x0000
 #define S5K5E9_REG_SENSOR_ID_H			0x0001
@@ -39,31 +34,36 @@
 
 #define S5K5E9_REG_FRAMECNT			0x0005
 
-#define S5K5E9_REG_GAIN_H				0x0204
-#define S5K5E9_REG_GAIN_L				0x0205
+#define S5K5E9_REG_MODE_SELECT			0x0100
+#define S5K5E9_MODE_STANDBY			0x0
+#define S5K5E9_MODE_STREAMING			0x1
+
+#define S5K5E9_REG_GAIN_H			0x0204
+#define S5K5E9_REG_GAIN_L			0x0205
 #define S5K5E9_REG_GAIN_BIT_SHIFT		0x1
 
 #define S5K5E9_REG_UPDATE_DUMMY			0x3200
 #define S5K5E9_REG_UPDATE_DUMMY_VAL		0x00
 
 #define S5K5E9_REG_TEST_PATTERN			0x0601
-#define S5K5E9_REG_TEST_PATTERN_ENABLE	0x02
-#define S5K5E9_REG_TEST_PATTERN_DISABLE	0x00
+#define S5K5E9_REG_TEST_PATTERN_ENABLE		0x2
+#define S5K5E9_REG_TEST_PATTERN_DISABLE		0x0
 
+/* TODO: directly from old imx214, need to train */
 /* Exposure control */
-#define S5K5E9_REG_EXPOSURE		0x0202
-#define S5K5E9_EXPOSURE_MIN		0
-#define S5K5E9_EXPOSURE_MAX		3184
-#define S5K5E9_EXPOSURE_STEP		1
-#define S5K5E9_EXPOSURE_DEFAULT		3184
+#define S5K5E9_REG_EXPOSURE			0x0202
+#define S5K5E9_EXPOSURE_MIN			0
+#define S5K5E9_EXPOSURE_MAX			3184
+#define S5K5E9_EXPOSURE_STEP			1
+#define S5K5E9_EXPOSURE_DEFAULT			3184
 
 /* S5K5E9 native and active pixel array size */
-#define S5K5E9_NATIVE_WIDTH		4224U
-#define S5K5E9_NATIVE_HEIGHT		3136U
-#define S5K5E9_PIXEL_ARRAY_LEFT		8U
-#define S5K5E9_PIXEL_ARRAY_TOP		8U
-#define S5K5E9_PIXEL_ARRAY_WIDTH	4208U
-#define S5K5E9_PIXEL_ARRAY_HEIGHT	3120U
+#define S5K5E9_NATIVE_WIDTH			4224U
+#define S5K5E9_NATIVE_HEIGHT			3136U
+#define S5K5E9_PIXEL_ARRAY_LEFT			8U
+#define S5K5E9_PIXEL_ARRAY_TOP			8U
+#define S5K5E9_PIXEL_ARRAY_WIDTH		4208U
+#define S5K5E9_PIXEL_ARRAY_HEIGHT		3120U
 
 static const char * const s5k5e9_supply_name[] = {
 	"vdda",
@@ -89,8 +89,6 @@ struct s5k5e9 {
 	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *unit_size;
 
-//	struct regulator_bulk_data	supplies[S5K5E9_NUM_SUPPLIES];
-
 	struct gpio_desc *enable_gpio;
 
 	/*
@@ -106,8 +104,8 @@ struct reg_8 {
 };
 
 enum {
-	S5K5E9_TABLE_WAIT_MS = 0,
-	S5K5E9_TABLE_END,
+	S5K5E9_TABLE_WAIT_MS = 0, /* treat as register addr SENSOR_ID_L */
+	S5K5E9_TABLE_END, /* treat as register addr SENSOR_ID_H */
 	S5K5E9_MAX_RETRIES,
 	S5K5E9_WAIT_MS
 };
@@ -177,7 +175,6 @@ static const struct reg_8 mode_2592x1940[] = {
 
 static const struct reg_8 mode_1920x1080[] = {
 /* TODO: disable device tree and capture again for change resolution */
-
 	{S5K5E9_TABLE_WAIT_MS, 10},
 //	{0x0138, 0x01},
 	{S5K5E9_TABLE_END, 0x00}
@@ -233,10 +230,8 @@ static const struct reg_8 mode_1280x720[] = {
 	{0x30B8, 0x2A},
 	{0x30BA, 0x2E},
 	{0x0100, 0x01},
-	
-	/* TODO: change sub script */
-
 	{S5K5E9_TABLE_WAIT_MS, 10},
+/* TODO: check what is this */
 //	{0x0138, 0x01},
 	{S5K5E9_TABLE_END, 0x00}
 };
@@ -281,7 +276,7 @@ static const struct reg_8 mode_table_common[] = {
 	{0x30c2, 0x05},
 	{0x3069, 0x87},
 	{0x3c0f, 0x00},
-//	{0x0a02, 0x3f}, //my dump does not have this	
+//	{0x0a02, 0x3f}, //my dump does not have this
 	{0x3083, 0x14},
 	{0x3080, 0x08},
 	{0x3c34, 0xea},
@@ -315,7 +310,6 @@ static const struct s5k5e9_mode {
 		/* TODO: find out real framelength and linelength */
 		.linelength = 3112,
 		.framelength = 2030,
-		
 		.reg_table = mode_1280x720,
 	},
 #endif
@@ -333,7 +327,6 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
 	int ret;
 
-	dev_info(dev, "%s enter", __func__);
 	ret = devm_regulator_bulk_get_enable(dev, S5K5E9_NUM_SUPPLIES, s5k5e9_supply_name);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "failed to enable regulators: %d\n", ret);
@@ -344,14 +337,21 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 
 	ret = clk_prepare_enable(s5k5e9->xclk);
 	if (ret < 0) {
-		//regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 		dev_err(s5k5e9->dev, "clk prepare enable failed\n");
 		return ret;
 	}
 
-	if (!IS_ERR(s5k5e9->enable_gpio))
+	/* it is an CAM0_RST_N gpio pin */
+	if (!IS_ERR(s5k5e9->enable_gpio)) {
 		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-	usleep_range(12000, 15000);
+		usleep_range(12000, 15000);
+
+		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
+		usleep_range(12000, 15000);
+
+		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+		usleep_range(12000, 15000);
+	}
 
 	return 0;
 }
@@ -582,6 +582,7 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
+		/* TODO: Long exposure > 1s, is yet to support */
 #if 0
 		if(ctrl->val > 61053) {
 			wr_pair[0] =
@@ -689,16 +690,6 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 	if (s5k5e9->link_freq)
 		s5k5e9->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
-	/*
-	 * WARNING!
-	 * Values obtained reverse engineering blobs and/or devices.
-	 * Ranges and functionality might be wrong.
-	 *
-	 * Sony, please release some register set documentation for the
-	 * device.
-	 *
-	 * Yours sincerely, Ricardo.
-	 */
 	s5k5e9->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
 					     V4L2_CID_EXPOSURE,
 					     S5K5E9_EXPOSURE_MIN,
@@ -993,10 +984,9 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return ret;
 	}
 
-	s5k5e9->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
+	s5k5e9->enable_gpio = devm_gpiod_get_optional(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(s5k5e9->enable_gpio)) {
 		dev_err(dev, "cannot get enable gpio\n");
-//		return PTR_ERR(s5k5e9->enable_gpio);
 	}
 
 	s5k5e9->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
@@ -1015,26 +1005,10 @@ static int s5k5e9_probe(struct i2c_client *client)
 	 */
 	s5k5e9_power_on(s5k5e9->dev);
 
-	/* TODO: check result val */
-	if (!IS_ERR(s5k5e9->enable_gpio))
-                gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
-        usleep_range(12000, 15000);
-
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
-        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-                dev_err(dev, "sensor init 1 failed ret = 0x%x\n", id[0] << 8 | id[1]);
-//                return -EIO;
-        }
-
-        if (!IS_ERR(s5k5e9->enable_gpio))
-                gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-        usleep_range(12000, 15000);
-
-	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
-	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
+	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[1]);
+	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[0]);
 	if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-                dev_err(dev, "sensor init 2 failed ret = 0x%x\n", id[0] << 8 | id[1]);
+                dev_err(dev, "sensor init 1 failed ret = 0x%x\n", id[0] << 8 | id[1]);
                 return -EIO;
 	}
 
