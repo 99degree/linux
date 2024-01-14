@@ -784,7 +784,7 @@ regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custo
 
 
 	gc8034: camera@10 {
-		compatible = "samsung,s5k5e9", "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
+		compatible = "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
 		reg = <0x10>;
 
 		reset-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
@@ -813,7 +813,7 @@ vdddo6-supply = <&depth_ldo_avdd_regulator>;
 vdddo7-supply = <&wide_ldo_afvdd_regulator>;
 vdddo8-supply = <&front_ldo_dvdd_regulator>;
 
-		status = "okay";
+		status = "disabled";
 
                 port {
                         gc8034_ep: endpoint {
@@ -858,7 +858,7 @@ vdddo8-supply = <&front_ldo_dvdd_regulator>;
 		vdddo2-supply = <&wide_ldo_dvdd2_regulator>; //DVDD 20M
 		vdddo3-supply = <&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
 
-		status = "okay";
+		status = "disabled";
 
 		port {
 				ov16a1q_ep_0: endpoint {
@@ -900,7 +900,7 @@ vdddo8-supply = <&front_ldo_dvdd_regulator>;
 		vddd-supply = <&wide_ldo_avdd2_regulator>;
 		vdddo-supply = <&depth_ldo_avdd_regulator>;
 
-		status = "okay";
+		status = "disabled";
 
 		port {
 				gc02m1_ep_0: endpoint {

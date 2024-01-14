@@ -1031,6 +1031,15 @@
 			<&gpi_dma1 1 5 QCOM_GPI_SPI>;
 };
 
+/* refine with original pm6150l/pm6150 */
+&pm6150_gpios {
+//        gpio-ranges = <&pm6150_gpios 1 0 10>;
+};
+
+&pm6150l_gpios {
+//        gpio-ranges = <&pm6150_gpios 1 0 12>;
+};
+
 &qfprom {
         vcc-supply = <&vdd_qfprom>;
         status = "okay";
