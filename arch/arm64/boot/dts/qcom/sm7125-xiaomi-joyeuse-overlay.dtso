@@ -711,8 +711,16 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
 			reg = <0x2d>;
 
 			/* add both for same gpio as improve compatibility */
-			enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;		 /* 24 25 29 30 32 try*/	
-			reset-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+			enable-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>, 
+					<&tlmm 25 GPIO_ACTIVE_LOW>,
+					<&tlmm 29 GPIO_ACTIVE_LOW>,
+					<&tlmm 30 GPIO_ACTIVE_LOW>,
+					<&tlmm 32 GPIO_ACTIVE_LOW>;		 /* 24 25 29 30 32 try*/	
+			reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>,
+                                        <&tlmm 25 GPIO_ACTIVE_LOW>,
+                                        <&tlmm 29 GPIO_ACTIVE_LOW>,
+                                        <&tlmm 30 GPIO_ACTIVE_LOW>,
+                                        <&tlmm 32 GPIO_ACTIVE_LOW>;
 
 			pinctrl-names = "default";//, "suspend";
 			pinctrl-0 = <&cam_sensor_mclk2_active &cam_sensor_mclk1_active &cam_sensor_mclk0_active &cam_sensor_mclk4_active &cam_sensor_mclk3_active>;

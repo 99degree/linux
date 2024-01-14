@@ -30,7 +30,7 @@
 
 #define S5K5E9_REG_SENSOR_ID_L			0x0000
 #define S5K5E9_REG_SENSOR_ID_H			0x0001
-#define S5K5E9_SENSOR_ID_VAL			0x487B
+#define S5K5E9_SENSOR_ID_VAL			0x559b
 
 #define S5K5E9_REG_FRAMECNT			0x0005
 
@@ -69,6 +69,14 @@ static const char * const s5k5e9_supply_name[] = {
 	"vdda",
 	"vddd",
 	"vdddo",
+"vdddo1",
+"vdddo2",
+"vdddo3",
+"vdddo4",
+"vdddo5",
+"vdddo6",
+"vdddo7",
+"vdddo8",
 };
 
 #define S5K5E9_NUM_SUPPLIES ARRAY_SIZE(s5k5e9_supply_name)
@@ -89,7 +97,7 @@ struct s5k5e9 {
 	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *unit_size;
 
-	struct gpio_desc *enable_gpio;
+	struct gpio_desc *enable_gpio[5];
 
 	/*
 	 * Serialize control access, get/set format, get selection
@@ -325,7 +333,7 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
-	int ret;
+	int i, ret;
 
 	ret = devm_regulator_bulk_get_enable(dev, S5K5E9_NUM_SUPPLIES, s5k5e9_supply_name);
 	if (ret < 0) {
@@ -341,18 +349,19 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 		return ret;
 	}
 
+	for (i = 0; i < 5; i++) {
 	/* it is an CAM0_RST_N gpio pin */
-	if (!IS_ERR(s5k5e9->enable_gpio)) {
-		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-		usleep_range(12000, 15000);
+		if (!IS_ERR(s5k5e9->enable_gpio[i])) {
+			gpiod_set_value_cansleep(s5k5e9->enable_gpio[i], 0);
+			usleep_range(12000, 15000);
 
-		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
-		usleep_range(12000, 15000);
+			gpiod_set_value_cansleep(s5k5e9->enable_gpio[i], 1);
+			usleep_range(12000, 15000);
 
-		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-		usleep_range(12000, 15000);
+			gpiod_set_value_cansleep(s5k5e9->enable_gpio[i], 0);
+			usleep_range(12000, 15000);
+		}
 	}
-
 	return 0;
 }
 
@@ -953,7 +962,7 @@ static int s5k5e9_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct s5k5e9 *s5k5e9;
-	int ret;
+	int i, ret;
 	int id[2];
 
 	ret = s5k5e9_parse_fwnode(dev);
@@ -984,9 +993,11 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return ret;
 	}
 
-	s5k5e9->enable_gpio = devm_gpiod_get_optional(dev, "enable", GPIOD_OUT_LOW);
-	if (IS_ERR(s5k5e9->enable_gpio)) {
-		dev_err(dev, "cannot get enable gpio\n");
+	for (i = 0; i < 5; i++) {
+		s5k5e9->enable_gpio[i] = devm_gpiod_get_index_optional(dev, "enable", i, GPIOD_OUT_LOW);
+		if (IS_ERR(s5k5e9->enable_gpio[i])) {
+			dev_err(dev, "cannot get enable gpio\n");
+		}
 	}
 
 	s5k5e9->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
