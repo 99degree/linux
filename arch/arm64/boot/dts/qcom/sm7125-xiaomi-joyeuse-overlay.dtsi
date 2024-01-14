@@ -36,6 +36,9 @@
 
 	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
 
+	qcom,msm-id = <QCOM_ID_SM7125 0>;
+	qcom,board-id = <0x50022 1>;
+
         firmware: firmware {};
 
         chosen {

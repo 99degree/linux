@@ -21,6 +21,10 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
+#define S5K5E9_REG_MODE_SELECT		0x0100
+#define S5K5E9_MODE_STANDBY		0x00
+#define S5K5E9_MODE_STREAMING		0x01
+
 #define S5K5E9_DEFAULT_CLK_FREQ	24000000
 #define S5K5E9_DEFAULT_LINK_FREQ 480000000
 #define S5K5E9_DEFAULT_PIXEL_RATE ((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
@@ -46,6 +50,20 @@
 #define S5K5E9_REG_TEST_PATTERN_ENABLE	0x02
 #define S5K5E9_REG_TEST_PATTERN_DISABLE	0x00
 
+/* Exposure control */
+#define S5K5E9_REG_EXPOSURE		0x0202
+#define S5K5E9_EXPOSURE_MIN		0
+#define S5K5E9_EXPOSURE_MAX		3184
+#define S5K5E9_EXPOSURE_STEP		1
+#define S5K5E9_EXPOSURE_DEFAULT		3184
+
+/* S5K5E9 native and active pixel array size */
+#define S5K5E9_NATIVE_WIDTH		4224U
+#define S5K5E9_NATIVE_HEIGHT		3136U
+#define S5K5E9_PIXEL_ARRAY_LEFT		8U
+#define S5K5E9_PIXEL_ARRAY_TOP		8U
+#define S5K5E9_PIXEL_ARRAY_WIDTH	4208U
+#define S5K5E9_PIXEL_ARRAY_HEIGHT	3120U
 
 static const char * const s5k5e9_supply_name[] = {
 	"vdda",
@@ -313,7 +331,7 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
-	int ret, i;
+	int ret;
 
 	dev_info(dev, "%s enter", __func__);
 	ret = devm_regulator_bulk_get_enable(dev, S5K5E9_NUM_SUPPLIES, s5k5e9_supply_name);
@@ -326,11 +344,13 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 
 	ret = clk_prepare_enable(s5k5e9->xclk);
 	if (ret < 0) {
+		//regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 		dev_err(s5k5e9->dev, "clk prepare enable failed\n");
 		return ret;
 	}
 
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+	if (!IS_ERR(s5k5e9->enable_gpio))
+		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
 	usleep_range(12000, 15000);
 
 	return 0;
@@ -342,7 +362,8 @@ static int __maybe_unused s5k5e9_power_off(struct device *dev)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
 
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+	if (!IS_ERR(s5k5e9->enable_gpio))
+		gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
 
 	clk_disable_unprepare(s5k5e9->xclk);
 
@@ -419,7 +440,7 @@ __s5k5e9_get_pad_format(struct s5k5e9 *s5k5e9,
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_format(&s5k5e9->sd, sd_state, pad);
+		return v4l2_subdev_state_get_format(sd_state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &s5k5e9->fmt;
 	default:
@@ -449,7 +470,7 @@ __s5k5e9_get_pad_crop(struct s5k5e9 *s5k5e9,
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_crop(&s5k5e9->sd, sd_state, pad);
+		return v4l2_subdev_state_get_crop(sd_state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &s5k5e9->crop;
 	default:
@@ -504,18 +525,35 @@ static int s5k5e9_get_selection(struct v4l2_subdev *sd,
 {
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
 
-	if (sel->target != V4L2_SEL_TGT_CROP)
-		return -EINVAL;
+	switch (sel->target) {
+	case V4L2_SEL_TGT_CROP:
+		mutex_lock(&s5k5e9->mutex);
+		sel->r = *__s5k5e9_get_pad_crop(s5k5e9, sd_state, sel->pad,
+						sel->which);
+		mutex_unlock(&s5k5e9->mutex);
+		return 0;
 
-	mutex_lock(&s5k5e9->mutex);
-	sel->r = *__s5k5e9_get_pad_crop(s5k5e9, sd_state, sel->pad,
-					sel->which);
-	mutex_unlock(&s5k5e9->mutex);
-	return 0;
+	case V4L2_SEL_TGT_NATIVE_SIZE:
+		sel->r.top = 0;
+		sel->r.left = 0;
+		sel->r.width = S5K5E9_NATIVE_WIDTH;
+		sel->r.height = S5K5E9_NATIVE_HEIGHT;
+		return 0;
+
+	case V4L2_SEL_TGT_CROP_DEFAULT:
+	case V4L2_SEL_TGT_CROP_BOUNDS:
+		sel->r.top = S5K5E9_PIXEL_ARRAY_TOP;
+		sel->r.left = S5K5E9_PIXEL_ARRAY_LEFT;
+		sel->r.width = S5K5E9_PIXEL_ARRAY_WIDTH;
+		sel->r.height = S5K5E9_PIXEL_ARRAY_HEIGHT;
+		return 0;
+	}
+
+	return -EINVAL;
 }
 
-static int s5k5e9_entity_init_cfg(struct v4l2_subdev *subdev,
-				  struct v4l2_subdev_state *sd_state)
+static int s5k5e9_entity_init_state(struct v4l2_subdev *subdev,
+				    struct v4l2_subdev_state *sd_state)
 {
 	struct v4l2_subdev_format fmt = { };
 
@@ -617,6 +655,76 @@ static const struct v4l2_ctrl_ops s5k5e9_ctrl_ops = {
 	.s_ctrl = s5k5e9_set_ctrl,
 };
 
+static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
+{
+	static const s64 link_freq[] = {
+		S5K5E9_DEFAULT_LINK_FREQ
+	};
+	static const struct v4l2_area unit_size = {
+		.width = 1120,
+		.height = 1120,
+	};
+	struct v4l2_fwnode_device_properties props;
+	struct v4l2_ctrl_handler *ctrl_hdlr;
+	int ret;
+
+	ret = v4l2_fwnode_device_parse(s5k5e9->dev, &props);
+	if (ret < 0)
+		return ret;
+
+	ctrl_hdlr = &s5k5e9->ctrls;
+	ret = v4l2_ctrl_handler_init(&s5k5e9->ctrls, 6);
+	if (ret)
+		return ret;
+
+	s5k5e9->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, NULL,
+					       V4L2_CID_PIXEL_RATE, 0,
+					       S5K5E9_DEFAULT_PIXEL_RATE, 1,
+					       S5K5E9_DEFAULT_PIXEL_RATE);
+
+	s5k5e9->link_freq = v4l2_ctrl_new_int_menu(ctrl_hdlr, NULL,
+						   V4L2_CID_LINK_FREQ,
+						   ARRAY_SIZE(link_freq) - 1,
+						   0, link_freq);
+	if (s5k5e9->link_freq)
+		s5k5e9->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+
+	/*
+	 * WARNING!
+	 * Values obtained reverse engineering blobs and/or devices.
+	 * Ranges and functionality might be wrong.
+	 *
+	 * Sony, please release some register set documentation for the
+	 * device.
+	 *
+	 * Yours sincerely, Ricardo.
+	 */
+	s5k5e9->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+					     V4L2_CID_EXPOSURE,
+					     S5K5E9_EXPOSURE_MIN,
+					     S5K5E9_EXPOSURE_MAX,
+					     S5K5E9_EXPOSURE_STEP,
+					     S5K5E9_EXPOSURE_DEFAULT);
+
+	s5k5e9->unit_size = v4l2_ctrl_new_std_compound(ctrl_hdlr,
+				NULL,
+				V4L2_CID_UNIT_CELL_SIZE,
+				v4l2_ctrl_ptr_create((void *)&unit_size));
+
+	v4l2_ctrl_new_fwnode_properties(ctrl_hdlr, &s5k5e9_ctrl_ops, &props);
+
+	ret = ctrl_hdlr->error;
+	if (ret) {
+		v4l2_ctrl_handler_free(ctrl_hdlr);
+		dev_err(s5k5e9->dev, "failed to add controls: %d\n", ret);
+		return ret;
+	}
+
+	s5k5e9->sd.ctrl_handler = ctrl_hdlr;
+
+	return 0;
+};
+
 #define MAX_CMD 4
 static int s5k5e9_write_table(struct s5k5e9 *s5k5e9,
 			      const struct reg_8 table[])
@@ -676,7 +784,7 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 		dev_err(s5k5e9->dev, "could not sync v4l2 controls\n");
 		goto error;
 	}
-	ret = regmap_write(s5k5e9->regmap, 0x100, 1);
+	ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_MODE_SELECT, S5K5E9_MODE_STREAMING);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "could not sent start table %d\n", ret);
 		goto error;
@@ -694,7 +802,7 @@ static int s5k5e9_stop_streaming(struct s5k5e9 *s5k5e9)
 {
 	int ret;
 
-	ret = regmap_write(s5k5e9->regmap, 0x100, 0);
+	ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_MODE_SELECT, S5K5E9_MODE_STANDBY);
 	if (ret < 0)
 		dev_err(s5k5e9->dev, "could not sent stop table %d\n",	ret);
 
@@ -728,9 +836,17 @@ err_rpm_put:
 	return ret;
 }
 
-static int s5k5e9_g_frame_interval(struct v4l2_subdev *subdev,
-				   struct v4l2_subdev_frame_interval *fival)
+static int s5k5e9_get_frame_interval(struct v4l2_subdev *subdev,
+				     struct v4l2_subdev_state *sd_state,
+				     struct v4l2_subdev_frame_interval *fival)
 {
+	/*
+	 * FIXME: Implement support for V4L2_SUBDEV_FORMAT_TRY, using the V4L2
+	 * subdev active state API.
+	 */
+	if (fival->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+		return -EINVAL;
+
 	fival->interval.numerator = 1;
 	fival->interval.denominator = S5K5E9_FPS;
 
@@ -761,8 +877,6 @@ static int s5k5e9_enum_frame_interval(struct v4l2_subdev *subdev,
 
 static const struct v4l2_subdev_video_ops s5k5e9_video_ops = {
 	.s_stream = s5k5e9_s_stream,
-	.g_frame_interval = s5k5e9_g_frame_interval,
-	.s_frame_interval = s5k5e9_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops s5k5e9_subdev_pad_ops = {
@@ -772,13 +886,18 @@ static const struct v4l2_subdev_pad_ops s5k5e9_subdev_pad_ops = {
 	.get_fmt = s5k5e9_get_format,
 	.set_fmt = s5k5e9_set_format,
 	.get_selection = s5k5e9_get_selection,
-	.init_cfg = s5k5e9_entity_init_cfg,
+	.get_frame_interval = s5k5e9_get_frame_interval,
+	.set_frame_interval = s5k5e9_get_frame_interval,
 };
 
 static const struct v4l2_subdev_ops s5k5e9_subdev_ops = {
 	.core = &s5k5e9_core_ops,
 	.video = &s5k5e9_video_ops,
 	.pad = &s5k5e9_subdev_pad_ops,
+};
+
+static const struct v4l2_subdev_internal_ops s5k5e9_internal_ops = {
+	.init_state = s5k5e9_entity_init_state,
 };
 
 static const struct regmap_config sensor_regmap_config = {
@@ -790,18 +909,15 @@ static const struct regmap_config sensor_regmap_config = {
 static int s5k5e9_get_regulators(struct device *dev, struct s5k5e9 *s5k5e9)
 {
 	unsigned int i;
-	int ret;
 
 	return 0;
 #if 0
 	for (i = 0; i < S5K5E9_NUM_SUPPLIES; i++)
 		s5k5e9->supplies[i].supply = s5k5e9_supply_name[i];
 
-	ret = devm_regulator_bulk_get(dev, S5K5E9_NUM_SUPPLIES,
+	return devm_regulator_bulk_get(dev, S5K5E9_NUM_SUPPLIES,
 				       s5k5e9->supplies);
 #endif
-	dev_info(dev, "%s done.", __func__);
-	return ret;
 }
 
 static int s5k5e9_parse_fwnode(struct device *dev)
@@ -846,14 +962,8 @@ static int s5k5e9_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct s5k5e9 *s5k5e9;
-	static const s64 link_freq[] = {
-		S5K5E9_DEFAULT_LINK_FREQ,
-	};
-	static const struct v4l2_area unit_size = {
-		.width = 1120,
-		.height = 1120,
-	};
-	int ret, id[2];
+	int ret;
+	int id[2];
 
 	ret = s5k5e9_parse_fwnode(dev);
 	if (ret)
@@ -883,11 +993,10 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return ret;
 	}
 
-	/* TODO: is reset2 or enable gpio? */
 	s5k5e9->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(s5k5e9->enable_gpio)) {
 		dev_err(dev, "cannot get enable gpio\n");
-		return PTR_ERR(s5k5e9->enable_gpio);
+//		return PTR_ERR(s5k5e9->enable_gpio);
 	}
 
 	s5k5e9->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
@@ -897,6 +1006,8 @@ static int s5k5e9_probe(struct i2c_client *client)
 	}
 
 	i2c_set_clientdata(client, s5k5e9);
+	v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
+	s5k5e9->sd.internal_ops = &s5k5e9_internal_ops;
 
 	/*
 	 * Enable power initially, to avoid warnings
@@ -904,69 +1015,37 @@ static int s5k5e9_probe(struct i2c_client *client)
 	 */
 	s5k5e9_power_on(s5k5e9->dev);
 
+	/* TODO: check result val */
+	if (!IS_ERR(s5k5e9->enable_gpio))
+                gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
+        usleep_range(12000, 15000);
+
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
+        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
+        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
+                dev_err(dev, "sensor init 1 failed ret = 0x%x\n", id[0] << 8 | id[1]);
+//                return -EIO;
+        }
+
+        if (!IS_ERR(s5k5e9->enable_gpio))
+                gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+        usleep_range(12000, 15000);
+
 	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
 	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
 	if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
-//                return -EIO;
-	}
-
-        gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
-        usleep_range(12000, 15000);
-
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
-        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
-//                return -EIO;
-        }
-
-        gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
-        usleep_range(12000, 15000);
-
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[0]);
-        ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L,&id[1]);
-        if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-                dev_err(dev, "sensor init failed ret = 0x%x\n", id[0] << 8 | id[1]);
+                dev_err(dev, "sensor init 2 failed ret = 0x%x\n", id[0] << 8 | id[1]);
                 return -EIO;
-        }
-
-        v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
+	}
 
 	pm_runtime_set_active(s5k5e9->dev);
 	pm_runtime_enable(s5k5e9->dev);
 	pm_runtime_idle(s5k5e9->dev);
 
-	v4l2_ctrl_handler_init(&s5k5e9->ctrls, 3);
+	ret = s5k5e9_ctrls_init(s5k5e9);
+	if (ret < 0)
+		goto error_power_off;
 
-	s5k5e9->pixel_rate = v4l2_ctrl_new_std(&s5k5e9->ctrls, NULL,
-					       V4L2_CID_PIXEL_RATE, 0,
-					       S5K5E9_DEFAULT_PIXEL_RATE, 1,
-					       S5K5E9_DEFAULT_PIXEL_RATE);
-	s5k5e9->link_freq = v4l2_ctrl_new_int_menu(&s5k5e9->ctrls, NULL,
-						   V4L2_CID_LINK_FREQ,
-						   ARRAY_SIZE(link_freq) - 1,
-						   0, link_freq);
-	if (s5k5e9->link_freq)
-		s5k5e9->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
-
-/* TODO check!!! */
-	s5k5e9->exposure = v4l2_ctrl_new_std(&s5k5e9->ctrls, &s5k5e9_ctrl_ops,
-					     V4L2_CID_EXPOSURE,
-					     0, 3184, 1, 0x0c70);
-
-	s5k5e9->unit_size = v4l2_ctrl_new_std_compound(&s5k5e9->ctrls,
-				NULL,
-				V4L2_CID_UNIT_CELL_SIZE,
-				v4l2_ctrl_ptr_create((void *)&unit_size));
-	ret = s5k5e9->ctrls.error;
-	if (ret) {
-		dev_err(&client->dev, "%s control init failed (%d)\n",
-			__func__, ret);
-		goto free_ctrl;
-	}
-
-	s5k5e9->sd.ctrl_handler = &s5k5e9->ctrls;
 	mutex_init(&s5k5e9->mutex);
 	s5k5e9->ctrls.lock = &s5k5e9->mutex;
 
@@ -981,7 +1060,7 @@ static int s5k5e9_probe(struct i2c_client *client)
 		goto free_ctrl;
 	}
 
-	s5k5e9_entity_init_cfg(&s5k5e9->sd, NULL);
+	s5k5e9_entity_init_state(&s5k5e9->sd, NULL);
 
 	ret = v4l2_async_register_subdev_sensor(&s5k5e9->sd);
 	if (ret < 0) {
@@ -997,6 +1076,7 @@ free_entity:
 free_ctrl:
 	mutex_destroy(&s5k5e9->mutex);
 	v4l2_ctrl_handler_free(&s5k5e9->ctrls);
+error_power_off:
 	pm_runtime_disable(s5k5e9->dev);
 
 	return ret;
