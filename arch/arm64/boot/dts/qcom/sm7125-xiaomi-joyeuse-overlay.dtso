@@ -54,7 +54,6 @@
 #if 1
 	wide_ldo_avdd0_regulator: gpio-regulator@99 { //AVDD0 2.9V //AVDD0_2.8V
                 compatible = "regulator-fixed";
-                //reg = <0x00 0x00>;
                 regulator-name = "wide_ldo_avdd0_regulator";
                 regulator-min-microvolt = <2800000>;
                 regulator-max-microvolt = <2800000>;
@@ -62,31 +61,25 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 4 0>; /* schematic not connected */
                 vin-supply = <&vreg_bob>;
-		//register-always-on;
-		regulator-boot-on;
         };
 
         wide_ldo_avdd1_regulator: gpio-regulator@0 { //AVDD1 2.9V //AVDD0_2.8V
                 compatible = "regulator-fixed";
-                //reg = <0x00 0x00>;
                 regulator-name = "wide_ldo_avdd1_regulator";
                 regulator-min-microvolt = <2800000>;
                 regulator-max-microvolt = <2800000>;
                 regulator-enable-ramp-delay = <100>;
                 enable-active-high;
                 gpio = <&pm6150l_gpios 9 0>; 
-			/* 
-			* another gpio4 called avdd1_2p8 but schematic not connected 
-			* and the name is swapped to avdd0 accordingly.
-			*/
+		/* 
+		* another gpio4 called avdd1_2p8 but schematic not connected 
+		* and the name is swapped to avdd0 accordingly.
+		*/
                 vin-supply = <&vreg_bob>;
-			//register-always-on;
-			regulator-boot-on;
         };
 
         wide_ldo_avdd2_regulator: gpio-regulator@1 { //AVDD2 1.8V //2M_DVDDIO_1.8V?
                 compatible = "regulator-fixed";
-                //reg = <0x01 0x00>;
                 regulator-name = "wide_ldo_avdd2_regulator";
                 regulator-min-microvolt = <1800000>;
                 regulator-max-microvolt = <1800000>;
@@ -94,13 +87,10 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 12 0>; //for P0,demo is tlmm 63 //TODO
                 vin-supply = <&vreg_bob>; //TODO
-				//register-always-on;
-                regulator-boot-on;
         };
 
         wide_ldo_dvdd_regulator: gpio-regulator@2 { //DVDD 1.2V
                 compatible = "regulator-fixed";
-                //reg = <0x02 0x00>;
                 regulator-name = "wide_ldo_dvdd_regulator";
                 regulator-min-microvolt = <1200000>;
                 regulator-max-microvolt = <1200000>;
@@ -108,13 +98,10 @@
                 enable-active-high;
                 gpio = <&tlmm 42 0>;
                 vin-supply = <&vreg_s5a>;//48M pm6150_s5
-				//register-always-on;
-                regulator-boot-on;
         };
 
         wide_ldo_dvdd2_regulator: gpio-regulator@7 { //DVDD2 1.05V
                 compatible = "regulator-fixed";
-                //reg = <0x07 0x00>;
                 regulator-name = "wide_ldo_dvdd2_regulator";
                 regulator-min-microvolt = <1050000>;
                 regulator-max-microvolt = <1050000>;
@@ -122,13 +109,10 @@
                 enable-active-high;
                 gpio = <&tlmm 42 0>;
                 vin-supply = <&vreg_s8c>;//64M pm6150l_s8 + pm6150_s5a
-				//register-always-on;
-                regulator-boot-on;
         };
 
         depth_ldo_avdd_regulator: gpio-regulator@3 { //depth AVDD 2.8V
                 compatible = "regulator-fixed";
-                //reg = <0x03 0x00>;
                 regulator-name = "depth_ldo_avdd_regulator";
                 regulator-min-microvolt = <2800000>;
                 regulator-max-microvolt = <2800000>;
@@ -136,8 +120,6 @@
                 enable-active-high;
                 gpio = <&tlmm 43 0>;
                 vin-supply = <&vreg_bob>;
-				//register-always-on;
-                regulator-boot-on;
         };
 
         ultra_ldo_avdd_regulator: gpio-regulator@4 { //ultra AVDD 2.8V
@@ -150,13 +132,10 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 8 0>;//for p0 main band
                 vin-supply = <&vreg_bob>;
-				//register-always-on;
-                regulator-boot-on;
         };
 
         ultra_ldo_dvdd_regulator: gpio-regulator@5 { //ultra DVDD 2.8V
                 compatible = "regulator-fixed";
-                //reg = <0x05 0x00>;
                 regulator-name = "ultra_ldo_dvdd_regulator";
                 regulator-min-microvolt = <1200000>;
                 regulator-max-microvolt = <1200000>;
@@ -164,13 +143,10 @@
                 enable-active-high;
                 gpio = <&tlmm 72 0>;
                 vin-supply = <&vreg_s5a>;
-				//register-always-on;
-                regulator-boot-on;
         };
 
         wide_ldo_afvdd_regulator: gpio-regulator@6 { //AFVDD 2.8V
                 compatible = "regulator-fixed";
-                //reg = <0x06 0x00>;
                 regulator-name = "wide_ldo_afvdd_regulator";
                 regulator-min-microvolt = <2800000>;
                 regulator-max-microvolt = <2800000>;
@@ -178,13 +154,10 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 6 0>;
                 vin-supply = <&vreg_bob>; //TODO
-				//register-always-on;
-                regulator-boot-on;
         };
 
         front_ldo_dvdd_regulator: gpio-regulator@8 { //dvdd1.1v-20
                 compatible = "regulator-fixed";
-                //reg = <0x08 0x00>;
                 regulator-name = "front_ldo_dvdd_regulator";
                 regulator-min-microvolt = <1050000>;
                 regulator-max-microvolt = <1050000>;
@@ -192,8 +165,6 @@
                 enable-active-high;
                 gpio = <&tlmm 117 0>;
                 vin-supply = <&vreg_s5a>;
-				//register-always-on;
-                regulator-boot-on;
         };
 #endif
         clk_titan_gdsc: gpio-regulator@100 { //dummy gdsc
@@ -508,17 +479,12 @@
 	status = "okay";
 
 	ports {
-		/* related to csiphy */
+		/* TODO:related to csiphy */
 		port@0 {
 			csiphy0_ep0: endpoint@0 {
 					data-lanes = <0 1 2 3>;
 					//remote-endpoint = <&s5k5e9_ep0>;
 			};		
-			csiphy0_ep1: endpoint@1 {
-					data-lanes = <0 1 2 3>;
-					remote-endpoint = <&s5k5e9_ep1>;
-			};	
-		
 		};
 		
 		port@1 {
@@ -535,7 +501,7 @@
 
 			csiphy1_ep2: endpoint@2 {
 					data-lanes = <0 1 2 3>;
-					//remote-endpoint = <&s5k5e9_ep2>;
+					remote-endpoint = <&s5k5e9_ep0>;
 			};
 			
 			csiphy1_ep3: endpoint@3 {
@@ -632,14 +598,12 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
 /* sensor 4 yyds */	
 &cci0_i2c1 {
         status = "okay";
-        s5k5e9_1: camera@2d { //try for addr 0x51 0x54
-			compatible = "samsung,s5k5e9", "samsung,gw1";
+        s5k5e9_1: camera@2d {
+			compatible = "samsung,s5k5e9";
 			reg = <0x2d>;
 
-			enable-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
-
-			pinctrl-names = "default";//, "suspend";
-			pinctrl-0 = <&cam_sensor_mclk2_active &cam_sensor_mclk1_active &cam_sensor_mclk0_active &cam_sensor_mclk4_active &cam_sensor_mclk3_active>;
+			pinctrl-names = "default", "suspend";
+			pinctrl-0 = <&cam_sensor_mclk2_active>;
 			pinctrl-1 = <&cam_sensor_mclk2_suspend>;
 
 			clocks = <&camcc CAM_CC_MCLK2_CLK>;
@@ -652,17 +616,22 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
 			vddd-supply = <&ultra_ldo_avdd_regulator>;
 			vdddo-supply = <&ultra_ldo_dvdd_regulator>;
 
+                        enable-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+
 			status = "okay";
-#if 1
+
                 port {
-                        s5k5e9_ep1: endpoint {
+                        s5k5e9_ep0: endpoint {
                                 link-frequencies = /bits/ 64
                                         <24000000 480000000>;
+				/*
+				 * according to various source this sensor only use 2 lanes,
+				 * but lets assign 4 for it, more doesnt harm atm.
+				 */
                                 data-lanes = <1 2 3 4>;
-                                remote-endpoint = <&csiphy0_ep1>;
+                                remote-endpoint = <&csiphy1_ep2>;
                         };
                 };
-#endif
 	};
 };
 
@@ -710,15 +679,6 @@ regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custo
 		vdda-supply = <&vreg_s3a_0p8>; /* dummy */
 		vddd-supply = <&ultra_ldo_avdd_regulator>;
 		vdddo-supply = <&ultra_ldo_dvdd_regulator>;
-vdddo1-supply = <&wide_ldo_avdd0_regulator>;
-vdddo2-supply = <&wide_ldo_avdd1_regulator>;
-vdddo3-supply = <&wide_ldo_avdd2_regulator>;
-vdddo4-supply = <&wide_ldo_dvdd_regulator>;
-vdddo5-supply = <&wide_ldo_dvdd2_regulator>;
-vdddo6-supply = <&depth_ldo_avdd_regulator>;
-vdddo7-supply = <&wide_ldo_afvdd_regulator>;
-vdddo8-supply = <&front_ldo_dvdd_regulator>;
-
 		status = "disabled";
 
                 port {
