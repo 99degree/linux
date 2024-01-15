@@ -1,5 +1,14 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#if 0
+/* dt overlay */
+/plugin/;
+#else
 #include "sm7125-xiaomi-joyeuse.dts"
-#include "sm7125-idp.dtsi"
+#endif
+#include "sm7125-xiaomi-joyeuse-overlay.dtsi"
 
 / {
 	chosen {
@@ -42,7 +51,7 @@
 		regulator-always-on;
 		vin-supply = <&vph_pwr>;
 	};
-
+#if 1
 	wide_ldo_avdd0_regulator: gpio-regulator@99 { //AVDD0 2.9V //AVDD0_2.8V
                 compatible = "regulator-fixed";
                 //reg = <0x00 0x00>;
@@ -53,6 +62,8 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 4 0>; /* schematic not connected */
                 vin-supply = <&vreg_bob>;
+		//register-always-on;
+		regulator-boot-on;
         };
 
         wide_ldo_avdd1_regulator: gpio-regulator@0 { //AVDD1 2.9V //AVDD0_2.8V
@@ -64,11 +75,13 @@
                 regulator-enable-ramp-delay = <100>;
                 enable-active-high;
                 gpio = <&pm6150l_gpios 9 0>; 
-		/* 
-		 * another gpio4 called avdd1_2p8 but schematic not connected 
-		 * and the name is swapped to avdd0 accordingly.
-		*/
+			/* 
+			* another gpio4 called avdd1_2p8 but schematic not connected 
+			* and the name is swapped to avdd0 accordingly.
+			*/
                 vin-supply = <&vreg_bob>;
+			//register-always-on;
+			regulator-boot-on;
         };
 
         wide_ldo_avdd2_regulator: gpio-regulator@1 { //AVDD2 1.8V //2M_DVDDIO_1.8V?
@@ -81,6 +94,8 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 12 0>; //for P0,demo is tlmm 63 //TODO
                 vin-supply = <&vreg_bob>; //TODO
+				//register-always-on;
+                regulator-boot-on;
         };
 
         wide_ldo_dvdd_regulator: gpio-regulator@2 { //DVDD 1.2V
@@ -93,6 +108,8 @@
                 enable-active-high;
                 gpio = <&tlmm 42 0>;
                 vin-supply = <&vreg_s5a>;//48M pm6150_s5
+				//register-always-on;
+                regulator-boot-on;
         };
 
         wide_ldo_dvdd2_regulator: gpio-regulator@7 { //DVDD2 1.05V
@@ -105,6 +122,8 @@
                 enable-active-high;
                 gpio = <&tlmm 42 0>;
                 vin-supply = <&vreg_s8c>;//64M pm6150l_s8 + pm6150_s5a
+				//register-always-on;
+                regulator-boot-on;
         };
 
         depth_ldo_avdd_regulator: gpio-regulator@3 { //depth AVDD 2.8V
@@ -117,6 +136,8 @@
                 enable-active-high;
                 gpio = <&tlmm 43 0>;
                 vin-supply = <&vreg_bob>;
+				//register-always-on;
+                regulator-boot-on;
         };
 
         ultra_ldo_avdd_regulator: gpio-regulator@4 { //ultra AVDD 2.8V
@@ -129,6 +150,8 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 8 0>;//for p0 main band
                 vin-supply = <&vreg_bob>;
+				//register-always-on;
+                regulator-boot-on;
         };
 
         ultra_ldo_dvdd_regulator: gpio-regulator@5 { //ultra DVDD 2.8V
@@ -141,6 +164,8 @@
                 enable-active-high;
                 gpio = <&tlmm 72 0>;
                 vin-supply = <&vreg_s5a>;
+				//register-always-on;
+                regulator-boot-on;
         };
 
         wide_ldo_afvdd_regulator: gpio-regulator@6 { //AFVDD 2.8V
@@ -153,6 +178,8 @@
                 enable-active-high;
                 gpio = <&pm6150l_gpios 6 0>;
                 vin-supply = <&vreg_bob>; //TODO
+				//register-always-on;
+                regulator-boot-on;
         };
 
         front_ldo_dvdd_regulator: gpio-regulator@8 { //dvdd1.1v-20
@@ -165,8 +192,10 @@
                 enable-active-high;
                 gpio = <&tlmm 117 0>;
                 vin-supply = <&vreg_s5a>;
+				//register-always-on;
+                regulator-boot-on;
         };
-
+#endif
         clk_titan_gdsc: gpio-regulator@100 { //dummy gdsc
                 compatible = "regulator-fixed";
                 //reg = <0x08 0x00>;
@@ -468,6 +497,10 @@
         status = "okay";
 };
 
+&camcc {
+        status = "okay";
+};
+
 &camss {
 	//vdda-phy-supply = <&vreg_l1a_0p875>;
 	//vdda-pll-supply = <&vreg_l26a_1p2>;
@@ -475,10 +508,39 @@
 	status = "okay";
 
 	ports {
+		/* related to csiphy */
 		port@0 {
-			csiphy0_ep: endpoint {
+			csiphy0_ep0: endpoint@0 {
+					data-lanes = <0 1 2 3>;
+					//remote-endpoint = <&s5k5e9_ep0>;
+			};		
+			csiphy0_ep1: endpoint@1 {
+					data-lanes = <0 1 2 3>;
+					remote-endpoint = <&s5k5e9_ep1>;
+			};	
+		
+		};
+		
+		port@1 {
+
+			csiphy1_ep0: endpoint@0 {
 				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&ov16a1q_ep>;
+				remote-endpoint = <&ov16a1q_ep_0>;
+			};
+
+			csiphy1_ep1: endpoint@1 {
+					data-lanes = <0 1 2 3>;
+					remote-endpoint = <&gc8034_ep>;
+			};
+
+			csiphy1_ep2: endpoint@2 {
+					data-lanes = <0 1 2 3>;
+					//remote-endpoint = <&s5k5e9_ep2>;
+			};
+			
+			csiphy1_ep3: endpoint@3 {
+					data-lanes = <0 1 2 3>;
+					remote-endpoint = <&gc02m1_ep_0>;
 			};
 		};
 	};
@@ -488,10 +550,13 @@
         status = "okay";
 };
 
+&cci1 {
+        status = "okay";
+};
 #if 0
 [   18.731285] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:0,slave_addr:0x7a,sensor_id:0x971
-[   18.954235] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:2,slave_addr:0x20,sensor_id:0x1641
 [   19.064560] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:1,slave_addr:0x6e,sensor_id:0x2e0
+[   18.954235] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:2,slave_addr:0x20,sensor_id:0x1641
 [   19.162159] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:3,slave_addr:0x6e,sensor_id:0x8044
 [   19.296172] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:4,slave_addr:0x5a,sensor_id:0x559b
 
@@ -502,64 +567,256 @@
  CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0xA8
 
 [   47.248726] CAM_DBG: CAM-ACTUATOR: cam_actuator_slaveInfo_pkt_parser: 237: Slave addr: 0x18 Freq Mode: 1
+
+id:0x7a:0x971
+sensor:0 //reset1 //tlmm 25 //mclk1 (gpio14)
+cci-master:0
+cci-dev:0
+<&wide_ldo_avdd1_regulator>; //AVDD1 48M/64M
+<&wide_ldo_dvdd_regulator>; //DVDD 48M
+<&pm6150_l13>;//IOVDD
+<&titan_top_gdsc>;
+<&wide_ldo_avdd2_regulator>; //AVDD 1.8V-48M
+<&wide_ldo_dvdd2_regulator>; //DVDD 64M
+regulator-names = "cam_vana", "cam_vdig", "cam_vio",
+                        "cam_clk", "cam_v_custom1", "cam_v_custom2";
+==
+id:0x6e:0x2e0//gc02m1 >> i2cdetect as addr 0x51
+sensor:1 //reset2 //tlmm 29 //mclk3 (gpio16)
+  cci-master = <0>;
+  cci-device = <1>;
+<&wide_ldo_avdd2_regulator>;
+<&depth_ldo_avdd_regulator>;
+<&titan_top_gdsc>;
+"cam_vio", "cam_vana","cam_clk";
+  
+==
+/* front cam*/
+id:0x20:0x1641//ov16a1q
+sensor:2 //reset2 //tlmm 32 //mclk0 (gpio13)
+  cci-master = <0>;
+  cci-device = <1>;
+<&pm6150_l13>;
+<&ultra_ldo_avdd_regulator>;//AVDD 16M/20M
+<&ultra_ldo_dvdd_regulator>;//DVDD 16M
+<&wide_ldo_dvdd2_regulator>; //DVDD 20M
+<&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
+<&titan_top_gdsc>;
+regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
+			"cam_clk";
+<&pm6150l_gpios 4 0>;				
+==
+id:0x6e:0x8044//gc8034 >> i2cdetect as addr 0x51
+sensor:3 //reset0 //tlmm 30  //MCLK4 (gpio23)
+  cci-master = <1>;
+  cci-device = <0>;
+<&pm6150_l13>;
+<&ultra_ldo_avdd_regulator>;
+<&ultra_ldo_dvdd_regulator>;
+<&titan_top_gdsc>;
+                regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
+<&pm6150l_gpios 4 0>
+				
+==
+id:0x5a:0x559b//s5k5e9
+sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
+  cci-master = <1>; // port [0..1]
+  cci-device = <0>; //repersent to i2c_dev
+<&pm6150_l13>;
+<&ultra_ldo_avdd_regulator>;
+<&ultra_ldo_dvdd_regulator>;
+<&titan_top_gdsc>;
+                regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
+#endif
+	
+/* sensor 4 yyds */	
+&cci0_i2c1 {
+        status = "okay";
+        s5k5e9_1: camera@2d { //try for addr 0x51 0x54
+			compatible = "samsung,s5k5e9", "samsung,gw1";
+			reg = <0x2d>;
+
+			enable-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+
+			pinctrl-names = "default";//, "suspend";
+			pinctrl-0 = <&cam_sensor_mclk2_active &cam_sensor_mclk1_active &cam_sensor_mclk0_active &cam_sensor_mclk4_active &cam_sensor_mclk3_active>;
+			pinctrl-1 = <&cam_sensor_mclk2_suspend>;
+
+			clocks = <&camcc CAM_CC_MCLK2_CLK>;
+			clock-names = "xvclk";
+			clock-frequency = <19200000>;
+			assigned-clocks = <&camcc CAM_CC_MCLK2_CLK>;
+			assigned-clock-rates = <19200000>;
+
+			vdda-supply = <&vreg_l13a_1p8>;
+			vddd-supply = <&ultra_ldo_avdd_regulator>;
+			vdddo-supply = <&ultra_ldo_dvdd_regulator>;
+
+			status = "okay";
+#if 1
+                port {
+                        s5k5e9_ep1: endpoint {
+                                link-frequencies = /bits/ 64
+                                        <24000000 480000000>;
+                                data-lanes = <1 2 3 4>;
+                                remote-endpoint = <&csiphy0_ep1>;
+                        };
+                };
+#endif
+	};
+};
+
+/* sensor 3 */
+&cci1_i2c0 {
+	status = "okay";
+	/* cci 0 sensor 3 */
+
+#if 0
+/* front cam*/
+id:0x20:0x1641//ov16a1q
+sensor:2 //reset2 //tlmm 32 //mclk0 (gpio13)
+  cci-master = <0>;
+  cci-device = <1>;
+<&pm6150_l13>;
+<&ultra_ldo_avdd_regulator>;//AVDD 16M/20M
+<&ultra_ldo_dvdd_regulator>;//DVDD 16M
+<&wide_ldo_dvdd2_regulator>; //DVDD 20M
+<&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
+<&titan_top_gdsc>;
+regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
+                        "cam_clk";
+<&pm6150l_gpios 4 0>;
 #endif
 
-&cci_i2c0 {
+
+	gc8034: camera@10 {
+		compatible = "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
+		reg = <0x10>;
+
+		reset-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+
+		pinctrl-names = "default", "suspend";
+		pinctrl-0 = <&cam_sensor_mclk0_active>;
+		pinctrl-1 = <&cam_sensor_mclk0_suspend>;
+
+		clocks = <&camcc CAM_CC_MCLK0_CLK>;
+		clock-names = "xvclk";
+		clock-frequency = <19200000>;
+		assigned-clocks = <&camcc CAM_CC_MCLK0_CLK>;
+		assigned-clock-rates = <19200000>;
+
+		//vdda-supply = <&vreg_l13a_1p8>;
+		vdda-supply = <&vreg_s3a_0p8>; /* dummy */
+		vddd-supply = <&ultra_ldo_avdd_regulator>;
+		vdddo-supply = <&ultra_ldo_dvdd_regulator>;
+vdddo1-supply = <&wide_ldo_avdd0_regulator>;
+vdddo2-supply = <&wide_ldo_avdd1_regulator>;
+vdddo3-supply = <&wide_ldo_avdd2_regulator>;
+vdddo4-supply = <&wide_ldo_dvdd_regulator>;
+vdddo5-supply = <&wide_ldo_dvdd2_regulator>;
+vdddo6-supply = <&depth_ldo_avdd_regulator>;
+vdddo7-supply = <&wide_ldo_afvdd_regulator>;
+vdddo8-supply = <&front_ldo_dvdd_regulator>;
+
+		status = "disabled";
+
+                port {
+                        gc8034_ep: endpoint {
+                                link-frequencies = /bits/ 64
+					<24000000 480000000>;
+                                       // <360000000 180000000>;
+                                data-lanes = <1 2 3 4>;
+                                remote-endpoint = <&csiphy1_ep1>;
+                        };
+                };
+	};
+};
+
+/* sensor 2*/
+&cci0_i2c1 {
 	status = "okay";
 
-	ov16a1q: camera@20 {
-		compatible = "ovti,ov16a1q";
-                reg = <0x20>;
+	ov16a1q_0: camera@20 {
+		compatible = "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
+		reg = <0x20>;// CCI sensor id 0x1641
 
-		/*
-		  gpios = <&tlmm 13 0>,//cam_sensor_mclk0_active
-		   <&tlmm 32 0>, //reset-gpio
-		   <&pm6150l_gpios 4 0>; //wide_ldo_avdd0_regulator
-		  gpio-reset = <1>;
-		  gpio-vana = <2>;
-		  gpio-req-tbl-num = <0 1 2>;
-		  gpio-req-tbl-flags = <1 0 0>;
-		  gpio-req-tbl-label = "CAMIF_MCLK0",
-		     "CAM_RESET2",
-		     "CAM_AVDD"; //goto fixed regulator avdd
-		*/
-
-                reset-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
-
-                pinctrl-names = "default";
-                pinctrl-0 = <&cam_sensor_mclk0_active /*&regulator_gpio42_default*/>; //well, try to define also gpio42
+		reset-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		
+		pinctrl-names = "default", "suspend";
+		pinctrl-0 = <&cam_sensor_mclk0_active>;
+		pinctrl-1 = <&cam_sensor_mclk0_suspend>;
 
 		//power-domains = <&camcc TITAN_TOP_GDSC>;
 
 		/* GPIO[13..16]->MCLK[0..3] */
 
-                clocks = <&camcc CAM_CC_MCLK0_CLK>;
-                clock-names = "xvclk";
-                clock-frequency = <19200000>;
+		clocks = <&camcc CAM_CC_MCLK0_CLK >;
+		clock-names = "xvclk";
+		clock-frequency = <19200000>;
+		assigned-clocks = <&camcc CAM_CC_MCLK0_CLK>;
+		assigned-clock-rates = <19200000>;
 
-		cam_vio-supply = <&vreg_l13a_1p8>;
-		cam_vana-supply = <&ultra_ldo_avdd_regulator>;
-		cam_vdig-supply = <&ultra_ldo_dvdd_regulator>;
-		cam_v_custom1-supply = <&wide_ldo_dvdd2_regulator>;
-		cam_v_custom2-supply = <&front_ldo_dvdd_regulator>;
-		cam_clk-supply = <&clk_titan_gdsc>;
-		cam_avdd-supply = <&wide_ldo_avdd0_regulator>;
-		//regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
-		//"cam_clk", "cam_avdd";
+		vdda-supply = <&vreg_l13a_1p8>;
+		vddd-supply = <&ultra_ldo_avdd_regulator>;
+		vdddo-supply = <&ultra_ldo_dvdd_regulator>;
+		vdddo2-supply = <&wide_ldo_dvdd2_regulator>; //DVDD 20M
+		vdddo3-supply = <&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
 
-		//lens-focus = <&ak7375>;
+		status = "disabled";
 
-		status = "okay";
+		port {
+				ov16a1q_ep_0: endpoint {
+						link-frequencies = /bits/ 64
+								<360000000 180000000>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csiphy1_ep0>;
+				};
+		};
+	};
+};
 
-                port {
-                        ov16a1q_ep: endpoint {
-                                link-frequencies = /bits/ 64
-                                        <360000000 180000000>;
-                                data-lanes = <1 2 3 4>;
-                                remote-endpoint = <&csiphy0_ep>;
-                        };
-                };
-        };
+/* sensor 1 */
+&cci0_i2c1 {
+	status = "okay";
+
+	gc02m1: camera@6e {
+		compatible = "samsung,gc02m1";
+		reg = <0x6e>;// CCI sensor 
+
+		reset-gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		
+		pinctrl-names = "default", "suspend";
+		pinctrl-0 = <&cam_sensor_mclk3_active>;
+		pinctrl-1 = <&cam_sensor_mclk3_suspend>;
+
+		//power-domains = <&camcc TITAN_TOP_GDSC>;
+
+		/* GPIO[13..16]->MCLK[0..3] */
+
+		clocks = <&camcc CAM_CC_MCLK3_CLK >;
+		clock-names = "xvclk";
+		clock-frequency = <19200000>;
+		assigned-clocks = <&camcc CAM_CC_MCLK3_CLK>;
+		assigned-clock-rates = <19200000>;
+
+		vdda-supply = <&vreg_l13a_1p8>;
+		vddd-supply = <&wide_ldo_avdd2_regulator>;
+		vdddo-supply = <&depth_ldo_avdd_regulator>;
+
+		status = "disabled";
+
+		port {
+				gc02m1_ep_0: endpoint {
+						link-frequencies = /bits/ 64
+								<480000000 24000000>;
+						data-lanes = <1 2 3 4>;
+						remote-endpoint = <&csiphy1_ep3>;
+				};
+		};
+	};
 };
 
 &dispcc {
@@ -638,9 +895,6 @@
 &mdss_dsi0 {
 	vdda-supply = <&vreg_l3c_1p23>;
 	status = "okay";
-
-	panel0: panel@0 {
-	};
 };
 
 &mdss_dsi0_out {
@@ -925,8 +1179,9 @@
 
 &tlmm {
         regulator_gpio42_default: regulator-default-state {
-                pins = "gpio42";
+                pins = "gpio42", "gpio43", "gpio72", "gpio117";
                 function = "gpio";
+		bias-pull-up;
         };
 
 	qup_uart3_sleep: qup-uart3-sleep {
@@ -976,88 +1231,52 @@
 		};
 	};
 
-		cci0_active: cci0_active {
-			mux {
+		cci0_active: cci0-default-state {
 				/* CLK, DATA */
-				pins = "gpio17", "gpio18";
 				function = "cci_i2c";
-			};
-
-			config {
-				pins = "gpio17", "gpio18";
+				pins = "gpio17", "gpio18", "gpio19", "gpio20";
 				bias-pull-up; /* PULL UP*/
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
-		cci0_suspend: cci0_suspend {
-			mux {
+		cci0_suspend: cci0-sleep-state {
 				/* CLK, DATA */
-				pins = "gpio17", "gpio18";
 				function = "cci_i2c";
-			};
-
-			config {
-				pins = "gpio17", "gpio18";
+				pins = "gpio17", "gpio18", "gpio19", "gpio20";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
-
-		cci1_active: cci1_active {
-			mux {
+#if 0
+		cci1_active: cci1-default-state {
 				/* CLK, DATA */
-				pins = "gpio19", "gpio20";
 				function = "cci_i2c";
-			};
-
-			config {
 				pins = "gpio19", "gpio20";
 				bias-pull-up; /* PULL UP*/
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
-		cci1_suspend: cci1_suspend {
-			mux {
+		cci1_suspend: cci1-sleep-state {
 				/* CLK, DATA */
-				pins = "gpio19", "gpio20";
 				function = "cci_i2c";
-			};
-
-			config {
 				pins = "gpio19", "gpio20";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
-
-		cci2_active: cci2_active {
-			mux {
+#endif
+		cci2_active: cci2-default-state {
 				/* CLK, DATA */
-				pins = "gpio27", "gpio28";
 				function = "cci_i2c";
-			};
-
-			config {
 				pins = "gpio27", "gpio28";
 				bias-pull-up; /* PULL UP*/
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
-		cci2_suspend: cci2_suspend {
-			mux {
+		cci2_suspend: cci2-sleep-state {
 				/* CLK, DATA */
-				pins = "gpio27", "gpio28";
 				function = "cci_i2c";
-			};
-
-			config {
 				pins = "gpio27", "gpio28";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk0_active: cam_sensor_mclk0_active {
@@ -1206,114 +1425,69 @@
 
 		cam_sensor_mclk1_active: cam_sensor_mclk1_active {
 			/* MCLK1 */
-			mux {
-				pins = "gpio14";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio14";
 				bias-disable; /* No PULL */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk1_suspend: cam_sensor_mclk1_suspend {
 			/* MCLK1 */
-			mux {
-				pins = "gpio14";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio14";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk2_active: cam_sensor_mclk2_active {
 			/* MCLK2 */
-			mux {
-				pins = "gpio15";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio15";
 				bias-disable; /* No PULL */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk2_suspend: cam_sensor_mclk2_suspend {
 			/* MCLK2 */
-			mux {
-				pins = "gpio15";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio15";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk3_active: cam_sensor_mclk3_active {
 			/* MCLK3 */
-			mux {
-				pins = "gpio16";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio16";
 				bias-disable; /* No PULL */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk3_suspend: cam_sensor_mclk3_suspend {
 			/* MCLK3 */
-			mux {
-				pins = "gpio16";
 				function = "cam_mclk";
-			};
-
-			config {
 				pins = "gpio16";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 
 		cam_sensor_mclk4_active: cam_sensor_mclk4_active {
 			/* MCLK4 */
-			mux {
+
 				pins = "gpio23";
 				function = "cam_mclk";
-			};
-
-			config {
-				pins = "gpio23";
 				bias-disable; /* No PULL */
 				drive-strength = <2>; /* 2 MA */
-			};
+
 		};
 
 		cam_sensor_mclk4_suspend: cam_sensor_mclk4_suspend {
 			/* MCLK4 */
-			mux {
-				pins = "gpio23";
 				function = "cam_mclk";
-			};
 
-			config {
 				pins = "gpio23";
 				bias-pull-down; /* PULL DOWN */
 				drive-strength = <2>; /* 2 MA */
-			};
 		};
 #if 0
         pmx_ts_active {
@@ -1399,3 +1573,5 @@
 
 &ufs_mem_hc { status = "disabled"; };
 &ufs_mem_phy { status = "disabled"; };
+
+&mpss_gpr { status = "disabled"; };
