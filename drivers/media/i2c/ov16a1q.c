@@ -1035,6 +1035,7 @@ static const struct ov16a1q_mode supported_modes[] = {
 		.hdr_mode = NO_HDR,
 		.vc[PAD0] = 0,
 	},
+#if 0
 	{
 		.width = 2328,
 		.height = 1748,
@@ -1051,11 +1052,12 @@ static const struct ov16a1q_mode supported_modes[] = {
 		.hdr_mode = NO_HDR,
 		.vc[PAD0] = 0,
 	},
+#endif
 };
 
 static const s64 link_freq_items[] = {
 	OV16A1Q_LINK_FREQ_726MHZ,
-	OV16A1Q_LINK_FREQ_378MHZ,
+//	OV16A1Q_LINK_FREQ_378MHZ,
 };
 
 static const char * const ov16a1q_test_pattern_menu[] = {
@@ -2000,6 +2002,16 @@ static int ov16a1q_initialize_controls(struct ov16a1q *ov16a1q)
 			0, OV16A1Q_PIXEL_RATE,
 			1, dst_pixel_rate);
 
+	if (!ov16a1q->link_freq || ov16a1q->link_freq == NULL) {
+		dev_err(&ov16a1q->client->dev, "error create link_freq");
+		return -EIO;
+	}
+
+	if (!mode->link_freq_idx)  {
+                dev_err(&ov16a1q->client->dev, "error create link_freq_idx");
+//                return -EIO;
+        }
+
 	__v4l2_ctrl_s_ctrl(ov16a1q->link_freq,
 			   mode->link_freq_idx);
 
@@ -2253,13 +2265,13 @@ static void ov16a1q_remove(struct i2c_client *client)
 	pm_runtime_set_suspended(&client->dev);
 }
 
-#if IS_ENABLED(CONFIG_OF)
 static const struct of_device_id ov16a1q_of_match[] = {
 	{ .compatible = "ovti,ov16a1q" },
+        { .compatible = "ovti,ov16a10" },
+        { .compatible = "ovti,ov16a1x" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, ov16a1q_of_match);
-#endif
 
 static const struct i2c_device_id ov16a1q_match_id[] = {
 	{ "ovti,ov16a1q", 0 },
@@ -2270,7 +2282,7 @@ static struct i2c_driver ov16a1q_i2c_driver = {
 	.driver = {
 		.name = OV16A1Q_NAME,
 		.pm = &ov16a1q_pm_ops,
-		.of_match_table = of_match_ptr(ov16a1q_of_match),
+		.of_match_table = ov16a1q_of_match,
 	},
 	.probe		= &ov16a1q_probe,
 	.remove		= &ov16a1q_remove,
@@ -2280,4 +2292,5 @@ static struct i2c_driver ov16a1q_i2c_driver = {
 module_i2c_driver(ov16a1q_i2c_driver);
 
 MODULE_DESCRIPTION("OmniVision ov16a1q sensor driver");
-MODULE_LICENSE("GPL");
+MODULE_AUTHOR("99degree <https://github.com/99degree>");
+MODULE_LICENSE("GPL v2");
