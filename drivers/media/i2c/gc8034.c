@@ -1847,6 +1847,27 @@ static int gc8034_set_gain_reg(struct gc8034 *gc8034, u32 a_gain)
 	return ret;
 }
 
+static const struct regval gc8034_global_regs_test_pattern[] = {
+	{0xfc, 0x00},
+	{0xf4, 0x80},
+	{0xf5, 0x19},
+	{0xf8, 0x63},
+	{0xfa, 0x45},
+	{0xfc, 0x00},
+	{0xfc, 0xfe},
+	{0xfe, 0x03},
+	{0x21, 0x05},
+	{0x22, 0x06},
+	{0x23, 0x16},
+	{0x25, 0x12},
+	{0x26, 0x07},
+	{0x29, 0x07},
+	{0x2a, 0x08},
+	{0x2b, 0x07},
+	{0xfe, 0x00},
+	{0x8c, 0x01},
+};
+
 static int gc8034_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct gc8034 *gc8034 = container_of(ctrl->handler,
@@ -1894,6 +1915,13 @@ static int gc8034_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret |= gc8034_write_reg(gc8034->client,
 					GC8034_REG_VTS_L,
 					temp & 0xff);
+		break;
+	case V4L2_CID_TEST_PATTERN:
+		int i;
+		for (i = 0; i < ARRAY_SIZE(gc8034_global_regs_test_pattern); i++) {
+			ret = gc8034_write_reg(gc8034->client, gc8034_global_regs_test_pattern[i].addr,
+							gc8034_global_regs_test_pattern[i].val);
+		}
 		break;
 	default:
 		dev_warn(&client->dev, "%s Unhandled id:0x%x, val:0x%x\n",
@@ -2204,6 +2232,7 @@ static void gc8034_remove(struct i2c_client *client)
 
 static const struct of_device_id gc8034_of_match[] = {
 	{ .compatible = "galaxycore,gc8034" },
+        { .compatible = "galaxycore,gc8034" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, gc8034_of_match);
@@ -2217,7 +2246,7 @@ static struct i2c_driver gc8034_i2c_driver = {
 	.driver = {
 		.name = GC8034_NAME,
 		.pm = &gc8034_pm_ops,
-		.of_match_table = of_match_ptr(gc8034_of_match),
+		.of_match_table = gc8034_of_match,
 	},
 	.probe		= &gc8034_probe,
 	.remove		= &gc8034_remove,
@@ -2227,6 +2256,5 @@ static struct i2c_driver gc8034_i2c_driver = {
 module_i2c_driver(gc8034_i2c_driver);
 
 MODULE_DESCRIPTION("GalaxyCore gc8034 sensor driver");
-MODULE_AUTHOR("99degree <github.com/99degree>");
-MODULE_LICENSE("GPLv2");
-
+MODULE_AUTHOR("99degree <https://github.com/99degree>");
+MODULE_LICENSE("GPL v2");
