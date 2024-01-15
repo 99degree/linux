@@ -1,3 +1,28 @@
+#include <dt-bindings/clock/qcom,dispcc-sc7180.h>
+#include <dt-bindings/clock/qcom,gcc-sc7180.h>
+#include <dt-bindings/clock/qcom,gpucc-sc7180.h>
+#include <dt-bindings/clock/qcom,lpasscorecc-sc7180.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/clock/qcom,videocc-sc7180.h>
+#include <dt-bindings/firmware/qcom,scm.h>
+#include <dt-bindings/interconnect/qcom,icc.h>
+#include <dt-bindings/interconnect/qcom,osm-l3.h>
+#include <dt-bindings/interconnect/qcom,sc7180.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/phy/phy-qcom-qmp.h>
+#include <dt-bindings/phy/phy-qcom-qusb2.h>
+#include <dt-bindings/power/qcom-rpmpd.h>
+#include <dt-bindings/reset/qcom,sdm845-aoss.h>
+#include <dt-bindings/reset/qcom,sdm845-pdc.h>
+#include <dt-bindings/soc/qcom,rpmh-rsc.h>
+#include <dt-bindings/soc/qcom,apr.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/arm/qcom,ids.h>
+#include <dt-bindings/firmware/qcom,scm.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include <dt-bindings/clock/qcom,sm8250-lpass-aoncc.h>
 #include <dt-bindings/clock/qcom,sm8250-lpass-audiocc.h>
 #include <dt-bindings/clock/qcom,camcc-sc7180.h>
@@ -10,6 +35,9 @@
 / {
 
 	compatible = "qcom,sm7125", "qcom,sc7180-idp", "qcom,sc7180";
+
+	qcom,msm-id = <QCOM_ID_SM7125 0>;
+	qcom,board-id = <0x50022 1>;
 
         firmware: firmware {};
 
@@ -296,7 +324,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg = <0 0x0ac4a000 0 0x4000>;
+		reg = <0 0x0ac4a000 0 0x1000>;
 		interrupts = <GIC_SPI 468 IRQ_TYPE_EDGE_RISING>;
 		power-domains = <&camcc TITAN_TOP_GDSC>;
 
@@ -345,7 +373,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg = <0 0x0ac4b000 0 0x4000>;
+		reg = <0 0x0ac4b000 0 0x1000>;
 		interrupts = <GIC_SPI 462 IRQ_TYPE_EDGE_RISING>;
 		power-domains = <&camcc TITAN_TOP_GDSC>;
 
@@ -367,8 +395,8 @@
 		assigned-clock-rates = <80000000>, <37500000>;
 
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&cci1_active>;
-		pinctrl-1 = <&cci1_suspend>;
+		pinctrl-0 = <&cci2_active>;
+		pinctrl-1 = <&cci2_suspend>;
 
 		status = "disabled";
 
@@ -378,13 +406,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-
+#if 0
 		cci1_i2c1: i2c-bus@1 {
 			reg = <1>;
 			clock-frequency = <1000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+#endif
 	};
 
 	rxmacro: rxmacro@62600000 {
@@ -1002,6 +1031,15 @@
 			<&gpi_dma1 1 5 QCOM_GPI_SPI>;
 };
 
+/* refine with original pm6150l/pm6150 */
+&pm6150_gpios {
+//        gpio-ranges = <&pm6150_gpios 1 0 10>;
+};
+
+&pm6150l_gpios {
+//        gpio-ranges = <&pm6150_gpios 1 0 12>;
+};
+
 &qfprom {
         vcc-supply = <&vdd_qfprom>;
         status = "okay";
@@ -1024,7 +1062,7 @@
 &remoteproc_mpss {
         compatible = "qcom,sm7125-mpss-pas", "qcom,sm6350-mpss-pas";
         glink-edge {
-		gpr {
+		mpss_gpr: gpr {
 			compatible = "qcom,gpr";
 			qcom,glink-channels = "apr_audio_svc";
 			qcom,domain = <APR_DOMAIN_APPS>;

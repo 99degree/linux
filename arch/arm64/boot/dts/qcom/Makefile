@@ -240,3 +240,8 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sm8650-mtp.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= sm8650-qrd.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= x1e80100-crd.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= x1e80100-qcp.dtb
+
+
+dtb-$(CONFIG_ARCH_QCOM) += sm7125-samsung-a72q.dtb
+sm7125-xiaomi-joyeuse-overlay-dtbs := sm7125-xiaomi-joyeuse.dtb sm7125-xiaomi-joyeuse-overlay.dtbo
+dtb-$(CONFIG_ARCH_QCOM) += sm7125-xiaomi-joyeuse-overlay.dtbo
