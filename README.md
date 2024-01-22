@@ -20,7 +20,7 @@ Here are functionality not tested:
 modem
 rmtfs
 slpi(sensors, largely broken, not supported)
-bluetooth
+bluetooth/wifi
 fingerprint(largely broken, not supported)
 sound/mic/headphone/ampifier dai
 gpu(display comtroller is working, drm)
@@ -39,6 +39,9 @@ usb peri/adb shell
 spi/dma/i2c
 pon/pwr button/vol button
 lcd backlight
+camera_cci bus
+camss subsys (no sensor support yet)
+camera s5k5e9 sensor initial probe support(no capture img yet)
 ```
 
 So with my rewrite of nt36xxx_spi driver, it is barely meet the requirement to Android/LOS/PostmarketOS. The success story of 
