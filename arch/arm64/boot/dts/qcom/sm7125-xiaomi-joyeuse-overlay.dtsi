@@ -291,8 +291,8 @@
 			"vfe_lite_src";
 
 		iommus = <&apps_smmu 0x820 0x0>,
-							<&apps_smmu 0x840 0x0>,
-							<&apps_smmu 0x860 0x0>;
+			<&apps_smmu 0x840 0x0>,
+			<&apps_smmu 0x860 0x0>;
 
 		status = "disabled";
 
