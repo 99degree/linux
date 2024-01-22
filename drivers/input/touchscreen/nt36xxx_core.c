@@ -224,7 +224,7 @@ const u32 nt36675_memory_maps[] = {
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
 
-void _debug_irq(struct nt36xxx_ts *ts, int line){
+void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line) {
         struct irq_desc *desc;
         desc = irq_data_to_desc( irq_get_irq_data(ts->irq));
         dev_info(ts->dev, "%d irq_desc depth=%d", line, desc->depth );
@@ -706,6 +706,10 @@ static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 
 	WARN_ON(ts->hw_crc != 2);
 
+	/* add one more guard */
+	if (ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)
+		goto exit;
+
 	/* supposed we need to load once and use many time */
 	if (ts->fw_entry.data)
 		goto upload;
@@ -888,20 +892,24 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 
         disable_irq_nosync(ts->irq);
 
+	mutex_lock(&ts->lock);
+
         ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
                 dev_err(ts->dev, "Failed to check chip version\n");
-		goto skip;
+		goto unlock;
         }
 
         /* Set memory maps for the specific chip version */
         ret = nt36xxx_chip_version_init(ts);
         if (ret) {
                 dev_err(ts->dev, "Failed to check chip version\n");
-		goto skip;
+		goto unlock;
         }
 
 	_nt36xxx_boot_download_firmware(ts);
+unlock:
+	mutex_unlock(&ts->lock);
 skip:
 	enable_irq(ts->irq);
 exit:
@@ -1153,7 +1161,7 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 		if (ts->fw_name)
 			schedule_delayed_work(&ts->work, 0);
 
-	ts->status &= ~NT36XXX_STATUS_SUSPEND;
+	ts->status &= ~(NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE);
 
 	return 0;
 }
@@ -1168,7 +1176,7 @@ static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
 
 	enable_irq(ts->irq);
 
-	regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
+	ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 
 	ret = nt36xxx_internal_pm_resume(dev);
 	return ret;
