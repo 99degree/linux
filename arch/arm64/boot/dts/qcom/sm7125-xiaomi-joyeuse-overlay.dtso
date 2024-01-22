@@ -473,42 +473,57 @@
 };
 
 &camss {
-	//vdda-phy-supply = <&vreg_l1a_0p875>;
-	//vdda-pll-supply = <&vreg_l26a_1p2>;
+	vdda-phy-supply = <&vreg_l4a_0p88>;
+	vdda-pll-supply = <&vreg_l3c_1p23>;
 
 	status = "okay";
 
 	ports {
-		/* TODO:related to csiphy */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		//confirmed
 		port@0 {
 			csiphy0_ep0: endpoint@0 {
-					data-lanes = <0 1 2 3>;
-					//remote-endpoint = <&s5k5e9_ep0>;
+				data-lanes = <0 1>;
+				remote-endpoint = <&gc8034_ep0>;
+				status = "disabled";
 			};		
 		};
 		
 		port@1 {
-
 			csiphy1_ep0: endpoint@0 {
-				data-lanes = <0 1 2 3>;
-				remote-endpoint = <&ov16a1q_ep_0>;
-			};
-
-			csiphy1_ep1: endpoint@1 {
-					data-lanes = <0 1 2 3>;
-					remote-endpoint = <&gc8034_ep>;
-			};
-
-			csiphy1_ep2: endpoint@2 {
-					data-lanes = <0 1 2 3>;
-					remote-endpoint = <&s5k5e9_ep0>;
-			};
-			
-			csiphy1_ep3: endpoint@3 {
-					data-lanes = <0 1 2 3>;
-					remote-endpoint = <&gc02m1_ep_0>;
+				/* TODO: check! */
+				data-lanes = <0 1 2>;
+				remote-endpoint = <&s5kgw1_ep0>;
+				status = "disabled";
 			};
 		};
+
+		//confirmed
+		port@2 {
+                        csiphy2_ep1: endpoint@1 {
+                                data-lanes = <0 1 2 3>;
+                                remote-endpoint = <&s5k5e9_ep0>;
+				status = "okay";
+                        };
+
+                        csiphy2_ep0: endpoint@0 {
+				/* TODO: check with log */
+                                data-lanes = <0 1 2>;
+                                remote-endpoint = <&gc02m1_ep0>;
+				status = "disabled";
+                        };
+		};
+
+		//confirmed
+		port@3 {
+			csiphy3_ep0: endpoint@0 {
+                                data-lanes = <0 1 2 3>;
+                                remote-endpoint = <&ov16a1x_ep0>;
+				status = "disabled";
+                        };
+                };
 	};
 };
 
@@ -519,6 +534,7 @@
 &cci1 {
         status = "okay";
 };
+
 #if 0
 [   18.731285] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:0,slave_addr:0x7a,sensor_id:0x971
 [   19.064560] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:1,slave_addr:0x6e,sensor_id:0x2e0
@@ -533,57 +549,13 @@
  CAM_DBG: CAM-EEPROM: cam_eeprom_read_memory: 51: slave-addr = 0xA8
 
 [   47.248726] CAM_DBG: CAM-ACTUATOR: cam_actuator_slaveInfo_pkt_parser: 237: Slave addr: 0x18 Freq Mode: 1
+#endif
 
-id:0x7a:0x971
-sensor:0 //reset1 //tlmm 25 //mclk1 (gpio14)
-cci-master:0
-cci-dev:0
-<&wide_ldo_avdd1_regulator>; //AVDD1 48M/64M
-<&wide_ldo_dvdd_regulator>; //DVDD 48M
-<&pm6150_l13>;//IOVDD
-<&titan_top_gdsc>;
-<&wide_ldo_avdd2_regulator>; //AVDD 1.8V-48M
-<&wide_ldo_dvdd2_regulator>; //DVDD 64M
-regulator-names = "cam_vana", "cam_vdig", "cam_vio",
-                        "cam_clk", "cam_v_custom1", "cam_v_custom2";
-==
-id:0x6e:0x2e0//gc02m1 >> i2cdetect as addr 0x51
-sensor:1 //reset2 //tlmm 29 //mclk3 (gpio16)
-  cci-master = <0>;
-  cci-device = <1>;
-<&wide_ldo_avdd2_regulator>;
-<&depth_ldo_avdd_regulator>;
-<&titan_top_gdsc>;
-"cam_vio", "cam_vana","cam_clk";
-  
-==
-/* front cam*/
-id:0x20:0x1641//ov16a1q
-sensor:2 //reset2 //tlmm 32 //mclk0 (gpio13)
-  cci-master = <0>;
-  cci-device = <1>;
-<&pm6150_l13>;
-<&ultra_ldo_avdd_regulator>;//AVDD 16M/20M
-<&ultra_ldo_dvdd_regulator>;//DVDD 16M
-<&wide_ldo_dvdd2_regulator>; //DVDD 20M
-<&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
-<&titan_top_gdsc>;
-regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
-			"cam_clk";
-<&pm6150l_gpios 4 0>;				
-==
-id:0x6e:0x8044//gc8034 >> i2cdetect as addr 0x51
-sensor:3 //reset0 //tlmm 30  //MCLK4 (gpio23)
-  cci-master = <1>;
-  cci-device = <0>;
-<&pm6150_l13>;
-<&ultra_ldo_avdd_regulator>;
-<&ultra_ldo_dvdd_regulator>;
-<&titan_top_gdsc>;
-                regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
-<&pm6150l_gpios 4 0>
-				
-==
+/* sensor 4 yyds */
+&cci0_i2c1 {
+        status = "okay";
+
+#if 0
 id:0x5a:0x559b//s5k5e9
 sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
   cci-master = <1>; // port [0..1]
@@ -592,12 +564,12 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
 <&ultra_ldo_avdd_regulator>;
 <&ultra_ldo_dvdd_regulator>;
 <&titan_top_gdsc>;
-                regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
+regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
+csiphy-sd-index = <2>;
+[   45.672624] CAM_DBG: CAM-ISP: cam_csid_ppi_init_hw: 212: lane_cfg  0x3210 | num_lanes  0x4 | lane_type 0x0
+[   37.714675] CAM_INFO: CAM-ISP: cam_ife_csid_set_csid_clock: 3248 CSID clock rate 96200000
 #endif
 	
-/* sensor 4 yyds */	
-&cci0_i2c1 {
-        status = "okay";
         s5k5e9_1: camera@2d {
 			compatible = "samsung,s5k5e9";
 			reg = <0x2d>;
@@ -623,19 +595,16 @@ sensor:4 //reset3 //tlmm 24, //MCLK2 (gpio15)
                 port {
                         s5k5e9_ep0: endpoint {
                                 link-frequencies = /bits/ 64
-                                        <24000000 480000000>;
-				/*
-				 * according to various source this sensor only use 2 lanes,
-				 * but lets assign 4 for it, more doesnt harm atm.
-				 */
-                                data-lanes = <1 2 3 4>;
-                                remote-endpoint = <&csiphy1_ep2>;
+					<24000000 480000000>;
+                                data-lanes = <0 1 2 3>;
+                                remote-endpoint = <&csiphy2_ep1>;
+				status = "okay";
                         };
                 };
 	};
 };
 
-/* sensor 3 */
+/* sensor 2 */
 &cci1_i2c0 {
 	status = "okay";
 	/* cci 0 sensor 3 */
@@ -655,15 +624,16 @@ sensor:2 //reset2 //tlmm 32 //mclk0 (gpio13)
 regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custom2",
                         "cam_clk";
 <&pm6150l_gpios 4 0>;
+[  209.817067] CAM_DBG: CAM-ISP: cam_csid_ppi_init_hw: 212: lane_cfg  0x3210 | num_lanes  0x4 | lane_type 0x0
+[  154.501391] CAM_INFO: CAM-ISP: cam_ife_csid_set_csid_clock: 3248 CSID clock rate 96200000
+csiphy-sd-index = <3>;
 #endif
-
-
-	gc8034: camera@10 {
+	ov16a1x: camera@10 {
 		compatible = "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
 		reg = <0x10>;
 
-		reset-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
-		enable-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-names = "default", "suspend";
 		pinctrl-0 = <&cam_sensor_mclk0_active>;
@@ -675,75 +645,98 @@ regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custo
 		assigned-clocks = <&camcc CAM_CC_MCLK0_CLK>;
 		assigned-clock-rates = <19200000>;
 
-		//vdda-supply = <&vreg_l13a_1p8>;
-		vdda-supply = <&vreg_s3a_0p8>; /* dummy */
-		vddd-supply = <&ultra_ldo_avdd_regulator>;
-		vdddo-supply = <&ultra_ldo_dvdd_regulator>;
-		status = "disabled";
+		vdda-supply = <&vreg_l13a_1p8>;
+		vddd-supply = <&ultra_ldo_avdd_regulator>;//AVDD 16M/20M
+		vdddo-supply = <&ultra_ldo_dvdd_regulator>;//DVDD 16M
+		vddc-supply = <&wide_ldo_dvdd2_regulator>; //DVDD 20M
+		vddd1-supply = <&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
+
+		status = "okay";
 
                 port {
-                        gc8034_ep: endpoint {
+                        ov16a1x_ep0: endpoint {
                                 link-frequencies = /bits/ 64
 					<24000000 480000000>;
-                                       // <360000000 180000000>;
-                                data-lanes = <1 2 3 4>;
-                                remote-endpoint = <&csiphy1_ep1>;
+                                data-lanes = <0 1 2 3>;
+                                remote-endpoint = <&csiphy3_ep0>;
+				status = "okay";
                         };
                 };
 	};
 };
 
-/* sensor 2*/
+/* sensor 3 */
 &cci0_i2c1 {
 	status = "okay";
+#if 0
+id:0x6e:0x8044//gc8034 >> i2cdetect as addr 0x51
+sensor:3 //reset0 //tlmm 30  //MCLK4 (gpio23)
+  cci-master = <1>;
+  cci-device = <0>;
+<&pm6150_l13>;
+<&ultra_ldo_avdd_regulator>;
+<&ultra_ldo_dvdd_regulator>;
+<&titan_top_gdsc>;
+regulator-names = "cam_vio", "cam_vana", "cam_vdig", "cam_clk";
+regulator : <&pm6150l_gpios 4 0>
+[   34.152935] CAM_DBG: CAM-ISP: cam_csid_ppi_init_hw: 212: lane_cfg  0x10 | num_lanes  0x2 | lane_type 0x0
+[   48.205835] CAM_INFO: CAM-ISP: cam_ife_csid_set_csid_clock: 3248 CSID clock rate 146400000
+[   48.214952] CAM_DBG: CAM-CPAS: cam_cpas_hw_start: 1057: client=[0][csiphy][0] streamon_clients=7
+csiphy-sd-index = <0>;
+#endif
+	gc8034: camera@28 {
+		compatible = "galaxycore,gc8034";
+		reg = <0x28>;
 
-	ov16a1q_0: camera@20 {
-		compatible = "ovti,ov16a1q", "ovti,ov16a1x", "ovti,ov16a10";
-		reg = <0x20>;// CCI sensor id 0x1641
-
-		reset-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
 		
 		pinctrl-names = "default", "suspend";
-		pinctrl-0 = <&cam_sensor_mclk0_active>;
-		pinctrl-1 = <&cam_sensor_mclk0_suspend>;
+		pinctrl-0 = <&cam_sensor_mclk4_active>;
+		pinctrl-1 = <&cam_sensor_mclk4_suspend>;
 
-		//power-domains = <&camcc TITAN_TOP_GDSC>;
-
-		/* GPIO[13..16]->MCLK[0..3] */
-
-		clocks = <&camcc CAM_CC_MCLK0_CLK >;
+		clocks = <&camcc CAM_CC_MCLK4_CLK >;
 		clock-names = "xvclk";
 		clock-frequency = <19200000>;
-		assigned-clocks = <&camcc CAM_CC_MCLK0_CLK>;
+		assigned-clocks = <&camcc CAM_CC_MCLK4_CLK>;
 		assigned-clock-rates = <19200000>;
 
 		vdda-supply = <&vreg_l13a_1p8>;
 		vddd-supply = <&ultra_ldo_avdd_regulator>;
 		vdddo-supply = <&ultra_ldo_dvdd_regulator>;
-		vdddo2-supply = <&wide_ldo_dvdd2_regulator>; //DVDD 20M
-		vdddo3-supply = <&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
+		vddc-supply = <&wide_ldo_avdd0_regulator>;
 
 		status = "disabled";
 
 		port {
-				ov16a1q_ep_0: endpoint {
+				gc8034_ep0: endpoint {
 						link-frequencies = /bits/ 64
 								<360000000 180000000>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csiphy1_ep0>;
+						data-lanes = <0 1>;
+						remote-endpoint = <&csiphy0_ep0>;
 				};
 		};
 	};
 };
 
 /* sensor 1 */
-&cci0_i2c1 {
+&cci1_i2c0 {
 	status = "okay";
+#if 0
+id:0x6e:0x2e0//gc02m1 >> i2cdetect as addr 0x51
+sensor:1 //reset2 //tlmm 29 //mclk3 (gpio16)
+  cci-master = <0>;
+  cci-device = <1>;
+<&wide_ldo_avdd2_regulator>;
+<&depth_ldo_avdd_regulator>;
+<&titan_top_gdsc>;
+"cam_vio", "cam_vana","cam_clk";
+csiphy-sd-index = <2>;
 
-	gc02m1: camera@6e {
+#endif
+	gc02m1: camera@28 {
 		compatible = "samsung,gc02m1";
-		reg = <0x6e>;// CCI sensor 
+		reg = <0x28>;
 
 		reset-gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
 		enable-gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
@@ -752,30 +745,83 @@ regulator-names = "cam_vio", "cam_vana", "cam_vdig","cam_v_custom1","cam_v_custo
 		pinctrl-0 = <&cam_sensor_mclk3_active>;
 		pinctrl-1 = <&cam_sensor_mclk3_suspend>;
 
-		//power-domains = <&camcc TITAN_TOP_GDSC>;
-
-		/* GPIO[13..16]->MCLK[0..3] */
-
 		clocks = <&camcc CAM_CC_MCLK3_CLK >;
 		clock-names = "xvclk";
 		clock-frequency = <19200000>;
 		assigned-clocks = <&camcc CAM_CC_MCLK3_CLK>;
 		assigned-clock-rates = <19200000>;
 
-		vdda-supply = <&vreg_l13a_1p8>;
+		//vdda-supply = <&vreg_l13a_1p8>;
 		vddd-supply = <&wide_ldo_avdd2_regulator>;
-		vdddo-supply = <&depth_ldo_avdd_regulator>;
+		vdda-supply = <&depth_ldo_avdd_regulator>;
 
 		status = "disabled";
 
 		port {
-				gc02m1_ep_0: endpoint {
-						link-frequencies = /bits/ 64
-								<480000000 24000000>;
-						data-lanes = <1 2 3 4>;
-						remote-endpoint = <&csiphy1_ep3>;
-				};
+			gc02m1_ep0: endpoint {
+				link-frequencies = /bits/ 64
+					<480000000 24000000>;
+				/* TODO: seemed 0x210, logged with gw1 sensor log */
+				data-lanes = <0 1 2>;
+				remote-endpoint = <&csiphy2_ep0>;
+			};
 		};
+	};
+};
+
+/* sensor 0 */
+&cci0_i2c0 {
+	status = "okay";
+#if 0
+id:0x7a:0x971
+sensor:0 //reset1 //tlmm 25 //mclk1 (gpio14)
+cci-master:0
+cci-dev:0
+<&wide_ldo_avdd1_regulator>; //AVDD1 48M/64M
+<&wide_ldo_dvdd_regulator>; //DVDD 48M
+<&pm6150_l13>;//IOVDD
+<&titan_top_gdsc>;
+<&wide_ldo_avdd2_regulator>; //AVDD 1.8V-48M
+<&wide_ldo_dvdd2_regulator>; //DVDD 64M
+regulator-names = "cam_vana", "cam_vdig", "cam_vio",
+                        "cam_clk", "cam_v_custom1", "cam_v_custom2";
+csiphy-sd-index = <1>;
+#endif
+        s5kgw1: camera@3d {
+                compatible = "samsung,s5kgw1";
+                reg = <0x3d>;
+
+                reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+                enable-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+
+                pinctrl-names = "default", "suspend";
+                pinctrl-0 = <&cam_sensor_mclk1_active>;
+                pinctrl-1 = <&cam_sensor_mclk1_suspend>;
+
+                clocks = <&camcc CAM_CC_MCLK1_CLK >;
+                clock-names = "xvclk";
+                clock-frequency = <19200000>;
+                assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
+                assigned-clock-rates = <19200000>;
+
+		vdda-supply = <&vreg_l13a_1p8>;//IOVDD
+		vddd-supply = <&wide_ldo_avdd1_regulator>; //AVDD1 48M/64M
+		vdddo-supply = <&wide_ldo_dvdd_regulator>; //DVDD 48M
+		vddc-supply = <&wide_ldo_avdd2_regulator>; //AVDD 1.8V-48M
+		vdddo1-supply =<&wide_ldo_dvdd2_regulator>; //DVDD 64M
+
+                status = "disabled";
+
+                port {
+                        s5kgw1_ep0: endpoint {
+				/* TODO: check clk */
+                                link-frequencies = /bits/ 64
+                                        <480000000 24000000>;
+                                /* TODO: seemed 0x210, logged with gw1 sensor log */
+                                data-lanes = <0 1 2>;
+                                remote-endpoint = <&csiphy1_ep0>;
+                        };
+                };
 	};
 };
 
