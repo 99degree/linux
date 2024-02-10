@@ -1088,7 +1088,7 @@ csiphy-sd-index = <1>;
 };
 
 &uart8 {
-	status = "okay";
+	//status = "okay";
 };
 
 
