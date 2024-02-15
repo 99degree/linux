@@ -17,16 +17,18 @@
 #include <linux/blkdev.h>
 #include <linux/pagemap.h>
 #include <linux/export.h>
+#include <linux/fs.h>
+#include <linux/fs_context.h>
 #include <linux/fs_parser.h>
 #include <linux/hid.h>
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/scatterlist.h>
 #include <linux/sched/signal.h>
+#include <linux/sysfs.h>
 #include <linux/uio.h>
 #include <linux/vmalloc.h>
 #include <asm/unaligned.h>
-
 #include <linux/usb/ccid.h>
 #include <linux/usb/composite.h>
 #include <linux/usb/functionfs.h>
@@ -1625,12 +1627,20 @@ static int functionfs_init(void)
 {
 	int ret;
 
-	ret = register_filesystem(&ffs_fs_type);
-	if (!ret)
-		pr_info("file system registered\n");
-	else
-		pr_err("failed registering file system (%d)\n", ret);
+        ret = sysfs_create_mount_point(kernel_kobj, "usb-ffs");
+        if (ret)
+                goto out2;
 
+	ret = register_filesystem(&ffs_fs_type);
+	if (!ret) {
+		pr_info("file system registered\n");
+		return 0;
+	} else {
+		pr_err("failed registering file system (%d)\n", ret);
+	}
+
+	sysfs_remove_mount_point(kernel_kobj, "usb-ffs");
+out2:
 	return ret;
 }
 
@@ -1638,6 +1648,7 @@ static void functionfs_cleanup(void)
 {
 	pr_info("unloading\n");
 	unregister_filesystem(&ffs_fs_type);
+	sysfs_remove_mount_point(kernel_kobj, "usb-ffs");
 }
 
 
