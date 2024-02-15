@@ -987,21 +987,24 @@ csiphy-sd-index = <1>;
 	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
 	memory-region = <&adsp_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &remoteproc_cdsp {
 	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
 	memory-region = <&cdsp_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &remoteproc_mpss {
 	firmware-name = "qcom/sm7125/miatoll/modem.mbn";
 	memory-region = <&mpss_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &i2c4 {
@@ -1084,11 +1087,11 @@ csiphy-sd-index = <1>;
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
 
-	status = "okay";
+	status = "disabled";
 };
 
 &uart8 {
-	//status = "okay";
+	status = "disabled";
 };
 
 
