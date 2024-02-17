@@ -71,6 +71,8 @@ Anyway, welcome to everybody come and visit here please find my changes useful, 
 and make it up-stream, provided that quoting and credit me. I didnt add myself any copy-right-years into those files, but i assumed they are.
 It is nice to use my github nickname 99degree as copyright reference (and include full identification as [6] too). 
 
+Again, a cloud build bundle with custom postmarketOS is available for rought testing at [10]
+
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
 
  - [1] https://github.com/torvalds/linux
