@@ -168,7 +168,7 @@
 	/* TODO: check csid2 and csid-lite */
 
 	camss: camss@acb3000 {
-		compatible = "qcom,sdm845-camss";
+		compatible = "qcom,sc7180-camss";
 
 		reg = <0 0x0acb3000 0 0x1000>,
 			<0 0x0acba000 0 0x1000>,
