@@ -520,7 +520,7 @@
 		port@3 {
 			csiphy3_ep0: endpoint@0 {
                                 data-lanes = <0 1 2 3>;
-                                remote-endpoint = <&ov16a1x_ep0>;
+//                                remote-endpoint = <&ov16a1x_ep0>;
 				status = "disabled";
                         };
                 };
@@ -651,14 +651,15 @@ csiphy-sd-index = <3>;
 		vddc-supply = <&wide_ldo_dvdd2_regulator>; //DVDD 20M
 		vddd1-supply = <&front_ldo_dvdd_regulator>; //DVDD NEW-BOM 1.1V OV32
 
-		status = "okay";
+		//status = "okay";
+		status = "disabled";
 
                 port {
                         ov16a1x_ep0: endpoint {
                                 link-frequencies = /bits/ 64
 					<24000000 480000000>;
                                 data-lanes = <0 1 2 3>;
-                                remote-endpoint = <&csiphy3_ep0>;
+                                //remote-endpoint = <&csiphy3_ep0>;
 				status = "okay";
                         };
                 };
@@ -987,21 +988,24 @@ csiphy-sd-index = <1>;
 	firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
 	memory-region = <&adsp_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &remoteproc_cdsp {
 	firmware-name = "qcom/sm7125/miatoll/cdsp.mbn";
 	memory-region = <&cdsp_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &remoteproc_mpss {
 	firmware-name = "qcom/sm7125/miatoll/modem.mbn";
 	memory-region = <&mpss_mem>;
 
-	status = "okay";
+	//status = "okay";
+	status = "disabled";
 };
 
 &i2c4 {
@@ -1084,11 +1088,11 @@ csiphy-sd-index = <1>;
 	pinctrl-names = "default", "sleep";
 	pinctrl-1 = <&qup_uart3_sleep>;
 
-	status = "okay";
+	status = "disabled";
 };
 
 &uart8 {
-	status = "okay";
+	status = "disabled";
 };
 
 
