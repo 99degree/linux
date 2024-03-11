@@ -23,13 +23,29 @@
 
 #define S5K5E9_DEFAULT_CLK_FREQ			24000000
 #define S5K5E9_DEFAULT_LINK_FREQ		480000000
+#define S5K5E9_LINK_FREQ_422MHZ         	422400000
+#define S5K5E9_LINK_FREQ_422MHZ_INDEX   	0
 #define S5K5E9_DEFAULT_PIXEL_RATE 		((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
 #define S5K5E9_FPS				30
 #define S5K5E9_MBUS_CODE 			MEDIA_BUS_FMT_SRGGB10_1X10
 #define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC		61053
 #define S5K5E9_INT_MAX				5
+/* TODO:need to change */
+#define S5K5E9_VTS_30FPS			0x0808 /* default for 30 fps */
+#define S5K5E9_VTS_MAX                  	0xffff
+#define S5K5E9_FIXED_PPL                	2724    /* Pixels per line */
 
+#define S5K5E9_ANA_GAIN_MIN             0
+#define S5K5E9_ANA_GAIN_MAX             232
+#define S5K5E9_ANA_GAIN_STEP            1
+#define S5K5E9_ANA_GAIN_DEFAULT         0x0
 
+#define S5K5E9_DGTL_GAIN_MIN            0x0100
+#define S5K5E9_DGTL_GAIN_MAX            0x0fff
+#define S5K5E9_DGTL_GAIN_DEFAULT        0x0100
+#define S5K5E9_DGTL_GAIN_STEP           1
+
+/* register addr */
 #define S5K5E9_REG_SENSOR_ID_L			0x0000
 #define S5K5E9_REG_SENSOR_ID_H			0x0001
 #define S5K5E9_SENSOR_ID_VAL			0x559b
@@ -67,6 +83,16 @@
 #define S5K5E9_PIXEL_ARRAY_WIDTH		4208U
 #define S5K5E9_PIXEL_ARRAY_HEIGHT		3120U
 
+struct reg_8 {
+        u16 addr;
+        u8 val;
+};
+
+struct s5k5e9_reg_list {
+        u32 num_of_regs;
+        const struct reg_8 *regs;
+};
+
 static const char * const s5k5e9_supply_name[] = {
 	"vdda",
 	"vddd",
@@ -74,6 +100,29 @@ static const char * const s5k5e9_supply_name[] = {
 };
 
 #define S5K5E9_NUM_SUPPLIES ARRAY_SIZE(s5k5e9_supply_name)
+
+struct s5k5e9_mode {
+        /* Frame width in pixels */
+        u32 width;
+
+        /* Frame height in pixels */
+        u32 height;
+
+        /* Default vertical timining size */
+        u32 vts_def;
+
+        /* Min vertical timining size */
+        u32 vts_min;
+
+        /* Link frequency needed for this resolution */
+        u32 link_freq_index;
+
+        /* Analog crop rectangle */
+        const struct v4l2_rect *analog_crop;
+
+        /* Sensor register settings for this resolution */
+        const struct s5k5e9_reg_list reg_list;
+};
 
 struct s5k5e9 {
 	struct device *dev;
@@ -86,10 +135,16 @@ struct s5k5e9 {
 	struct v4l2_rect crop;
 
 	struct v4l2_ctrl_handler ctrls;
-	struct v4l2_ctrl *pixel_rate;
-	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *a_gain;
+	struct v4l2_ctrl *d_gain;
 	struct v4l2_ctrl *exposure;
+	struct v4l2_ctrl *h_blank;
+	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *pixel_rate;
 	struct v4l2_ctrl *unit_size;
+	struct v4l2_ctrl *v_blank;
+
+	const struct s5k5e9_mode *cur_mode;
 
 	struct gpio_desc *enable_gpio;
 
@@ -100,11 +155,6 @@ struct s5k5e9 {
 	struct mutex mutex;
 };
 
-struct reg_8 {
-	u16 addr;
-	u8 val;
-};
-
 enum {
 	S5K5E9_TABLE_WAIT_MS = 0, /* treat as register addr SENSOR_ID_L */
 	S5K5E9_TABLE_END, /* treat as register addr SENSOR_ID_H */
@@ -113,7 +163,7 @@ enum {
 };
 
 /*From s5k5e9_mode_tbls.h*/
-static const struct reg_8 mode_2592x1940[] = {
+static const struct reg_8 mode_2592x1940_regs[] = {
 	{0x0100, 0x00},
 	{0x0136, 0x13},
 	{0x0137, 0x33},
@@ -286,35 +336,42 @@ static const struct reg_8 mode_table_common[] = {
 	{S5K5E9_TABLE_END, 0x00}
 };
 
+
+//copy from ov5670
+/*
+ * All the modes supported by the driver are obtained by subsampling the
+ * full pixel array. The below values are reflected in registers from
+ * 0x3800-0x3807 in the modes register-value tables.
+ */
+static const struct v4l2_rect s5k5e9_analog_crop = {
+        .left   = 12,
+        .top    = 4,
+        .width  = 2600,
+        .height = 1952,
+};
+
+
 /*
  * Declare modes in order, from biggest
  * to smallest height.
  */
-static const struct s5k5e9_mode {
-	u32 width;
-	u32 height;
-	u32 linelength;
-	u32 framelength;
-	const struct reg_8 *reg_table;
-} s5k5e9_modes[] = {
-	{
-		.width = 2592,
-		.height = 1940,
+static const struct s5k5e9_mode supported_modes[] = {
+        {
+		/*
 		.linelength = 3112,
-		.framelength = 2030,
-		.reg_table = mode_2592x1940,
-	},
-#if 0
-	/* this is depending on framelength and linelength, and is not support yet */
-	{
-		.width = 1280,
-		.height = 720,
-		/* TODO: find out real framelength and linelength */
-		.linelength = 3112,
-		.framelength = 2030,
-		.reg_table = mode_1280x720,
-	},
-#endif
+                .framelength = 2030,
+		*/
+                .width = 2592,
+                .height = 1940,
+                .vts_def = S5K5E9_VTS_30FPS,
+                .vts_min = S5K5E9_VTS_30FPS,
+                .link_freq_index = S5K5E9_LINK_FREQ_422MHZ_INDEX,
+                .analog_crop = &s5k5e9_analog_crop,
+                .reg_list = {
+                        .num_of_regs = ARRAY_SIZE(mode_2592x1940_regs),
+                        .regs = mode_2592x1940_regs,
+                },
+        },
 };
 
 static inline struct s5k5e9 *to_s5k5e9(struct v4l2_subdev *sd)
@@ -398,11 +455,11 @@ static int s5k5e9_enum_frame_size(struct v4l2_subdev *subdev,
 	if (fse->code != S5K5E9_MBUS_CODE)
 		return -EINVAL;
 
-	if (fse->index >= ARRAY_SIZE(s5k5e9_modes))
+	if (fse->index >= ARRAY_SIZE(supported_modes))
 		return -EINVAL;
 
-	fse->min_width = fse->max_width = s5k5e9_modes[fse->index].width;
-	fse->min_height = fse->max_height = s5k5e9_modes[fse->index].height;
+	fse->min_width = fse->max_width = supported_modes[fse->index].width;
+	fse->min_height = fse->max_height = supported_modes[fse->index].height;
 
 	return 0;
 }
@@ -498,8 +555,8 @@ static int s5k5e9_set_format(struct v4l2_subdev *sd,
 	__crop = __s5k5e9_get_pad_crop(s5k5e9, sd_state, format->pad,
 				       format->which);
 
-	mode = v4l2_find_nearest_size(s5k5e9_modes,
-				      ARRAY_SIZE(s5k5e9_modes), width, height,
+	mode = v4l2_find_nearest_size(supported_modes,
+				      ARRAY_SIZE(supported_modes), width, height,
 				      format->format.width,
 				      format->format.height);
 
@@ -564,8 +621,8 @@ static int s5k5e9_entity_init_state(struct v4l2_subdev *subdev,
 	struct v4l2_subdev_format fmt = { };
 
 	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
-	fmt.format.width = s5k5e9_modes[0].width;
-	fmt.format.height = s5k5e9_modes[0].height;
+	fmt.format.width = supported_modes[0].width;
+	fmt.format.height = supported_modes[0].height;
 
 	s5k5e9_set_format(subdev, sd_state, &fmt);
 
@@ -609,11 +666,11 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 				{0x0203, ctrl->val & 0xff};
 			};
 #endif
-
-		regmap_write(s5k5e9->regmap, 0x0340, (s5k5e9_modes[0].framelength >> 8 ) & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0341, s5k5e9_modes[0].framelength & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0342, (s5k5e9_modes[0].linelength >> 8 ) & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0343, s5k5e9_modes[0].linelength & 0xff);
+/*
+		regmap_write(s5k5e9->regmap, 0x0340, (supported_modes[0].framelength >> 8 ) & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0341, supported_modes[0].framelength & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0342, (supported_modes[0].linelength >> 8 ) & 0xff);
+		regmap_write(s5k5e9->regmap, 0x0343, supported_modes[0].linelength & 0xff);
 		regmap_write(s5k5e9->regmap, 0x0200, 0xff);
 		regmap_write(s5k5e9->regmap, 0x0201, 0x70);
 		regmap_write(s5k5e9->regmap, 0x0202, (ctrl->val >> 8 ) & 0xff);
@@ -623,7 +680,7 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
 			break;
 		}
-
+*/
 		ret = 0;
 		break;
 
@@ -675,6 +732,11 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 	struct v4l2_ctrl_handler *ctrl_hdlr;
 	int ret;
 
+        s64 vblank_max;
+        s64 vblank_def;
+        s64 vblank_min;
+        //s64 exposure_max;
+
 	ret = v4l2_fwnode_device_parse(s5k5e9->dev, &props);
 	if (ret < 0)
 		return ret;
@@ -683,6 +745,16 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 	ret = v4l2_ctrl_handler_init(&s5k5e9->ctrls, 6);
 	if (ret)
 		return ret;
+
+/*
+	// Mandatory control by libcamera
+                V4L2_CID_ANALOGUE_GAIN, //missing
+                V4L2_CID_EXPOSURE,
+                V4L2_CID_HBLANK,      //missing
+                V4L2_CID_PIXEL_RATE,
+                V4L2_CID_VBLANK,	//missing
+*/
+
 
 	s5k5e9->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, NULL,
 					       V4L2_CID_PIXEL_RATE, 0,
@@ -707,6 +779,36 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 				NULL,
 				V4L2_CID_UNIT_CELL_SIZE,
 				v4l2_ctrl_ptr_create((void *)&unit_size));
+
+        s5k5e9->a_gain = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+		  				V4L2_CID_ANALOGUE_GAIN,
+			                        S5K5E9_ANA_GAIN_MIN,
+						S5K5E9_ANA_GAIN_MAX,
+						S5K5E9_ANA_GAIN_STEP,
+						S5K5E9_ANA_GAIN_DEFAULT);
+
+        s5k5e9->d_gain = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+						V4L2_CID_DIGITAL_GAIN,
+						S5K5E9_DGTL_GAIN_MIN,
+						S5K5E9_DGTL_GAIN_MAX,
+						S5K5E9_DGTL_GAIN_STEP,
+						S5K5E9_DGTL_GAIN_DEFAULT);
+
+        s5k5e9->h_blank = v4l2_ctrl_new_std(
+                                ctrl_hdlr, &s5k5e9_ctrl_ops, V4L2_CID_HBLANK,
+                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width,
+                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width, 1,
+                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width);
+        if (s5k5e9->h_blank)
+                s5k5e9->h_blank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+
+        vblank_max = S5K5E9_VTS_MAX - s5k5e9->cur_mode->height;
+        vblank_def = s5k5e9->cur_mode->vts_def - s5k5e9->cur_mode->height;
+        vblank_min = s5k5e9->cur_mode->vts_min - s5k5e9->cur_mode->height;
+
+        s5k5e9->v_blank = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+                                           V4L2_CID_VBLANK, vblank_min,
+                                           vblank_max, 1, vblank_def);
 
 	v4l2_ctrl_new_fwnode_properties(ctrl_hdlr, &s5k5e9_ctrl_ops, &props);
 
@@ -768,10 +870,10 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 		goto error;
 	}
 
-	mode = v4l2_find_nearest_size(s5k5e9_modes,
-				ARRAY_SIZE(s5k5e9_modes), width, height,
+	mode = v4l2_find_nearest_size(supported_modes,
+				ARRAY_SIZE(supported_modes), width, height,
 				s5k5e9->fmt.width, s5k5e9->fmt.height);
-	ret = s5k5e9_write_table(s5k5e9, mode->reg_table);
+	ret = s5k5e9_write_table(s5k5e9, mode->reg_list.regs);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "could not sent mode table %d\n", ret);
 		goto error;
@@ -859,8 +961,8 @@ static int s5k5e9_enum_frame_interval(struct v4l2_subdev *subdev,
 	if (fie->index != 0)
 		return -EINVAL;
 
-	mode = v4l2_find_nearest_size(s5k5e9_modes,
-				ARRAY_SIZE(s5k5e9_modes), width, height,
+	mode = v4l2_find_nearest_size(supported_modes,
+				ARRAY_SIZE(supported_modes), width, height,
 				fie->width, fie->height);
 
 	fie->code = S5K5E9_MBUS_CODE;
@@ -1020,6 +1122,9 @@ static int s5k5e9_probe(struct i2c_client *client)
 	pm_runtime_set_active(s5k5e9->dev);
 	pm_runtime_enable(s5k5e9->dev);
 	pm_runtime_idle(s5k5e9->dev);
+
+/* Set default mode to max resolution */
+        s5k5e9->cur_mode = &supported_modes[0];
 
 	ret = s5k5e9_ctrls_init(s5k5e9);
 	if (ret < 0)
