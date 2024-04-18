@@ -590,10 +590,17 @@ static int ovl_create_or_link(struct dentry *dentry, struct inode *inode,
 			      struct ovl_cattr *attr, bool origin)
 {
 	int err;
-	const struct cred *old_cred, *new_cred = NULL;
+	const struct cred *old_cred, *new_cred = NULL, *old_current_cred = NULL;
 	struct dentry *parent = dentry->d_parent;
 
 	old_cred = ovl_override_creds(dentry->d_sb);
+
+	/*
+	 * ovl_setup_cred_for_create() calls put_cred(override_creds()), so we
+	 * need to retain a reference to current_cred() if override_creds is off.
+	 */
+	if (!old_cred)
+		old_current_cred = get_cred(current_cred());
 
 	/*
 	 * When linking a file with copy up origin into a new parent, mark the
@@ -620,7 +627,7 @@ static int ovl_create_or_link(struct dentry *dentry, struct inode *inode,
 		 * fs{u,g}id.
 		 */
 		new_cred = ovl_setup_cred_for_create(dentry, inode, attr->mode,
-						     old_cred);
+						     old_cred? old_cred : current_cred());
 		err = PTR_ERR(new_cred);
 		if (IS_ERR(new_cred)) {
 			new_cred = NULL;
@@ -634,8 +641,9 @@ static int ovl_create_or_link(struct dentry *dentry, struct inode *inode,
 		err = ovl_create_over_whiteout(dentry, inode, attr);
 
 out_revert_creds:
-	ovl_revert_creds(old_cred);
-	put_cred(new_cred);
+	ovl_revert_creds(dentry->d_sb, old_cred ?: old_current_cred);
+	if (old_current_cred)
+		put_cred(old_current_cred);
 	return err;
 }
 
@@ -716,7 +724,7 @@ static int ovl_set_link_redirect(struct dentry *dentry)
 
 	old_cred = ovl_override_creds(dentry->d_sb);
 	err = ovl_set_redirect(dentry, false);
-	ovl_revert_creds(old_cred);
+	ovl_revert_creds(dentry->d_sb, old_cred);
 
 	return err;
 }
@@ -926,7 +934,7 @@ static int ovl_do_remove(struct dentry *dentry, bool is_dir)
 		err = ovl_remove_upper(dentry, is_dir, &list);
 	else
 		err = ovl_remove_and_whiteout(dentry, &list);
-	ovl_revert_creds(old_cred);
+	ovl_revert_creds(dentry->d_sb, old_cred);
 	if (!err) {
 		if (is_dir)
 			clear_nlink(dentry->d_inode);
@@ -1306,7 +1314,7 @@ out_dput_old:
 out_unlock:
 	unlock_rename(new_upperdir, old_upperdir);
 out_revert_creds:
-	ovl_revert_creds(old_cred);
+	ovl_revert_creds(old->d_sb, old_cred);
 	if (update_nlink)
 		ovl_nlink_end(new);
 	else
@@ -1320,7 +1328,7 @@ out:
 static int ovl_create_tmpfile(struct file *file, struct dentry *dentry,
 			      struct inode *inode, umode_t mode)
 {
-	const struct cred *old_cred, *new_cred = NULL;
+	const struct cred *old_cred, *new_cred = NULL, *old_current_cred = NULL;
 	struct path realparentpath;
 	struct file *realfile;
 	struct ovl_file *of;
@@ -1330,7 +1338,14 @@ static int ovl_create_tmpfile(struct file *file, struct dentry *dentry,
 	int err;
 
 	old_cred = ovl_override_creds(dentry->d_sb);
-	new_cred = ovl_setup_cred_for_create(dentry, inode, mode, old_cred);
+	/*
+	 * ovl_setup_cred_for_create() calls put_cred(override_creds()), so we
+	 * need to retain a reference to current_cred() if override_creds is off.
+	 */
+	if (!old_cred)
+		old_current_cred = get_cred(current_cred());
+
+	new_cred = ovl_setup_cred_for_create(dentry, inode, mode, old_cred? old_cred : current_cred());
 	err = PTR_ERR(new_cred);
 	if (IS_ERR(new_cred)) {
 		new_cred = NULL;
@@ -1362,8 +1377,9 @@ static int ovl_create_tmpfile(struct file *file, struct dentry *dentry,
 		ovl_file_free(of);
 	}
 out_revert_creds:
-	ovl_revert_creds(old_cred);
-	put_cred(new_cred);
+	ovl_revert_creds(dentry->d_sb, old_cred ?: old_current_cred);
+	if (old_current_cred)
+		put_cred(old_current_cred);
 	return err;
 }
 
