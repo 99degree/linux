@@ -60,6 +60,25 @@ config VIDEO_AR0521
 	  To compile this driver as a module, choose M here: the
 	  module will be called ar0521.
 
+config VIDEO_GC02M1
+        tristate "Samsung gc02m1 support"
+        help
+          This is a Video4Linux2 sensor driver for the Samsung
+	  gc02m1 camera.
+
+          To compile this driver as a module, choose M here: the
+          module will be called gc02m1.
+
+config VIDEO_GC8034
+        tristate "GlaxyCore GC8034 sensor support"
+        select V4L2_CCI_I2C
+        help
+          This is a Video4Linux2 sensor driver for the GlaxyCore
+          GC8034 camera.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called gc8034.
+
 config VIDEO_GC0308
 	tristate "GalaxyCore GC0308 sensor support"
 	select V4L2_CCI_I2C
@@ -385,6 +404,13 @@ config VIDEO_OV13B10
 	  This is a Video4Linux2 sensor driver for the OmniVision
 	  OV13B10 camera.
 
+config VIDEO_OV16A1X
+        tristate "OmniVision OV16A1[0Q] sensor support"
+	default y
+        help
+          This is a Video4Linux2 sensor driver for the OmniVision
+          OV16A1[0Q] camera.
+
 config VIDEO_OV2640
 	tristate "OmniVision OV2640 sensor support"
 	help
@@ -683,6 +709,12 @@ config VIDEO_S5K5BAF
 	help
 	  This is a V4L2 sensor driver for Samsung S5K5BAF 2M
 	  camera sensor with an embedded SoC image signal processor.
+
+config VIDEO_S5K5E9
+        tristate "Samsung S5K5E9 sensor support"
+        help
+          This is a V4L2 sensor driver for Samsung S5K5E9 raw
+          camera sensor.
 
 config VIDEO_S5K6A3
 	tristate "Samsung S5K6A3 sensor support"
