@@ -559,8 +559,8 @@ static void video_stop_streaming(struct vb2_queue *q)
 
 		if (entity->use_count > 1) {
 			/* Don't stop if other instances of the pipeline are still running */
-			dev_dbg(video->camss->dev, "Video pipeline still used, don't stop streaming.\n");
-			return;
+			dev_info(video->camss->dev, "Video pipeline still used, don't stop streaming.\n");
+			//return;
 		}
 
 		if (ret) {
@@ -1027,7 +1027,10 @@ int msm_video_register(struct camss_video *video, struct v4l2_device *v4l2_dev,
 		}
 		break;
 	case CAMSS_845:
+	case CAMSS_7150:
+	case CAMSS_7180:
 	case CAMSS_8250:
+	case CAMSS_8280XP:
 		video->formats = formats_rdi_845;
 		video->nformats = ARRAY_SIZE(formats_rdi_845);
 		break;
