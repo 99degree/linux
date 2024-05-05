@@ -1,0 +1,112 @@
+#!/bin/bash
+
+kernel='Image.gz-dtb-meizu'
+ramdisk='ramdisk.img.gz'
+dt='sm7325-idp.dtb'
+#dtbs='qcom/sm7125-idp.dtb qcom/sdm636-meizu-E3.dtb'
+#dtbs='qcom/sc7180-idp.dtb qcom/sdm636-meizu-E3.dtb'
+#dtbs='joyeuse_dtb.bin'
+#dtbs='sm7125-xiaomi-joyeuse-overlay.dtbo'
+dtbs='qcom/sm7125-xiaomi-joyeuse-cust.dtb'
+echo twrp boot
+kernel_src='arch/arm64/boot/Image'
+ramdisk_src='los20_recovery_img'
+bootconfig='bootconfig.cfg'
+
+cp $bootconfig /tmp
+
+if [ -e "$kernel_src" ]
+then
+echo "found $kernel_src"
+else
+kernel_src='Image'
+echo "use $kernel_src"
+fi
+
+if [ -e "$dtbs" ]
+then
+echo "found $dtbs"
+else
+dtbs='sm7125-xiaomi-joyeuse-overlay.dtbo'
+echo "use $dtbs"
+fi
+
+if [ -z "$1" ] && [ -z "$2" ]
+then
+cat $kernel_src $dtbs > /tmp/$kernel
+cat $dtbs > /tmp/$dt
+else
+echo "use location $1 Image"
+cat $1  > /tmp/$kernel
+cat $2  >> /tmp/$kernel
+cat $2  > /tmp/$dt
+fi
+
+if [ -z "$3" ]
+then
+echo "zipping initramfs $ramdisk_src"
+cd $ramdisk_src
+find ./ | cpio -o -Hnewc |gzip -9 > /tmp/$ramdisk
+cd ../
+echo "appending fw"
+cd fw/
+find ./ | cpio -o -Hnewc |gzip -9 >> /tmp/$ramdisk
+fi
+
+if [ -d "$3" ]
+then
+cd $3
+echo "zipping initramfs $3"
+find ./ | cpio -o -Hnewc |gzip -9 > /tmp/$ramdisk
+cd $OLDPWD
+#cd ~/source/
+echo "appending fw"
+cd fw
+find ./ | cpio -o -Hnewc |gzip -9 >> /tmp/$ramdisk
+cd ..
+elif [ -e "$3" ]
+then
+echo case 3
+echo "cat initramfs $3"
+cat $3  > /tmp/$ramdisk
+fi
+
+#SIZE_THRESHOLD=1717986
+
+#if [ $(stat -f /tmp/$ramdisk ) -gt ${SIZE_THRESHOLD} ]; then
+#echo "file /tmp/$ramdisk is greater than $SIZE_THRESHOLD possibly something wrong"
+#fi
+
+#cp ramdisk.los.miatoll.nonfs.img.gz /tmp/$ramdisk
+#cp ramdisk_los_boot.img.gz /tmp/$ramdisk
+cd /tmp/
+
+bootconfig -a bootconfig.cfg /tmp/$ramdisk
+
+cd /tmp/
+
+#cmdline_0='init=/init pd_ignore_unused no_console_suspend kpti=off nokaslr ignore_loglevel clk_ignore_unused '
+#cmdline='init=/init pd_ignore_unused clk_ignore_unused androidboot.hardware=qcom androidboot.usbcontroller=a600000.usb service_locator.enable=1 androidboot.keymaster=1 androidboot.fstab_suffix=default androidboot.multisim_config=dsds androidboot.selinux=permissive'
+#cmdline='console=null pmos_boot=/dev/block/mmcblk2p1 pmos_root=/dev/block/mmcblk2p2'
+cmdline='crashkernel=128M@3900M ignore_loglevel clk_ignore_unused pd_ignore_unused root=/dev/ram0 androidboot.usbcontroller=a600000.usb'
+
+kernel_offset='32768'
+#kernel_offset='2097152'
+ramdisk_offset='16777216'
+# @2f0,0000
+#ramdisk_offset='32505856'
+loadBase='0'
+tag_offset='256'
+dt_offset='32505856'
+# @3f0 0000
+#dt_offset='66060288'
+# @300 0000
+#dt_offset='50331648'
+osVersion='11.0.0'
+osPatchLevel='2020-06-00'
+headerVersion='2'
+#ramdisk='twrp.img.gz'
+#ramdisk='mk10.img.gz'
+echo $cmdline
+~/bin/fastboot boot $kernel $ramdisk --dtb $dt --dtb-offset $dt_offset --base $loadBase --kernel-offset $kernel_offset --ramdisk-offset $ramdisk_offset --tags-offset $tag_offset --page-size 4096 --os-version $osVersion --os-patch-level $osPatchLevel --header-version $headerVersion --cmdline "$cmdline"
+
