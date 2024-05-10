@@ -1,7 +1,7 @@
 # linux
 Linux kernel source tree
 
-This repo is tracking latest mainline kernel as updated as possible. The idea is to work with sm7125 soc and mainline [1]. 
+This repo is tracking latest mainline kernel as updated as possible. The idea is to work with sm7125 soc and mainline [1]. Wiki[12] is available for common porting question.
 
 The development machine is a XiaoMi redmi note 9 pro int'l version. Currently the working branch is based on latest code
 of Linus's public tree with my own periodic merge into local change and git rebase for every push.
@@ -66,3 +66,4 @@ Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 po
  - [9] https://www.youtube.com/watch?v=fz7Zj4eY4iY
  - [10] https://github.com/99degree/postmarket-nightly-builds/actions
  - [11] https://github.com/99degree/linux/commits/nt36xxx/
+ - [12] https://github.com/99degree/linux/wiki/
