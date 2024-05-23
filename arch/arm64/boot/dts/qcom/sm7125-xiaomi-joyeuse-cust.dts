@@ -1,0 +1,32 @@
+#include "sm7125-xiaomi-joyeuse.dts"
+#include "sm7125-xiaomi-joyeuse-display.dts"
+#include "sm7125-xiaomi-joyeuse-touch.dts"
+#include "sm7125-xiaomi-joyeuse-camera.dts"
+
+/* that can protect ufs partition untouch */
+&ufs_mem_hc {
+	status = "disabled";
+};
+
+&ufs_mem_phy {
+	status = "disabled";
+};
+
+&pm6150_qgauge {
+	status = "okay";
+};
+
+&pm6150_rtc {
+	status = "okay";
+};
+
+&soc {
+        battery: battery {
+                compatible = "simple-battery";
+
+                voltage-min-design-microvolt = <3400000>;
+                voltage-max-design-microvolt = <4400000>;
+
+		charge-full-design-microamp-hours = <5160000>;
+        };
+};
