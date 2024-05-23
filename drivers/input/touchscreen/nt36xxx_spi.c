@@ -47,12 +47,10 @@ static int nt36xxx_spi_write(void *dev, const void *data,
 
 	u8 addr[4] = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 7,  (*(u32 *)data & 0x7f) | 0x80};
 
-	memcpy((void *)data, addr, 4);
-
 	dev_dbg(dev, "%s len=0x%lx", __func__, len);
 
-	spi_write(spi, data, 3);
-	ret = spi_write(spi, (u8 *)data + 3, len - 3);
+	spi_write(spi, addr, 3);
+	ret = spi_write(spi, data + 3, len - 3);
 	if (ret)
 		dev_err(dev, "transfer err %d\n ", ret);
 	else if (DEBUG) {
