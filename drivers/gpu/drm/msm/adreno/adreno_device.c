@@ -335,6 +335,7 @@ static const struct adreno_info gpulist[] = {
 		.init = a6xx_gpu_init,
 		.speedbins = ADRENO_SPEEDBINS(
 			{ 0,   0 },
+			{ 159, 1 },
 			{ 169, 1 },
 			{ 174, 2 },
 		),
