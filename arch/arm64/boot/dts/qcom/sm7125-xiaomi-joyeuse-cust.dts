@@ -1,0 +1,61 @@
+#include "sm7125-xiaomi-joyeuse.dts"
+#include "sm7125-xiaomi-joyeuse-display.dts"
+#include "sm7125-xiaomi-joyeuse-touch.dts"
+#include "sm7125-xiaomi-joyeuse-camera.dts"
+
+&soc {
+        sound: sound { };
+};
+
+#include "sm7125-xiaomi-joyeuse-sound.dts"
+
+/* must add sc7180 into compatible machine or add cpu blocklist with sm7125 */
+/ {
+	compatible = "xiaomi,joyeuse", "qcom,sm7125", "qcom,sc7180";
+};
+
+/* that can protect ufs partition untouch */
+&ufs_mem_hc {
+	status = "disabled";
+};
+
+&ufs_mem_phy {
+	status = "disabled";
+};
+
+&pm6150_qgauge {
+	status = "okay";
+};
+
+&pm6150_rtc {
+	status = "okay";
+};
+
+&qupv3_id_0 {
+	status = "okay";
+};
+
+&qupv3_id_1 {
+	status = "okay";
+};
+
+&soc {
+        battery: battery {
+                compatible = "simple-battery";
+
+                voltage-min-design-microvolt = <3400000>;
+                voltage-max-design-microvolt = <4400000>;
+
+		charge-full-design-microamp-hours = <5160000>;
+        };
+};
+
+&pm6150_qgauge {
+        monitored-battery = <&battery>;
+        status = "okay";
+};
+
+&touchscreen {
+//	status = "disabled";
+};
+
