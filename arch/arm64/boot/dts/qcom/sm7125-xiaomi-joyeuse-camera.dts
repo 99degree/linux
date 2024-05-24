@@ -1,3 +1,6 @@
+#ifndef SM7125_XIAOMI_JOYEUSE_CAMERA_DTS
+#define SM7125_XIAOMI_JOYEUSE_CAMERA_DTS
+
 #include <dt-bindings/clock/qcom,camcc-sc7180.h>
 
 #include "sm7125-xiaomi-joyeuse-display.dts"
@@ -1043,3 +1046,13 @@ csiphy-sd-index = <1>;
 				drive-strength = <2>; /* 2 MA */
 		};
 };
+
+&qupv3_id_0 {
+	status = "okay";
+};
+
+&qupv3_id_1 {
+	status = "okay";
+};
+
+#endif
