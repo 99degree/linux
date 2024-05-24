@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+#ifndef SM7125_XIAOMI_JOYEUSE_TOUCH_DTS
+#define SM7125_XIAOMI_JOYEUSE_TOUCH_DTS
+
 #include <dt-bindings/dma/qcom-gpi.h>
 #include <dt-bindings/gpio/gpio.h>
 
@@ -174,3 +179,5 @@
 &gpi_dma1 {
         status = "okay";
 };
+
+#endif
