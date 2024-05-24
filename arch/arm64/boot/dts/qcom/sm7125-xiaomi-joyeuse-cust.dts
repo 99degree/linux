@@ -25,6 +25,14 @@
 	status = "okay";
 };
 
+&qupv3_id_0 {
+	status = "okay";
+};
+
+&qupv3_id_1 {
+	status = "okay";
+};
+
 &soc {
         battery: battery {
                 compatible = "simple-battery";
@@ -35,3 +43,4 @@
 		charge-full-design-microamp-hours = <5160000>;
         };
 };
+
