@@ -3,6 +3,12 @@
 #include "sm7125-xiaomi-joyeuse-touch.dts"
 #include "sm7125-xiaomi-joyeuse-camera.dts"
 
+&soc {
+        sound: sound { };
+};
+
+#include "sm7125-xiaomi-joyeuse-sound.dts"
+
 /* must add sc7180 into compatible machine or add cpu blocklist with sm7125 */
 / {
 	compatible = "xiaomi,joyeuse", "qcom,sm7125", "qcom,sc7180";
