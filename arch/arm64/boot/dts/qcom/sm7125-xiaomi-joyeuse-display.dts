@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 
+#ifndef SM7125_XIAOMI_JOYEUSE_DISPLAY_DTS
+#define SM7125_XIAOMI_JOYEUSE_DISPLAY_DTS
+
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include "sm7125-xiaomi-joyeuse.dts"
 
@@ -169,3 +172,5 @@
                 bias-pull-down;         /* PULL DOWN */
         };
 };
+
+#endif
