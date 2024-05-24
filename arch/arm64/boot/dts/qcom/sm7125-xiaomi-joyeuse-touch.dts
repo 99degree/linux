@@ -117,7 +117,7 @@
 &spi11 {
         status = "okay";
 
-        touchscreen@0 {
+        touchscreen: touchscreen@0 {
                 compatible = "novatek,nt36675-spi",
 				"novatek,nt36xxx-spi",
 				"novatek,NVT-ts-spi";
