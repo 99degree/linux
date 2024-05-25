@@ -240,17 +240,13 @@ static int q6v5_wcss_start(struct rproc *rproc)
 	struct q6v5_wcss *wcss = rproc->priv;
 	int ret;
 
-	ret = qcom_pdm_get();
-	if (ret)
-		return ret;
-
 	qcom_q6v5_prepare(&wcss->q6v5);
 
 	/* Release Q6 and WCSS reset */
 	ret = reset_control_deassert(wcss->wcss_reset);
 	if (ret) {
 		dev_err(wcss->dev, "wcss_reset failed\n");
-		goto put_pdm;
+		return ret;
 	}
 
 	ret = reset_control_deassert(wcss->wcss_q6_reset);
@@ -291,9 +287,6 @@ wcss_q6_reset:
 
 wcss_reset:
 	reset_control_assert(wcss->wcss_reset);
-
-put_pdm:
-	qcom_pdm_release();
 
 	return ret;
 }
@@ -741,8 +734,6 @@ static int q6v5_wcss_stop(struct rproc *rproc)
 	}
 
 	qcom_q6v5_unprepare(&wcss->q6v5);
-
-	qcom_pdm_release();
 
 	return 0;
 }
