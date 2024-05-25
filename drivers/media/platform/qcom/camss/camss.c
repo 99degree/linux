@@ -713,7 +713,7 @@ static const struct camss_subdev_resources vfe_res_845[] = {
 	}
 };
 
-static const struct camss_subdev_resources csiphy_res_sc7180[] = {
+static const struct camss_subdev_resources csiphy_res_7180[] = {
 	/* CSIPHY0 */
 	{
 		.regulators = {},
@@ -795,7 +795,7 @@ static const struct camss_subdev_resources csiphy_res_sc7180[] = {
 	}
 };
 
-static const struct camss_subdev_resources csid_res_sc7180[] = {
+static const struct camss_subdev_resources csid_res_7180[] = {
 	/* CSID0 */
 	{
 		.regulators = { "vdda-phy", "vdda-pll" },
@@ -870,7 +870,7 @@ static const struct camss_subdev_resources csid_res_sc7180[] = {
 	}
 };
 
-static const struct camss_subdev_resources vfe_res_sc7180[] = {
+static const struct camss_subdev_resources vfe_res_7180[] = {
 	/* VFE0 */
 	{
 		.regulators = {},
@@ -2395,14 +2395,14 @@ static const struct camss_resources sm7150_resources = {
 static const struct camss_resources sc7180_resources = {
 	.version = CAMSS_7180,
 	.pd_name = "top",
-	.csiphy_res = csiphy_res_sc7180,
-	.csid_res = csid_res_sc7180,
-	.vfe_res = vfe_res_sc7180,
+	.csiphy_res = csiphy_res_7180,
+	.csid_res = csid_res_7180,
+	.vfe_res = vfe_res_7180,
 	//.icc_res = icc_res_sc7180,
 	//.icc_path_num = ARRAY_SIZE(icc_res_sc7180),
-	.csiphy_num = ARRAY_SIZE(csiphy_res_sc7180),
-	.csid_num = ARRAY_SIZE(csid_res_sc7180),
-	.vfe_num = ARRAY_SIZE(vfe_res_sc7180),
+	.csiphy_num = ARRAY_SIZE(csiphy_res_7180),
+	.csid_num = ARRAY_SIZE(csid_res_7180),
+	.vfe_num = ARRAY_SIZE(vfe_res_7180),
 };
 
 static const struct camss_resources sm8250_resources = {
