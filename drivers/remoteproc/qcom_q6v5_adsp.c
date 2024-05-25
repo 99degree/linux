@@ -23,7 +23,6 @@
 #include <linux/remoteproc.h>
 #include <linux/reset.h>
 #include <linux/soc/qcom/mdt_loader.h>
-#include <linux/soc/qcom/pd_mapper.h>
 #include <linux/soc/qcom/smem.h>
 #include <linux/soc/qcom/smem_state.h>
 
@@ -376,13 +375,9 @@ static int adsp_start(struct rproc *rproc)
 	int ret;
 	unsigned int val;
 
-	ret = qcom_pdm_get();
-	if (ret)
-		return ret;
-
 	ret = qcom_q6v5_prepare(&adsp->q6v5);
 	if (ret)
-		goto put_pdm;
+		return ret;
 
 	ret = adsp_map_carveout(rproc);
 	if (ret) {
@@ -451,8 +446,6 @@ adsp_smmu_unmap:
 	adsp_unmap_carveout(rproc);
 disable_irqs:
 	qcom_q6v5_unprepare(&adsp->q6v5);
-put_pdm:
-	qcom_pdm_release();
 
 	return ret;
 }
@@ -484,8 +477,6 @@ static int adsp_stop(struct rproc *rproc)
 	handover = qcom_q6v5_unprepare(&adsp->q6v5);
 	if (handover)
 		qcom_adsp_pil_handover(&adsp->q6v5);
-
-	qcom_pdm_release();
 
 	return ret;
 }
