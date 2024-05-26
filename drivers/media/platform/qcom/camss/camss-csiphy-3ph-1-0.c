@@ -868,6 +868,28 @@ static void csiphy_lanes_disable(struct csiphy_device *csiphy,
 			  CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(6));
 }
 
+static size_t csiphy_dump_regs(struct csiphy_device *csiphy, char *buf, size_t buf_len)
+{
+	struct csiphy_device_regs *regs = csiphy->data;
+	size_t len = 0;
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		len += scnprintf(buf + len, buf_len - len,
+				 "CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(%d) 0x%08x\n",
+				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(regs->offset, i)));
+	}
+
+	for (i = 0; i < 11; i++) {
+		len += scnprintf(buf + len, buf_len - len,
+				 "CSIPHY_3PH_CMN_CSI_COMMON_STATUSn(%d) 0x%08x\n",
+				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_STATUSn(regs->offset, i)));
+	}
+
+	return len;
+}
+
+
 const struct csiphy_hw_ops csiphy_ops_3ph_1_0 = {
 	.get_lane_mask = csiphy_get_lane_mask,
 	.hw_version_read = csiphy_hw_version_read,
@@ -875,4 +897,5 @@ const struct csiphy_hw_ops csiphy_ops_3ph_1_0 = {
 	.lanes_enable = csiphy_lanes_enable,
 	.lanes_disable = csiphy_lanes_disable,
 	.isr = csiphy_isr,
+	.dump_regs = csiphy_dump_regs,
 };

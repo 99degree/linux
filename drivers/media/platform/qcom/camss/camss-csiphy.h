@@ -12,6 +12,7 @@
 
 #include <linux/clk.h>
 #include <linux/interrupt.h>
+#include <linux/mutex.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-mediabus.h>
@@ -71,11 +72,16 @@ struct csiphy_hw_ops {
 	void (*lanes_disable)(struct csiphy_device *csiphy,
 			      struct csiphy_config *cfg);
 	irqreturn_t (*isr)(int irq, void *dev);
+	int (*init)(struct csiphy_device *csiphy);
+	size_t (*dump_regs)(struct csiphy_device *csiphy, char *buf, size_t buf_len);
 };
 
 struct csiphy_subdev_resources {
 	const struct csiphy_hw_ops *hw_ops;
 	const struct csiphy_formats *formats;
+	void *data;
+	struct mutex mutex;     /* atomicity of active flag */
+	bool active;
 };
 
 struct csiphy_device {
