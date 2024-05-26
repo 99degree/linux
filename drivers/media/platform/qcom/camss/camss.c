@@ -2602,7 +2602,11 @@ static int camss_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto err_v4l2_device_unregister;
 
-	ret = camss->res->link_entities(camss);
+	/* Prevent NULL caused fatal exception */
+	if (camss->res->link_entities)
+		ret = camss->res->link_entities(camss);
+	else
+		ret = camss_link_entities(camss);
 	if (ret < 0)
 		goto err_register_subdevs;
 
