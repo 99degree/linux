@@ -870,20 +870,19 @@ static void csiphy_lanes_disable(struct csiphy_device *csiphy,
 
 static size_t csiphy_dump_regs(struct csiphy_device *csiphy, char *buf, size_t buf_len)
 {
-	struct csiphy_device_regs *regs = csiphy->data;
 	size_t len = 0;
 	int i;
 
 	for (i = 0; i < 6; i++) {
 		len += scnprintf(buf + len, buf_len - len,
 				 "CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(%d) 0x%08x\n",
-				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_CTRLn(regs->offset, i)));
+				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_CTRLn( i)));
 	}
 
 	for (i = 0; i < 11; i++) {
 		len += scnprintf(buf + len, buf_len - len,
 				 "CSIPHY_3PH_CMN_CSI_COMMON_STATUSn(%d) 0x%08x\n",
-				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_STATUSn(regs->offset, i)));
+				 i, readl_relaxed(csiphy->base + CSIPHY_3PH_CMN_CSI_COMMON_STATUSn( i)));
 	}
 
 	return len;
