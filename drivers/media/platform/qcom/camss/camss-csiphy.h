@@ -79,9 +79,6 @@ struct csiphy_hw_ops {
 struct csiphy_subdev_resources {
 	const struct csiphy_hw_ops *hw_ops;
 	const struct csiphy_formats *formats;
-	void *data;
-	struct mutex mutex;     /* atomicity of active flag */
-	bool active;
 };
 
 struct csiphy_device {
@@ -100,6 +97,10 @@ struct csiphy_device {
 	struct csiphy_config cfg;
 	struct v4l2_mbus_framefmt fmt[MSM_CSIPHY_PADS_NUM];
 	const struct csiphy_subdev_resources *res;
+
+        void *data;
+        struct mutex mutex;     /* atomicity of active flag */
+        bool active;
 };
 
 struct camss_subdev_resources;
