@@ -56,6 +56,6 @@
 };
 
 &touchscreen {
-	status = "disabled";
+//	status = "disabled";
 };
 

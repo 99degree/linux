@@ -2755,6 +2755,7 @@ static const struct camss_resources sm7150_resources = {
 	.csiphy_num = ARRAY_SIZE(csiphy_res_7180),
 	.csid_num = ARRAY_SIZE(csid_res_7180),
 	.vfe_num = ARRAY_SIZE(vfe_res_7180),
+        .link_entities = camss_link_entities
 };
 
 static const struct camss_resources sc7180_resources = {
@@ -2768,6 +2769,7 @@ static const struct camss_resources sc7180_resources = {
 	.csiphy_num = ARRAY_SIZE(csiphy_res_7180),
 	.csid_num = ARRAY_SIZE(csid_res_7180),
 	.vfe_num = ARRAY_SIZE(vfe_res_7180),
+        .link_entities = camss_link_entities
 };
 
 static const struct camss_resources sm8250_resources = {
