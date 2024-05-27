@@ -449,14 +449,14 @@
 		//confirmed
 		port@2 {
                         csiphy2_ep1: endpoint@1 {
-                                data-lanes = <0 1 2 3>;
+                                data-lanes = <0 1>;
                                 remote-endpoint = <&s5k5e9_ep0>;
 				status = "okay";
                         };
 
                         csiphy2_ep0: endpoint@0 {
 				/* TODO: check with log */
-                                data-lanes = <0 1 2>;
+                                data-lanes = <0 1>;
                                 remote-endpoint = <&gc02m1_ep0>;
 				status = "disabled";
                         };
@@ -482,6 +482,33 @@
 };
 
 #if 0
+
+gc8034/8044
+log.07.0x8044.txt:[ 2481.052641] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:2 res_sel:0x4001 Lane type:0 lane_num:2 dt:43 vc:0
+log.07.0x8044.txt:[ 2481.052657] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4001 Lane type:0 lane_num:2 dt:43 vc:0
+log.07.0x8044.txt:[ 2481.052793] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4001 Lane type:0 lane_num:2 dt:43 vc:0
+
+s5k5e9:
+log.09.0x559b.txt:[ 2497.969580] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:2 res_sel:0x4003 Lane type:0 lane_num:2 dt:43 vc:0
+log.09.0x559b.txt:[ 2497.969595] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4003 Lane type:0 lane_num:2 dt:43 vc:0
+log.09.0x559b.txt:[ 2497.969731] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4003 Lane type:0 lane_num:2 dt:43 vc:0
+
+
+s5kgw1:
+//  Lane type:1 is 
+#define CAM_ISP_LANE_TYPE_DPHY                  0
+#define CAM_ISP_LANE_TYPE_CPHY                  1
+log.09.0x971.txt:[ 2519.934996] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:2 res_sel:0x4002 Lane type:1 lane_num:3 dt:43 vc:0
+log.09.0x971.txt:[ 2519.935013] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4002 Lane type:1 lane_num:3 dt:43 vc:0
+log.09.0x971.txt:[ 2519.935034] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:0 res_sel:0x4002 Lane type:1 lane_num:3 dt:43 vc:0
+log.09.0x971.txt:[ 2519.935197] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4002 Lane type:1 lane_num:3 dt:43 vc:0
+log.09.0x971.txt:[ 2519.935858] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4002 Lane type:1 lane_num:3 dt:48 vc:1
+
+ov16a1x:
+log.front.txt:[ 2761.218699] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:2 res_sel:0x4004 Lane type:0 lane_num:4 dt:43 vc:0
+log.front.txt:[ 2761.218715] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4004 Lane type:0 lane_num:4 dt:43 vc:0
+log.front.txt:[ 2761.218852] CAM_DBG: CAM-ISP: cam_ife_csid_cid_reserve: 612: CSID:1 res_sel:0x4004 Lane type:0 lane_num:4 dt:43 vc:0
+
 [   18.731285] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:0,slave_addr:0x7a,sensor_id:0x971
 [   19.064560] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:1,slave_addr:0x6e,sensor_id:0x2e0
 [   18.954235] CAM_INFO: CAM-SENSOR: cam_sensor_driver_cmd: 742 Probe success,slot:2,slave_addr:0x20,sensor_id:0x1641
@@ -542,7 +569,7 @@ csiphy-sd-index = <2>;
 		                s5k5e9_ep0: endpoint {
 		                        link-frequencies = /bits/ 64
 						<24000000 480000000>;
-	                                data-lanes = <0 1 2 3>;
+	                                data-lanes = <0 1>;
 	                                remote-endpoint = <&csiphy2_ep1>;
 					status = "okay";
 		                };
@@ -709,7 +736,7 @@ csiphy-sd-index = <2>;
 				link-frequencies = /bits/ 64
 					<480000000 24000000>;
 				/* TODO: seemed 0x210, logged with gw1 sensor log */
-				data-lanes = <0 1 2>;
+				data-lanes = <0 1>;
 				remote-endpoint = <&csiphy2_ep0>;
 			};
 		};
