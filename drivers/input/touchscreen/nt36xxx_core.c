@@ -91,7 +91,6 @@ struct nt36xxx_ts {
 #define NT36XXX_STATUS_SUSPEND			BIT(0)
 #define NT36XXX_STATUS_DOWNLOAD_COMPLETE	BIT(1)
 #define NT36XXX_STATUS_DOWNLOAD_RECOVER		BIT(2)
-#define NT36XXX_STATUS_PREPARE_FIRMWARE         BIT(3)
 	unsigned int status;
 
 	struct touchscreen_properties prop;
@@ -698,26 +697,27 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	return 0;
 }
 
-static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
-	int i, ret;
+static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
+	int i, ret, retry = 0;
 	size_t fw_need_write_size = 0;
         const struct firmware *fw_entry;
 	void *data, *data2;
+	u8 val[8 * 4] = {0};
 
 	WARN_ON(ts->hw_crc != 2);
 
 	/* add one more guard */
-	if (ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE)
-		return 0;
+	if (ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)
+		goto exit;
 
 	/* supposed we need to load once and use many time */
 	if (ts->fw_entry.data)
-		return 0;
+		goto upload;
 
 	ret = request_firmware(&fw_entry, ts->fw_name, ts->dev);
 	if (ret) {
 		dev_err(ts->dev, "request fw fail name=%s\n", ts->fw_name);
-		return -ENOMEM;
+		goto exit;
 	}
 
 	/*
@@ -730,7 +730,7 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
-                return -ENOMEM;
+                goto exit;
 	}
 	ts->fw_entry.size = fw_entry->size;
 
@@ -785,39 +785,17 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	ts->fw_entry.data = data2;
 	kfree(data);
 
-	ts->status |= NT36XXX_STATUS_PREPARE_FIRMWARE;
-
-	return 0;
-
-release_fw_buf:
-        kfree(ts->bin_map);
-        ts->bin_map = NULL;
-
-release_fw:
-        kfree(ts->fw_entry.data);
-        ts->fw_entry.data = NULL;
-        ts->fw_entry.size = 0;
-
-	return ret;
-};
-
-static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
-        int i, ret, retry = 0;
-        u8 val[8 * 4] = {0};
-
-	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
-		return -EIO;
-
+upload:
 	if (ts->hw_crc) {
 		ret = nt36xxx_download_firmware_hw_crc(ts);
 		if (ret) {
 			dev_err(ts->dev, "nt36xxx_download_firmware_hw_crc fail!");
-	                goto exit;
+	                goto release_fw_buf;
 		}
 
 	} else {
 		dev_err(ts->dev, "non-hw_crc model is not support yet!");
-		goto exit;
+		goto release_fw_buf;
 	}
 
 	/* set ilm & dlm reg bank */
@@ -865,13 +843,13 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	/* nvt_check_fw_reset_state() */
 	ret = nt36xxx_check_reset_state(ts, NT36XXX_STATE_INIT);
 	if (ret)
-		goto exit;
+		goto release_fw_buf;
 
 check_fw:
 	/* nvt_get_fw_info() */
 	ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_FWINFO, val, 16);
 	if (ret)
-		goto exit;
+		goto release_fw_buf;
 
 	dev_dbg(ts->dev, "Get default fw_ver=%d, max_x=%d, max_y=%d, by default max_x=%d max_y=%d\n",
 				val[2], ts->prop.max_x, ts->prop.max_y, ts->data->max_x, ts->data->max_y);
@@ -885,9 +863,17 @@ check_fw:
 	dev_info(ts->dev, "Touch IC fw loaded ok");
 
 	ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
+	goto exit;
 
+release_fw_buf:
+	kfree(ts->bin_map);
+	ts->bin_map = NULL;
+release_fw:
+	kfree(ts->fw_entry.data);
+	ts->fw_entry.data = NULL;
+	ts->fw_entry.size = 0;
 exit:
-	return ret;
+	return;
 }
 
 /*yell*/
@@ -896,9 +882,6 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 	int ret;
 
 	cancel_delayed_work(&ts->work);
-
-	if (_nt36xxx_boot_prepare_firmware(ts))
-		goto exit;
 
 	/* so the pm resume might have code to enable regulators. */
 	ret = pm_runtime_resume_and_get(ts->dev);
@@ -927,6 +910,7 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 	_nt36xxx_boot_download_firmware(ts);
 unlock:
 	mutex_unlock(&ts->lock);
+skip:
 	enable_irq(ts->irq);
 exit:
 	pm_runtime_put(ts->dev);
@@ -960,7 +944,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	if (!ts->input->phys)
 		return -ENOMEM;
 
-	ts->input->name = "nt36xxx_spi";
+	ts->input->name = "Novatek NT36XXX Touchscreen";
 	ts->input->dev.parent = dev;
 	ts->input->id = *id;
 
