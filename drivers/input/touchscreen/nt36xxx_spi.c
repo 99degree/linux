@@ -45,12 +45,17 @@ static int nt36xxx_spi_write(void *dev, const void *data,
 	struct spi_device *spi = to_spi_device((struct device *)dev);
 	int32_t ret;
 
+	void *data1 = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
+	if (!data1)
+		return -ENOMEM;
+
 	u8 addr[4] = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 7,  (*(u32 *)data & 0x7f) | 0x80};
+	memcpy(data1, addr, 4);
 
 	dev_dbg(dev, "%s len=0x%lx", __func__, len);
 
-	spi_write(spi, addr, 3);
-	ret = spi_write(spi, data + 3, len - 3);
+	spi_write(spi, data1, 3);
+	ret = spi_write(spi, data1 + 3, len - 3);
 	if (ret)
 		dev_err(dev, "transfer err %d\n ", ret);
 	else if (DEBUG) {
@@ -62,6 +67,7 @@ static int nt36xxx_spi_write(void *dev, const void *data,
 			16, 1, data + 3, (len - 3) > 0x20 ? 0x20 : len - 3 , true);
 	}
 
+	kfree(data1);
 	return ret;
 }
 
