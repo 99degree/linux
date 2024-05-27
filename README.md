@@ -13,7 +13,7 @@ rmtfs
 slpi(sensors, largely broken, not supported)
 bluetooth/wifi
 fingerprint(largely broken, not supported)
-sound/mic/headphone/ampifier dai
+sound/mic/headphone/ampifier dai (ported device tree, boots up, not tested)
 gpu(display comtroller is working, drm)
 camera(largely broken, not supported)
 pwm
@@ -31,8 +31,9 @@ spi/dma/i2c
 pon/pwr button/vol button
 lcd backlight
 camera_cci bus
-camss subsys (no sensor support yet)
-camera s5k5e9 sensor initial probe support(no capture img yet)
+camss subsys
+camera s5k5e9 sensor initial probe support(capture img dump not yet verified)
+pd-mapper(software to bringup sound/wifi/bt)
 ```
 
 So with rewrite of nt36xxx_spi driver[11], it is barely meet the requirement to Android/LOS/PostmarketOS. Success story of 
