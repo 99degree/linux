@@ -91,7 +91,9 @@ struct nt36xxx_ts {
 #define NT36XXX_STATUS_SUSPEND			BIT(0)
 #define NT36XXX_STATUS_DOWNLOAD_COMPLETE	BIT(1)
 #define NT36XXX_STATUS_DOWNLOAD_RECOVER		BIT(2)
-#define NT36XXX_STATUS_PREPARE_FIRMWARE         BIT(3)
+#define NT36XXX_STATUS_PREPARE_FIRMWARE		BIT(3)
+#define NT36XXX_STATUS_NEED_FIRMWARE      	BIT(4)
+
 	unsigned int status;
 
 	struct touchscreen_properties prop;
@@ -364,7 +366,9 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			break;
 		}
 
+		mutex_lock(&ts->lock);
 		ts->status |= NT36XXX_STATUS_DOWNLOAD_RECOVER;
+		mutex_unlock(&ts->lock);
 		goto xfer_error;
 	}
 
@@ -440,7 +444,9 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 
 exit:
 	if (ts->status & NT36XXX_STATUS_DOWNLOAD_RECOVER) {
+		mutex_lock(&ts->lock);
 		ts->status &= ~NT36XXX_STATUS_DOWNLOAD_RECOVER;
+		mutex_unlock(&ts->lock);
 		/* TODO: other builtin eeprom model might have another reset
 		 * approach other than download, might add here afterward */
 		if (ts->fw_name)
@@ -698,26 +704,29 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	return 0;
 }
 
-static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
-	int i, ret;
+static void _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts, bool download) {
+	int i, ret, retry = 0;
 	size_t fw_need_write_size = 0;
         const struct firmware *fw_entry;
 	void *data, *data2;
+	u8 val[8 * 4] = {0};
 
 	WARN_ON(ts->hw_crc != 2);
 
+#if 0
+	/* TODO: this check blocked unknown 2nd trial load fw and malfunction */
 	/* add one more guard */
-	if (ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE)
-		return 0;
-
+	if (ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)
+		goto exit;
+#endif
 	/* supposed we need to load once and use many time */
-	if (ts->fw_entry.data)
-		return 0;
+	if (ts->fw_entry.data || (ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
+		goto upload;
 
 	ret = request_firmware(&fw_entry, ts->fw_name, ts->dev);
 	if (ret) {
 		dev_err(ts->dev, "request fw fail name=%s\n", ts->fw_name);
-		return -ENOMEM;
+		goto exit;
 	}
 
 	/*
@@ -730,7 +739,7 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
-                return -ENOMEM;
+                goto exit;
 	}
 	ts->fw_entry.size = fw_entry->size;
 
@@ -787,37 +796,21 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 
 	ts->status |= NT36XXX_STATUS_PREPARE_FIRMWARE;
 
-	return 0;
+	/* the function is split into 2 piece */
+	if(!download)
+		goto exit;
 
-release_fw_buf:
-        kfree(ts->bin_map);
-        ts->bin_map = NULL;
-
-release_fw:
-        kfree(ts->fw_entry.data);
-        ts->fw_entry.data = NULL;
-        ts->fw_entry.size = 0;
-
-	return ret;
-};
-
-static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
-        int i, ret, retry = 0;
-        u8 val[8 * 4] = {0};
-
-	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
-		return -EIO;
-
+upload:
 	if (ts->hw_crc) {
 		ret = nt36xxx_download_firmware_hw_crc(ts);
 		if (ret) {
 			dev_err(ts->dev, "nt36xxx_download_firmware_hw_crc fail!");
-	                goto exit;
+	                goto release_fw_buf;
 		}
 
 	} else {
 		dev_err(ts->dev, "non-hw_crc model is not support yet!");
-		goto exit;
+		goto release_fw_buf;
 	}
 
 	/* set ilm & dlm reg bank */
@@ -865,13 +858,13 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	/* nvt_check_fw_reset_state() */
 	ret = nt36xxx_check_reset_state(ts, NT36XXX_STATE_INIT);
 	if (ret)
-		goto exit;
+		goto release_fw_buf;
 
 check_fw:
 	/* nvt_get_fw_info() */
 	ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR] | NT36XXX_EVT_FWINFO, val, 16);
 	if (ret)
-		goto exit;
+		goto release_fw_buf;
 
 	dev_dbg(ts->dev, "Get default fw_ver=%d, max_x=%d, max_y=%d, by default max_x=%d max_y=%d\n",
 				val[2], ts->prop.max_x, ts->prop.max_y, ts->data->max_x, ts->data->max_y);
@@ -885,9 +878,17 @@ check_fw:
 	dev_info(ts->dev, "Touch IC fw loaded ok");
 
 	ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
+	goto exit;
 
+release_fw_buf:
+	kfree(ts->bin_map);
+	ts->bin_map = NULL;
+release_fw:
+	kfree(ts->fw_entry.data);
+	ts->fw_entry.data = NULL;
+	ts->fw_entry.size = 0;
 exit:
-	return ret;
+	return;
 }
 
 /*yell*/
@@ -897,7 +898,11 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 
 	cancel_delayed_work(&ts->work);
 
-	if (_nt36xxx_boot_prepare_firmware(ts))
+	mutex_lock(&ts->lock);
+	_nt36xxx_boot_download_firmware(ts, false);
+	mutex_unlock(&ts->lock);
+
+	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
 		goto exit;
 
 	/* so the pm resume might have code to enable regulators. */
@@ -924,15 +929,17 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 		goto unlock;
         }
 
-	_nt36xxx_boot_download_firmware(ts);
+	dev_info(ts->dev, "ts->status=0x%x", ts->status);
+
+	_nt36xxx_boot_download_firmware(ts, true);
 unlock:
 	mutex_unlock(&ts->lock);
 	enable_irq(ts->irq);
-exit:
-	pm_runtime_put(ts->dev);
 
+	pm_runtime_put(ts->dev);
+exit:
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
-		cancel_delayed_work(&ts->work);
+		//cancel_delayed_work(&ts->work);
 		schedule_delayed_work(&ts->work, 4000);
 	}
 }
@@ -960,7 +967,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	if (!ts->input->phys)
 		return -ENOMEM;
 
-	ts->input->name = "nt36xxx_spi";
+	ts->input->name = "nt36xxx_spi_0";
 	ts->input->dev.parent = dev;
 	ts->input->id = *id;
 
@@ -1121,6 +1128,8 @@ skip_regulators:
 	/* have to make sure this is first time schedule work, if devm_drm_panel_add_follower
 	 * called into internal resume with schedule_delay_work, then block it over there */
 	if (ts->fw_name) {
+		ts->status |= NT36XXX_STATUS_NEED_FIRMWARE;
+
 		/* make the driver sleep while waiting tasklet fw download */
 		pm_runtime_suspend(dev);
 
@@ -1139,16 +1148,22 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 	int ret = 0;
 
+	mutex_lock(&ts->lock);
 	ts->status |= NT36XXX_STATUS_SUSPEND;
+	mutex_unlock(&ts->lock);
 
 	cancel_delayed_work_sync(&ts->work);
 
+	/* adding the mutex is to protect concurrent with download_task */
+	mutex_lock(&ts->lock);
 	if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
 	}
 
 	if (ret)
 		dev_err(ts->dev, "Cannot enter suspend!\n");
+	mutex_unlock(&ts->lock);
+
 	return 0;
 }
 
@@ -1170,16 +1185,17 @@ static int __maybe_unused nt36xxx_pm_suspend(struct device *dev)
 
 static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 {
-	struct nt36xxx_ts *ts = dev_get_drvdata(dev);
+        struct nt36xxx_ts *ts = dev_get_drvdata(dev);
 
-	/* some how reduced some kind of cpu, but remove checking should no harm */
-	if(ts->status & NT36XXX_STATUS_SUSPEND)
-		if (ts->fw_name)
-			schedule_delayed_work(&ts->work, 0);
+	mutex_lock(&ts->lock);
+        if(ts->status & (NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE))
+                ts->status &= ~(NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE);
+	mutex_unlock(&ts->lock);
 
-	ts->status &= ~(NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE);
+        if (ts->status & NT36XXX_STATUS_NEED_FIRMWARE)
+                schedule_delayed_work(&ts->work, 0);
 
-	return 0;
+        return 0;
 }
 
 static int __maybe_unused nt36xxx_pm_resume(struct device *dev)
@@ -1220,7 +1236,9 @@ static int panel_unpreparing(struct drm_panel_follower *follower)
 {
 	struct nt36xxx_ts *ts = container_of(follower, struct nt36xxx_ts, panel_follower);
 
+	mutex_lock(&ts->lock);
 	ts->status |= NT36XXX_STATUS_SUSPEND;
+	mutex_unlock(&ts->lock);
 
 	disable_irq_nosync(ts->irq);
 
