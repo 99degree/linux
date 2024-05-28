@@ -54,10 +54,11 @@ and make it up-stream, provided that quoting and credit me. I didnt add myself a
 i assumed they are. It is nice to use my github nickname 99degree as copyright reference (and include full identification as [6] too). 
 
 ## PostmarkerOS image download for Miatoll
-A dual boot Lineageos and postmarketos is available for Joyeuse[9]. And the pmOS binary release is at here[10] for download.
+A dual boot Lineageos on ufs and postmarketos on sdcard is available for Joyeuse[9]. And the pmOS binary release is at here[10] for download.
 Further trial of booting Android out of sdcard is under attempt, but failed as result boot media not found in first-stage-init.
 Again, a cloud build bundle with custom postmarketOS is available for rought testing at [10]
 
+## Afterward
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
 
  - [1] https://github.com/torvalds/linux
