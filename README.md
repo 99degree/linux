@@ -1,25 +1,11 @@
 # linux
 Linux kernel source tree
 
-This repo is tracking latest mainline kernel as updated as possible. The idea is to work with sm7125 soc and mainline [1]. Wiki[12] is available for common porting question.
-
+This repo is tracking latest mainline kernel as updated as possible. The idea is to work with sm7125 soc and mainline [1]. 
 The development machine is a XiaoMi redmi note 9 pro int'l version. Currently the working branch is based on latest code
 of Linus's public tree with my own periodic merge into local change and git rebase for every push.
 
-This repo have a simple philosophy, which is basically minimal change to mainline source. Here are functionality not tested:
-```
-modem
-rmtfs
-slpi(sensors, largely broken, not supported)
-bluetooth/wifi
-fingerprint(largely broken, not supported)
-sound/mic/headphone/ampifier dai (ported device tree, boots up, not tested)
-gpu(display comtroller is working, drm)
-camera(largely broken, not supported)
-pwm
-```
-
-Tested good:
+## Tested good:
 ```
 UFS
 sd card
@@ -36,22 +22,40 @@ camera s5k5e9 sensor initial probe support(capture img dump not yet verified)
 pd-mapper(software to bringup sound/wifi/bt)
 ```
 
+## Yet to test 
+This repo have a simple philosophy, which is basically minimal change to mainline source. Here are functionality not tested:
+```
+modem
+rmtfs
+slpi(sensors, largely broken, not supported)
+bluetooth/wifi
+fingerprint(largely broken, not supported)
+sound/mic/headphone/ampifier dai (ported device tree, boots up, not tested)
+gpu(display comtroller is working, drm)
+camera(largely broken, not supported)
+pwm
+```
+
+## Wiki, Wiki, Wiki
+Wiki[12] is available for common porting question.
+
 So with rewrite of nt36xxx_spi driver[11], it is barely meet the requirement to Android/LOS/PostmarketOS. Success story of 
 mainline similar to xiaomi phone is from Linaro [3] and the overall procedure is compile full Android/LOS by them-selves.
 
-A dual boot Lineageos and postmarketos is available for Joyeuse[9]. And the pmOS binary release is at here[10] for download.
-Further trial of booting Android out of sdcard is under attempt, but failed as result boot media not found in first-stage-init.
-
-The repo arrangement is simple too. Basically the branch 'working' is a force pushed workspace. Usually latest code will leave 
-and branch another working-2023xxxx or next-2024xxxx branch for each kernel release or important commit. 
-
 So if there are leave message, please feel free to leave a issue ticket, and then reference to specific commit from within the 
 tree in case of question and query. I will response  as I back online and try to answer questions in my own knowledge.
+
+## Freely redistribute
+The repo arrangement is simple too. Basically the branch 'working' is a force pushed workspace. Usually latest code will leave 
+and branch another working-2023xxxx or next-2024xxxx branch for each kernel release or important commit. 
 
 Anyway, welcome to everybody come and visit here please find my changes useful, you are also welcome to refine the changeset 
 and make it up-stream, provided that quoting and credit me. I didnt add myself any copy-right-years into those files, but 
 i assumed they are. It is nice to use my github nickname 99degree as copyright reference (and include full identification as [6] too). 
 
+## PostmarkerOS image download for Miatoll
+A dual boot Lineageos and postmarketos is available for Joyeuse[9]. And the pmOS binary release is at here[10] for download.
+Further trial of booting Android out of sdcard is under attempt, but failed as result boot media not found in first-stage-init.
 Again, a cloud build bundle with custom postmarketOS is available for rought testing at [10]
 
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
