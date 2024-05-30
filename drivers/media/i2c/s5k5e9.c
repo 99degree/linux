@@ -564,7 +564,8 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret = 0;		
 		break;
 	case V4L2_CID_TEST_PATTERN:
-		vals[0] = S5K5E9_REG_TEST_PATTERN_ENABLE;
+		dev_info(s5k5e9->dev, "test pattern set %s", (vals > 0)? "on": "off");
+		vals[0] = (vals > 0) ? S5K5E9_REG_TEST_PATTERN_ENABLE : S5K5E9_REG_TEST_PATTERN_DISABLE;
 		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, vals, 1);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
@@ -790,6 +791,12 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 		dev_err(s5k5e9->dev, "could not sync v4l2 controls\n");
 		goto error;
 	}
+
+	/* TODO: force to stop test-pattern */
+        ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, S5K5E9_REG_TEST_PATTERN_DISABLE);
+        if (ret < 0)
+                dev_err(s5k5e9->dev, "Error %d\n", ret);
+
 	ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_MODE_SELECT, S5K5E9_MODE_STREAMING);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "could not sent start table %d\n", ret);
