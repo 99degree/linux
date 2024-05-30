@@ -18,7 +18,7 @@ pon/pwr button/vol button
 lcd backlight
 camera_cci bus
 camss subsys 
-camera s5k5e9 sensor, minor glitch on video frame
+camera s5k5e9 sensor
 pd-mapper(software to bringup sound/wifi/bt)
 ```
 
