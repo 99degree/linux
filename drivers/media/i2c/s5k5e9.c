@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * s5k5e9.c - s5k5e9 sensor driver based on imx214 sensor driver by below
- *
- * Copyright 2018 Qtechnology A/S
- * Ricardo Ribalda <ribalda@kernel.org>
- 
- * Copyright 2023 99degree <https://github.com/99degree>
- *
+  * s5k5e9.c - s5k5e9 sensor driver
+  *
+  * Copyright 2018 Qtechnology A/S
+  * Ricardo Ribalda <ribalda@kernel.org>
+  * Copyright 2023 99degree <https://github.com/99degree>
+  *
  */
+
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
@@ -21,44 +21,42 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
-#define S5K5E9_DEFAULT_CLK_FREQ			24000000
-#define S5K5E9_DEFAULT_LINK_FREQ		480000000
-#define S5K5E9_LINK_FREQ_422MHZ         	422400000
-#define S5K5E9_LINK_FREQ_422MHZ_INDEX   	0
-#define S5K5E9_DEFAULT_PIXEL_RATE 		((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
-#define S5K5E9_FPS				30
-#define S5K5E9_MBUS_CODE 			MEDIA_BUS_FMT_SRGGB10_1X10
-#define S5K5E9_SHUTTER_BASE_VAL_ONE_SEC		61053
-#define S5K5E9_INT_MAX				5
-/* TODO:need to change */
-#define S5K5E9_VTS_30FPS			0x0808 /* default for 30 fps */
-#define S5K5E9_VTS_MAX                  	0xffff
-#define S5K5E9_FIXED_PPL                	2724    /* Pixels per line */
+#define S5K5E9_DEFAULT_CLK_FREQ	19200000
+#define S5K5E9_DEFAULT_LINK_FREQ 480000000
+#define S5K5E9_DEFAULT_PIXEL_RATE ((S5K5E9_DEFAULT_LINK_FREQ * 8LL) / 10)
+#define S5K5E9_FPS 30
+#define S5K5E9_MBUS_CODE MEDIA_BUS_FMT_SRGGB10_1X10
 
-#define S5K5E9_ANA_GAIN_MIN             0
-#define S5K5E9_ANA_GAIN_MAX             232
-#define S5K5E9_ANA_GAIN_STEP            1
-#define S5K5E9_ANA_GAIN_DEFAULT         0x0
-
-#define S5K5E9_DGTL_GAIN_MIN            0x0100
-#define S5K5E9_DGTL_GAIN_MAX            0x0fff
-#define S5K5E9_DGTL_GAIN_DEFAULT        0x0100
-#define S5K5E9_DGTL_GAIN_STEP           1
+/* it is an CAM0_RST_N gpio pin */
+#define S5K5E9_GPIO_ENABLE			0x0000
 
 /* register addr */
-#define S5K5E9_REG_SENSOR_ID_L			0x0000
-#define S5K5E9_REG_SENSOR_ID_H			0x0001
+#define S5K5E9_REG_SENSOR_ID			0x0000
 #define S5K5E9_SENSOR_ID_VAL			0x559b
 
 #define S5K5E9_REG_FRAMECNT			0x0005
+#define S5K5E9_FRAMECNT_IDLE		0xFF
 
-#define S5K5E9_REG_MODE_SELECT			0x0100
-#define S5K5E9_MODE_STANDBY			0x0
-#define S5K5E9_MODE_STREAMING			0x1
+#define S5K5E9_REG_MODE_SELECT		0x0100
+#define S5K5E9_MODE_STANDBY			0x00
+#define S5K5E9_MODE_STREAMING		0x01
 
-#define S5K5E9_REG_GAIN_H			0x0204
-#define S5K5E9_REG_GAIN_L			0x0205
-#define S5K5E9_REG_GAIN_BIT_SHIFT		0x1
+#define S5K5E9_REG_MODE_FLIP		0x0101
+#define S5K5E9_MODE_FLIP_NONE		0x00
+#define S5K5E9_MODE_FLIP_H			0x01
+#define S5K5E9_MODE_FLIP_V			0x10
+#define S5K5E9_MODE_FLIP_HV			0x11
+
+#define S5K5E9_REG_HOLD				0x0104
+
+#define S5K5E9_REG_200				0x0200 /*unknown*/
+#define S5K5E9_REG_201				0x0201 /*unknown*/
+
+#define S5K5E9_REG_FRAME_LENGTH		0x0340
+#define S5K5E9_REG_LINE_LENGTH		0x0342
+/*		.linelength = 3112,
+		.framelength = 2030,
+*/
 
 #define S5K5E9_REG_UPDATE_DUMMY			0x3200
 #define S5K5E9_REG_UPDATE_DUMMY_VAL		0x00
@@ -67,31 +65,26 @@
 #define S5K5E9_REG_TEST_PATTERN_ENABLE		0x2
 #define S5K5E9_REG_TEST_PATTERN_DISABLE		0x0
 
-/* TODO: directly from old imx214, need to train */
 /* Exposure control */
-#define S5K5E9_REG_EXPOSURE			0x0202
-#define S5K5E9_EXPOSURE_MIN			0
-#define S5K5E9_EXPOSURE_MAX			3184
-#define S5K5E9_EXPOSURE_STEP			1
-#define S5K5E9_EXPOSURE_DEFAULT			3184
+#define S5K5E9_REG_EXPOSURE		0x0202
+#define S5K5E9_EXPOSURE_MIN		0
+#define S5K5E9_EXPOSURE_MAX		3184
+#define S5K5E9_EXPOSURE_STEP		1
+#define S5K5E9_EXPOSURE_DEFAULT		3184
+
+#define S5K5E9_REG_ANA_GAIN				0x0204
+#define S5K5E9_ANA_GAIN_MIN             0
+#define S5K5E9_ANA_GAIN_MAX             232
+#define S5K5E9_ANA_GAIN_STEP            1
+#define S5K5E9_ANA_GAIN_DEFAULT         0x80
 
 /* S5K5E9 native and active pixel array size */
-#define S5K5E9_NATIVE_WIDTH			4224U
-#define S5K5E9_NATIVE_HEIGHT			3136U
-#define S5K5E9_PIXEL_ARRAY_LEFT			8U
-#define S5K5E9_PIXEL_ARRAY_TOP			8U
-#define S5K5E9_PIXEL_ARRAY_WIDTH		4208U
-#define S5K5E9_PIXEL_ARRAY_HEIGHT		3120U
-
-struct reg_8 {
-        u16 addr;
-        u8 val;
-};
-
-struct s5k5e9_reg_list {
-        u32 num_of_regs;
-        const struct reg_8 *regs;
-};
+#define S5K5E9_NATIVE_WIDTH		2592U
+#define S5K5E9_NATIVE_HEIGHT		1944U
+#define S5K5E9_PIXEL_ARRAY_LEFT		0U
+#define S5K5E9_PIXEL_ARRAY_TOP		2U
+#define S5K5E9_PIXEL_ARRAY_WIDTH	2592U
+#define S5K5E9_PIXEL_ARRAY_HEIGHT	1940U
 
 static const char * const s5k5e9_supply_name[] = {
 	"vdda",
@@ -100,29 +93,6 @@ static const char * const s5k5e9_supply_name[] = {
 };
 
 #define S5K5E9_NUM_SUPPLIES ARRAY_SIZE(s5k5e9_supply_name)
-
-struct s5k5e9_mode {
-        /* Frame width in pixels */
-        u32 width;
-
-        /* Frame height in pixels */
-        u32 height;
-
-        /* Default vertical timining size */
-        u32 vts_def;
-
-        /* Min vertical timining size */
-        u32 vts_min;
-
-        /* Link frequency needed for this resolution */
-        u32 link_freq_index;
-
-        /* Analog crop rectangle */
-        const struct v4l2_rect *analog_crop;
-
-        /* Sensor register settings for this resolution */
-        const struct s5k5e9_reg_list reg_list;
-};
 
 struct s5k5e9 {
 	struct device *dev;
@@ -135,16 +105,16 @@ struct s5k5e9 {
 	struct v4l2_rect crop;
 
 	struct v4l2_ctrl_handler ctrls;
-	struct v4l2_ctrl *a_gain;
-	struct v4l2_ctrl *d_gain;
-	struct v4l2_ctrl *exposure;
-	struct v4l2_ctrl *h_blank;
-	struct v4l2_ctrl *link_freq;
 	struct v4l2_ctrl *pixel_rate;
+	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *unit_size;
+	struct v4l2_ctrl *a_gain;
+	struct v4l2_ctrl *h_blank;
 	struct v4l2_ctrl *v_blank;
+	struct v4l2_ctrl *test_pattern;
 
-	const struct s5k5e9_mode *cur_mode;
+	struct regulator_bulk_data	supplies[S5K5E9_NUM_SUPPLIES];
 
 	struct gpio_desc *enable_gpio;
 
@@ -155,15 +125,20 @@ struct s5k5e9 {
 	struct mutex mutex;
 };
 
+struct reg_8 {
+	u16 addr;
+	u8 val;
+};
+
 enum {
-	S5K5E9_TABLE_WAIT_MS = 0, /* treat as register addr SENSOR_ID_L */
-	S5K5E9_TABLE_END, /* treat as register addr SENSOR_ID_H */
+	S5K5E9_TABLE_WAIT_MS = 0,
+	S5K5E9_TABLE_END,
 	S5K5E9_MAX_RETRIES,
 	S5K5E9_WAIT_MS
 };
 
 /*From s5k5e9_mode_tbls.h*/
-static const struct reg_8 mode_2592x1940_regs[] = {
+static const struct reg_8 mode_2592x1944[] = {
 	{0x0100, 0x00},
 	{0x0136, 0x13},
 	{0x0137, 0x33},
@@ -226,68 +201,10 @@ static const struct reg_8 mode_2592x1940_regs[] = {
 };
 
 static const struct reg_8 mode_1920x1080[] = {
-/* TODO: disable device tree and capture again for change resolution */
+
 	{S5K5E9_TABLE_WAIT_MS, 10},
-//	{0x0138, 0x01},
 	{S5K5E9_TABLE_END, 0x00}
 };
-
-static const struct reg_8 mode_1280x720[] = {
-	/* mode */
-	{0x0136, 0x18},
-	{0x0137, 0x00},
-	{0x0305, 0x04},
-	{0x0306, 0x00},
-	{0x0307, 0x5F},
-	{0x030D, 0x04},
-	{0x030E, 0x00},
-	{0x030F, 0x92},
-	{0x3C1F, 0x00},
-	{0x3C17, 0x00},
-	{0x0112, 0x0A},
-	{0x0113, 0x0A},
-	{0x0114, 0x01},
-	{0x0820, 0x03},
-	{0x0821, 0x6C},
-	{0x0822, 0x00},
-	{0x0823, 0x00},
-	{0x3929, 0x0F},
-	{0x0344, 0x00},
-	{0x0345, 0x18},
-	{0x0346, 0x01},
-	{0x0347, 0x04},
-	{0x0348, 0x0A},
-	{0x0349, 0x17},
-	{0x034A, 0x06},
-	{0x034B, 0xA3},
-	{0x034C, 0x05},
-	{0x034D, 0x00},
-	{0x034E, 0x02},
-	{0x034F, 0xD0},
-	{0x0900, 0x01},
-	{0x0901, 0x22},
-	{0x0381, 0x01},
-	{0x0383, 0x01},
-	{0x0385, 0x01},
-	{0x0387, 0x03},
-	{0x0101, 0x00},
-	{0x0340, 0x0F},
-	{0x0341, 0xE4},
-	{0x0342, 0x0C},
-	{0x0343, 0x28},
-	{0x0200, 0x0B},
-	{0x0201, 0x9C},
-	{0x0202, 0x00},
-	{0x0203, 0x02},
-	{0x30B8, 0x2A},
-	{0x30BA, 0x2E},
-	{0x0100, 0x01},
-	{S5K5E9_TABLE_WAIT_MS, 10},
-/* TODO: check what is this */
-//	{0x0138, 0x01},
-	{S5K5E9_TABLE_END, 0x00}
-};
-
 
 static const struct reg_8 mode_table_common[] = {
 	{0x0100, 0x00},
@@ -328,50 +245,35 @@ static const struct reg_8 mode_table_common[] = {
 	{0x30c2, 0x05},
 	{0x3069, 0x87},
 	{0x3c0f, 0x00},
-//	{0x0a02, 0x3f}, //my dump does not have this
+	{0x0a02, 0x3f},
 	{0x3083, 0x14},
 	{0x3080, 0x08},
-//	{0x3c34, 0xea},
-//	{0x3c35, 0x5c},
+	{0x3c34, 0xea},
+	{0x3c35, 0x5c},
+	{0x3931, 0x02},
+	{0x0601, 0x00}, /* disable test pattern */
 	{S5K5E9_TABLE_END, 0x00}
 };
-
-
-//copy from ov5670
-/*
- * All the modes supported by the driver are obtained by subsampling the
- * full pixel array. The below values are reflected in registers from
- * 0x3800-0x3807 in the modes register-value tables.
- */
-static const struct v4l2_rect s5k5e9_analog_crop = {
-        .left   = 12,
-        .top    = 4,
-        .width  = 2600,
-        .height = 1952,
-};
-
 
 /*
  * Declare modes in order, from biggest
  * to smallest height.
  */
-static const struct s5k5e9_mode supported_modes[] = {
-        {
-		/*
-		.linelength = 3112,
-                .framelength = 2030,
-		*/
-                .width = 2592,
-                .height = 1940,
-                .vts_def = S5K5E9_VTS_30FPS,
-                .vts_min = S5K5E9_VTS_30FPS,
-                .link_freq_index = S5K5E9_LINK_FREQ_422MHZ_INDEX,
-                .analog_crop = &s5k5e9_analog_crop,
-                .reg_list = {
-                        .num_of_regs = ARRAY_SIZE(mode_2592x1940_regs),
-                        .regs = mode_2592x1940_regs,
-                },
-        },
+static const struct s5k5e9_mode {
+	u32 width;
+	u32 height;
+	const struct reg_8 *reg_table;
+} s5k5e9_modes[] = {
+	{
+		.width = 2592,
+		.height = 1944,
+		.reg_table = mode_2592x1944,
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.reg_table = mode_1920x1080,
+	},
 };
 
 static inline struct s5k5e9 *to_s5k5e9(struct v4l2_subdev *sd)
@@ -385,39 +287,30 @@ static int __maybe_unused s5k5e9_power_on(struct device *dev)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
 	int ret;
-	int id[2];
 
-	dev_info(dev, "%s", __func__);
-
-	ret = devm_regulator_bulk_get_enable(dev, S5K5E9_NUM_SUPPLIES, s5k5e9_supply_name);
+	ret = regulator_bulk_enable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "failed to enable regulators: %d\n", ret);
 		return ret;
 	}
 
 	usleep_range(2000, 3000);
-	
-	dev_info(dev, "%s xvclk %ld", __func__, clk_get_rate(s5k5e9->xclk));
-	
+
+        ret = clk_set_rate(s5k5e9->xclk, S5K5E9_DEFAULT_CLK_FREQ);
+        if (ret) {
+                dev_err(dev, "could not set xclk frequency\n");
+                return ret;
+        }
+
 	ret = clk_prepare_enable(s5k5e9->xclk);
 	if (ret < 0) {
+		regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 		dev_err(s5k5e9->dev, "clk prepare enable failed\n");
 		return ret;
 	}
-	
-	/* it is an CAM0_RST_N gpio pin */
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
-	usleep_range(12000, 15000);
 
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 0);
+	gpiod_set_value_cansleep(s5k5e9->enable_gpio, S5K5E9_GPIO_ENABLE);
 	usleep_range(12000, 15000);
-
-	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_H, &id[1]);
-	ret = regmap_read(s5k5e9->regmap, S5K5E9_REG_SENSOR_ID_L, &id[0]);
-	if ((id[1] | (id[0] << 8)) != S5K5E9_SENSOR_ID_VAL) {
-		dev_err(dev, "sensor init 1 failed ret = 0x%x\n", id[0] << 8 | id[1]);
-		return -EIO;
-	}
 
 	return 0;
 }
@@ -428,12 +321,11 @@ static int __maybe_unused s5k5e9_power_off(struct device *dev)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct s5k5e9 *s5k5e9 = to_s5k5e9(sd);
 
-	gpiod_set_value_cansleep(s5k5e9->enable_gpio, 1);
+	gpiod_set_value_cansleep(s5k5e9->enable_gpio, !S5K5E9_GPIO_ENABLE);
 
-	dev_info(dev, "%s xvclk %ld", __func__, clk_get_rate(s5k5e9->xclk));
-	
 	clk_disable_unprepare(s5k5e9->xclk);
 
+	regulator_bulk_disable(S5K5E9_NUM_SUPPLIES, s5k5e9->supplies);
 	usleep_range(10, 20);
 
 	return 0;
@@ -458,11 +350,11 @@ static int s5k5e9_enum_frame_size(struct v4l2_subdev *subdev,
 	if (fse->code != S5K5E9_MBUS_CODE)
 		return -EINVAL;
 
-	if (fse->index >= ARRAY_SIZE(supported_modes))
+	if (fse->index >= ARRAY_SIZE(s5k5e9_modes))
 		return -EINVAL;
 
-	fse->min_width = fse->max_width = supported_modes[fse->index].width;
-	fse->min_height = fse->max_height = supported_modes[fse->index].height;
+	fse->min_width = fse->max_width = s5k5e9_modes[fse->index].width;
+	fse->min_height = fse->max_height = s5k5e9_modes[fse->index].height;
 
 	return 0;
 }
@@ -510,7 +402,6 @@ __s5k5e9_get_pad_format(struct s5k5e9 *s5k5e9,
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &s5k5e9->fmt;
 	default:
-		pr_err("%s fail", __func__);
 		return NULL;
 	}
 }
@@ -559,8 +450,8 @@ static int s5k5e9_set_format(struct v4l2_subdev *sd,
 	__crop = __s5k5e9_get_pad_crop(s5k5e9, sd_state, format->pad,
 				       format->which);
 
-	mode = v4l2_find_nearest_size(supported_modes,
-				      ARRAY_SIZE(supported_modes), width, height,
+	mode = v4l2_find_nearest_size(s5k5e9_modes,
+				      ARRAY_SIZE(s5k5e9_modes), width, height,
 				      format->format.width,
 				      format->format.height);
 
@@ -625,8 +516,8 @@ static int s5k5e9_entity_init_state(struct v4l2_subdev *subdev,
 	struct v4l2_subdev_format fmt = { };
 
 	fmt.which = sd_state ? V4L2_SUBDEV_FORMAT_TRY : V4L2_SUBDEV_FORMAT_ACTIVE;
-	fmt.format.width = supported_modes[0].width;
-	fmt.format.height = supported_modes[0].height;
+	fmt.format.width = s5k5e9_modes[0].width;
+	fmt.format.height = s5k5e9_modes[0].height;
 
 	s5k5e9_set_format(subdev, sd_state, &fmt);
 
@@ -640,8 +531,6 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 	u8 vals[2];
 	int ret;
 
-	return 0;
-
 	/*
 	 * Applying V4L2 control value only happens
 	 * when power is up for streaming
@@ -651,57 +540,37 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
-		/* TODO: Long exposure > 1s, is yet to support */
-#if 0
-		if(ctrl->val > 61053) {
-			wr_pair[0] =
-				{0x0340, ((ctrl->val + 5) >> 8 ) & 0xff }; //frame_h
-			wr_pair[1] =
-				{0x0341, (ctrl->val + 5) & 0xff}; //frame_l
-                        wr_pair[2] =
-				{0x0342, 0xFF}; //line_h
-                        wr_pair[3] =
-				{0x0343, 0XFC}; //line_l
-                        wr_pair[4] =
-				{0x0200, 0xFF};
-                        wr_pair[5] =
-				{0x0201, 0X70};
-                        wr_pair[6] =
-				{0x0202, (ctrl->val >> 8 ) & 0xff };
-                        wr_pair[7] =
-				{0x0203, ctrl->val & 0xff};
-			};
-#endif
-/*
-		regmap_write(s5k5e9->regmap, 0x0340, (supported_modes[0].framelength >> 8 ) & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0341, supported_modes[0].framelength & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0342, (supported_modes[0].linelength >> 8 ) & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0343, supported_modes[0].linelength & 0xff);
-		regmap_write(s5k5e9->regmap, 0x0200, 0xff);
-		regmap_write(s5k5e9->regmap, 0x0201, 0x70);
-		regmap_write(s5k5e9->regmap, 0x0202, (ctrl->val >> 8 ) & 0xff);
-		ret = regmap_write(s5k5e9->regmap, 0x0203, ctrl->val & 0xff);
+		ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_HOLD, 1);
 
-		if (ret < 0) {
-			dev_err(s5k5e9->dev, "Error %d\n", ret);
-			break;
-		}
-*/
-		ret = 0;
-		break;
-
-	case V4L2_CID_GAIN:
-		vals[1] = (ctrl->val >> S5K5E9_REG_GAIN_BIT_SHIFT) & 0xff; /* valid bits 0x1fff*/
-		vals[0] = (ctrl->val >> (8 + S5K5E9_REG_GAIN_BIT_SHIFT)) & 0xff;
-		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_GAIN_H, vals, 2);
+		vals[1] = ctrl->val;
+		vals[0] = ctrl->val >> 8;
+		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_EXPOSURE, vals, 2);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
+
+		ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_HOLD, 0);
+		/* dont let it fail */
 		ret = 0;
 		break;
+	case V4L2_CID_ANALOGUE_GAIN:
+		ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_HOLD, 1);
 
-	case V4L2_CID_TEST_PATTERN: /* this is not the */
-		vals[0] = S5K5E9_REG_TEST_PATTERN_ENABLE;
-		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, vals, 1);
+		vals[0] = ((ctrl->val * 2) >> 8) & 0xff;
+		vals[1] = (ctrl->val * 2) & 0xff;
+		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_ANA_GAIN, vals, 2);
+		if (ret < 0)
+			dev_err(s5k5e9->dev, "Error %d\n", ret);
+
+		ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_HOLD, 0);
+		/* dont let it fail */
+		ret = 0;
+		break;
+	case V4L2_CID_TEST_PATTERN:
+		dev_info(s5k5e9->dev, "test pattern set %s", (ctrl->val > 0)? "on": "off");
+		if (ctrl->val > 0)
+			ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, S5K5E9_REG_TEST_PATTERN_ENABLE);
+		else
+			ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_TEST_PATTERN, S5K5E9_REG_TEST_PATTERN_DISABLE);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
 
@@ -709,11 +578,14 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret = regmap_bulk_write(s5k5e9->regmap, S5K5E9_REG_UPDATE_DUMMY, vals, 1);
 		if (ret < 0)
 			dev_err(s5k5e9->dev, "Error %d\n", ret);
+
 		ret = 0;
 		break;
-
 	default:
+		dev_info(s5k5e9->dev, "%s ctrl not handled 0x%x", __func__, ctrl->id);
 		ret = -EINVAL;
+		/* dont let it fail */
+		ret = 0;
 	}
 
 	pm_runtime_put(s5k5e9->dev);
@@ -723,6 +595,11 @@ static int s5k5e9_set_ctrl(struct v4l2_ctrl *ctrl)
 
 static const struct v4l2_ctrl_ops s5k5e9_ctrl_ops = {
 	.s_ctrl = s5k5e9_set_ctrl,
+};
+
+static const char * const s5k5e9_test_pattern_menu[] = {
+	"Disabled",
+	"Vertical Color Bar Type 1",
 };
 
 static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
@@ -738,42 +615,54 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 	struct v4l2_ctrl_handler *ctrl_hdlr;
 	int ret;
 
-        s64 vblank_max;
-        s64 vblank_def;
-        s64 vblank_min;
-        //s64 exposure_max;
-
 	ret = v4l2_fwnode_device_parse(s5k5e9->dev, &props);
 	if (ret < 0)
 		return ret;
 
 	ctrl_hdlr = &s5k5e9->ctrls;
-	ret = v4l2_ctrl_handler_init(&s5k5e9->ctrls, 6);
+	ret = v4l2_ctrl_handler_init(&s5k5e9->ctrls, 8);
 	if (ret)
 		return ret;
 
+	ctrl_hdlr->lock = &s5k5e9->mutex;
+
 /*
-	// Mandatory control by libcamera
+        // Mandatory control by libcamera
                 V4L2_CID_ANALOGUE_GAIN, //missing
                 V4L2_CID_EXPOSURE,
                 V4L2_CID_HBLANK,      //missing
                 V4L2_CID_PIXEL_RATE,
-                V4L2_CID_VBLANK,	//missing
+                V4L2_CID_VBLANK,        //missing
 */
 
-
-	s5k5e9->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, NULL,
+	s5k5e9->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
 					       V4L2_CID_PIXEL_RATE, 0,
 					       S5K5E9_DEFAULT_PIXEL_RATE, 1,
 					       S5K5E9_DEFAULT_PIXEL_RATE);
 
-	s5k5e9->link_freq = v4l2_ctrl_new_int_menu(ctrl_hdlr, NULL,
+	if (!s5k5e9->pixel_rate)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "pixel_rate");
+
+	s5k5e9->link_freq = v4l2_ctrl_new_int_menu(ctrl_hdlr, &s5k5e9_ctrl_ops,
 						   V4L2_CID_LINK_FREQ,
 						   ARRAY_SIZE(link_freq) - 1,
 						   0, link_freq);
 	if (s5k5e9->link_freq)
 		s5k5e9->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
+	if (!s5k5e9->link_freq)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "link_freq");
+
+	/*
+	 * WARNING!
+	 * Values obtained reverse engineering blobs and/or devices.
+	 * Ranges and functionality might be wrong.
+	 *
+	 * Sony, please release some register set documentation for the
+	 * device.
+	 *
+	 * Yours sincerely, Ricardo.
+	 */
 	s5k5e9->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
 					     V4L2_CID_EXPOSURE,
 					     S5K5E9_EXPOSURE_MIN,
@@ -781,40 +670,55 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 					     S5K5E9_EXPOSURE_STEP,
 					     S5K5E9_EXPOSURE_DEFAULT);
 
+	if (!s5k5e9->exposure)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "exposure");
+
+	s5k5e9->test_pattern = v4l2_ctrl_new_std_menu_items(ctrl_hdlr, &s5k5e9_ctrl_ops,
+					V4L2_CID_TEST_PATTERN,
+					ARRAY_SIZE(s5k5e9_test_pattern_menu) - 1,
+					0, 0, s5k5e9_test_pattern_menu);
+
+	if (!s5k5e9->test_pattern)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "test_pattern");
+
+#define ANALOG_GAIN_MIN                 0x10
+#define ANALOG_GAIN_MAX                 0xf8
+#define ANALOG_GAIN_STEP                1
+#define ANALOG_GAIN_DEFAULT             0xf8
+
+	s5k5e9->a_gain = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+                                V4L2_CID_ANALOGUE_GAIN, ANALOG_GAIN_MIN,
+                                ANALOG_GAIN_MAX, ANALOG_GAIN_STEP,
+                                ANALOG_GAIN_DEFAULT);
+
+	if (!s5k5e9->a_gain)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "a_gain");
+
+	s5k5e9->h_blank = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+					V4L2_CID_HBLANK,
+					0, 0xffff, 1, 0); /* not impl atm */
+	if (s5k5e9->h_blank)
+			s5k5e9->h_blank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+
+	if (!s5k5e9->h_blank)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "h_blank");
+
+	s5k5e9->v_blank = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
+									   V4L2_CID_VBLANK, 0x0808 /* 30fps */,
+									   0xffff, 1, 0x0808);
+	if (s5k5e9->v_blank)
+			s5k5e9->v_blank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+
+	if (!s5k5e9->v_blank)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "v_blank");
+
 	s5k5e9->unit_size = v4l2_ctrl_new_std_compound(ctrl_hdlr,
-				NULL,
+				&s5k5e9_ctrl_ops,
 				V4L2_CID_UNIT_CELL_SIZE,
 				v4l2_ctrl_ptr_create((void *)&unit_size));
 
-        s5k5e9->a_gain = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
-		  				V4L2_CID_ANALOGUE_GAIN,
-			                        S5K5E9_ANA_GAIN_MIN,
-						S5K5E9_ANA_GAIN_MAX,
-						S5K5E9_ANA_GAIN_STEP,
-						S5K5E9_ANA_GAIN_DEFAULT);
-
-        s5k5e9->d_gain = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
-						V4L2_CID_DIGITAL_GAIN,
-						S5K5E9_DGTL_GAIN_MIN,
-						S5K5E9_DGTL_GAIN_MAX,
-						S5K5E9_DGTL_GAIN_STEP,
-						S5K5E9_DGTL_GAIN_DEFAULT);
-
-        s5k5e9->h_blank = v4l2_ctrl_new_std(
-                                ctrl_hdlr, &s5k5e9_ctrl_ops, V4L2_CID_HBLANK,
-                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width,
-                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width, 1,
-                                S5K5E9_FIXED_PPL - s5k5e9->cur_mode->width);
-        if (s5k5e9->h_blank)
-                s5k5e9->h_blank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
-
-        vblank_max = S5K5E9_VTS_MAX - s5k5e9->cur_mode->height;
-        vblank_def = s5k5e9->cur_mode->vts_def - s5k5e9->cur_mode->height;
-        vblank_min = s5k5e9->cur_mode->vts_min - s5k5e9->cur_mode->height;
-
-        s5k5e9->v_blank = v4l2_ctrl_new_std(ctrl_hdlr, &s5k5e9_ctrl_ops,
-                                           V4L2_CID_VBLANK, vblank_min,
-                                           vblank_max, 1, vblank_def);
+	if (!s5k5e9->unit_size)
+		dev_err(s5k5e9->dev, "%s ctrl fail", "unit_size");
 
 	v4l2_ctrl_new_fwnode_properties(ctrl_hdlr, &s5k5e9_ctrl_ops, &props);
 
@@ -829,6 +733,50 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 
 	return 0;
 };
+
+#if 0
+static void framelength() {
+	dummy_line = frame_length - imgsensor.frame_length;
+	imgsensor.frame_length = imgsensor.frame_length + dummy_line;
+	imgsensor.min_frame_length = imgsensor.frame_length;
+
+	if (shutter > imgsensor.min_frame_length - imgsensor_info.margin)
+		imgsensor.frame_length = shutter + imgsensor_info.margin;
+	else
+		imgsensor.frame_length = imgsensor.min_frame_length;
+	if (imgsensor.frame_length > imgsensor_info.max_frame_length)
+		imgsensor.frame_length = imgsensor_info.max_frame_length;
+	spin_unlock(&imgsensor_drv_lock);
+	shutter = (shutter < imgsensor_info.min_shutter) ?
+		imgsensor_info.min_shutter : shutter;
+	shutter = (shutter > (imgsensor_info.max_frame_length -
+		imgsensor_info.margin)) ? (imgsensor_info.max_frame_length -
+		imgsensor_info.margin) : shutter;
+
+	if (imgsensor.autoflicker_en) {
+		realtime_fps = imgsensor.pclk /
+			imgsensor.line_length * 10 / imgsensor.frame_length;
+		if (realtime_fps >= 297 && realtime_fps <= 305)
+			set_max_framerate(296, 0);
+		else if (realtime_fps >= 147 && realtime_fps <= 150)
+			set_max_framerate(146, 0);
+		else {
+			// Extend frame length
+			write_cmos_sensor_8(0x0340, imgsensor.frame_length >> 8);
+			write_cmos_sensor_8(0x0341, imgsensor.frame_length & 0xFF);
+		}
+	} else {
+		// Extend frame length
+		write_cmos_sensor_8(0x0340, imgsensor.frame_length >> 8);
+		write_cmos_sensor_8(0x0341, imgsensor.frame_length & 0xFF);
+	}
+
+	// Update Shutter
+	write_cmos_sensor_8(0x0202, (shutter >> 8) & 0xFF);
+	write_cmos_sensor_8(0x0203, shutter & 0xFF);
+
+}
+#endif
 
 #define MAX_CMD 4
 static int s5k5e9_write_table(struct s5k5e9 *s5k5e9,
@@ -876,10 +824,10 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 		goto error;
 	}
 
-	mode = v4l2_find_nearest_size(supported_modes,
-				ARRAY_SIZE(supported_modes), width, height,
+	mode = v4l2_find_nearest_size(s5k5e9_modes,
+				ARRAY_SIZE(s5k5e9_modes), width, height,
 				s5k5e9->fmt.width, s5k5e9->fmt.height);
-	ret = s5k5e9_write_table(s5k5e9, mode->reg_list.regs);
+	ret = s5k5e9_write_table(s5k5e9, mode->reg_table);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "could not sent mode table %d\n", ret);
 		goto error;
@@ -889,6 +837,16 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 		dev_err(s5k5e9->dev, "could not sync v4l2 controls\n");
 		goto error;
 	}
+
+/*
+	write_cmos_sensor_8(0x0202, (shutter >> 8) & 0xFF);
+	write_cmos_sensor_8(0x0203, shutter & 0xFF);
+
+	write_cmos_sensor_8(0x0340, imgsensor.frame_length >> 8);
+	write_cmos_sensor_8(0x0341, imgsensor.frame_length & 0xFF);
+	write_cmos_sensor_8(0x0342, imgsensor.line_length >> 8);
+	write_cmos_sensor_8(0x0343, imgsensor.line_length & 0xFF);
+*/
 	ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_MODE_SELECT, S5K5E9_MODE_STREAMING);
 	if (ret < 0) {
 		dev_err(s5k5e9->dev, "could not sent start table %d\n", ret);
@@ -896,7 +854,6 @@ static int s5k5e9_start_streaming(struct s5k5e9 *s5k5e9)
 	}
 
 	mutex_unlock(&s5k5e9->mutex);
-	dev_info(s5k5e9->dev, "%s", __func__);
 	return 0;
 
 error:
@@ -908,7 +865,6 @@ static int s5k5e9_stop_streaming(struct s5k5e9 *s5k5e9)
 {
 	int ret;
 
-	dev_info(s5k5e9->dev, "%s", __func__);
 	ret = regmap_write(s5k5e9->regmap, S5K5E9_REG_MODE_SELECT, S5K5E9_MODE_STANDBY);
 	if (ret < 0)
 		dev_err(s5k5e9->dev, "could not sent stop table %d\n",	ret);
@@ -969,8 +925,8 @@ static int s5k5e9_enum_frame_interval(struct v4l2_subdev *subdev,
 	if (fie->index != 0)
 		return -EINVAL;
 
-	mode = v4l2_find_nearest_size(supported_modes,
-				ARRAY_SIZE(supported_modes), width, height,
+	mode = v4l2_find_nearest_size(s5k5e9_modes,
+				ARRAY_SIZE(s5k5e9_modes), width, height,
 				fie->width, fie->height);
 
 	fie->code = S5K5E9_MBUS_CODE;
@@ -1010,25 +966,18 @@ static const struct v4l2_subdev_internal_ops s5k5e9_internal_ops = {
 static const struct regmap_config sensor_regmap_config = {
 	.reg_bits = 16,
 	.val_bits = 8,
-	.cache_type = REGCACHE_RBTREE,
+	.cache_type = REGCACHE_MAPLE,
 };
 
 static int s5k5e9_get_regulators(struct device *dev, struct s5k5e9 *s5k5e9)
 {
-	/*
-	 * since in power_on() there is a caall to bulk_get_optional()
-	 * then there is no need to call again and again
-	*/
-	return 0;
-#if 0
-        unsigned int i;
+	unsigned int i;
 
 	for (i = 0; i < S5K5E9_NUM_SUPPLIES; i++)
 		s5k5e9->supplies[i].supply = s5k5e9_supply_name[i];
 
 	return devm_regulator_bulk_get(dev, S5K5E9_NUM_SUPPLIES,
 				       s5k5e9->supplies);
-#endif
 }
 
 static int s5k5e9_parse_fwnode(struct device *dev)
@@ -1073,7 +1022,7 @@ static int s5k5e9_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct s5k5e9 *s5k5e9;
-	int i, ret;
+	int ret;
 
 	ret = s5k5e9_parse_fwnode(dev);
 	if (ret)
@@ -1091,16 +1040,22 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return PTR_ERR(s5k5e9->xclk);
 	}
 
+	ret = clk_set_rate(s5k5e9->xclk, S5K5E9_DEFAULT_CLK_FREQ);
+	if (ret) {
+		dev_err(dev, "could not set xclk frequency\n");
+		return ret;
+	}
+
 	ret = s5k5e9_get_regulators(dev, s5k5e9);
 	if (ret < 0) {
 		dev_err(dev, "cannot get regulators\n");
 		return ret;
 	}
 
-	s5k5e9->enable_gpio = devm_gpiod_get_index_optional(dev, "enable", i, GPIOD_OUT_LOW);
+	s5k5e9->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(s5k5e9->enable_gpio)) {
 		dev_err(dev, "cannot get enable gpio\n");
-		return -EIO;
+		return PTR_ERR(s5k5e9->enable_gpio);
 	}
 
 	s5k5e9->regmap = devm_regmap_init_i2c(client, &sensor_regmap_config);
@@ -1109,7 +1064,6 @@ static int s5k5e9_probe(struct i2c_client *client)
 		return PTR_ERR(s5k5e9->regmap);
 	}
 
-	i2c_set_clientdata(client, s5k5e9);
 	v4l2_i2c_subdev_init(&s5k5e9->sd, client, &s5k5e9_subdev_ops);
 	s5k5e9->sd.internal_ops = &s5k5e9_internal_ops;
 
@@ -1117,22 +1071,18 @@ static int s5k5e9_probe(struct i2c_client *client)
 	 * Enable power initially, to avoid warnings
 	 * from clk_disable on power_off
 	 */
-	ret = s5k5e9_power_on(s5k5e9->dev);
-	if (ret < 0)
-		goto error_power_off;
+	s5k5e9_power_on(s5k5e9->dev);
 
 	pm_runtime_set_active(s5k5e9->dev);
 	pm_runtime_enable(s5k5e9->dev);
 	pm_runtime_idle(s5k5e9->dev);
 
-/* Set default mode to max resolution */
-        s5k5e9->cur_mode = &supported_modes[0];
-
+	mutex_init(&s5k5e9->mutex);
+	
 	ret = s5k5e9_ctrls_init(s5k5e9);
 	if (ret < 0)
 		goto error_power_off;
 
-	mutex_init(&s5k5e9->mutex);
 	s5k5e9->ctrls.lock = &s5k5e9->mutex;
 
 	s5k5e9->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
@@ -1154,10 +1104,6 @@ static int s5k5e9_probe(struct i2c_client *client)
 		goto free_entity;
 	}
 
-	dev_info(dev, "probe successed!");
-
-	/* hack always on for debug csiphy */
-	//s5k5e9_s_stream(&s5k5e9->sd, 1);
 	return 0;
 
 free_entity:
@@ -1187,12 +1133,14 @@ static void s5k5e9_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id s5k5e9_of_match[] = {
-	{ .compatible = "samsung,s5k5e9" },
+	{ .compatible = "sony,s5k5e9" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, s5k5e9_of_match);
 
-UNIVERSAL_DEV_PM_OPS(s5k5e9_pm_ops, s5k5e9_power_off, s5k5e9_power_on, NULL);
+static const struct dev_pm_ops s5k5e9_pm_ops = {
+	SET_RUNTIME_PM_OPS(s5k5e9_power_off, s5k5e9_power_on, NULL)
+};
 
 static struct i2c_driver s5k5e9_i2c_driver = {
 	.driver = {
@@ -1206,7 +1154,6 @@ static struct i2c_driver s5k5e9_i2c_driver = {
 
 module_i2c_driver(s5k5e9_i2c_driver);
 
-MODULE_DESCRIPTION("samsung s5k5e9 Camera driver");
+MODULE_DESCRIPTION("Sony S5K5E9 Camera driver");
 MODULE_AUTHOR("Ricardo Ribalda <ribalda@kernel.org>");
-MODULE_AUTHOR("99degree <https://github.com/99degree>");
 MODULE_LICENSE("GPL v2");
