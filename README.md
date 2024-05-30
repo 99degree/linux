@@ -17,8 +17,8 @@ spi/dma/i2c
 pon/pwr button/vol button
 lcd backlight
 camera_cci bus
-camss subsys
-camera s5k5e9 sensor initial probe support(capture img dump not yet verified)
+camss subsys 
+camera s5k5e9 sensor, minor glitch on video frame
 pd-mapper(software to bringup sound/wifi/bt)
 ```
 
@@ -32,7 +32,7 @@ bluetooth/wifi
 fingerprint(largely broken, not supported)
 sound/mic/headphone/ampifier dai (ported device tree, boots up, not tested)
 gpu(display comtroller is working, drm)
-camera(largely broken, not supported)
+camera cmos sensors except s5k5e9
 pwm
 ```
 
