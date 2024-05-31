@@ -406,12 +406,20 @@
 };
 
 &reserved_memory {
-		camera_mem: camera_region@8e400000 {
-			compatible = "removed-dma-pool";
-			no-map;
-			reg = <0x00 0x8e400000 0x00 0x500000>;
-		};
-		
+	camera_mem: camera_region@8e400000 {
+		compatible = "removed-dma-pool";
+		no-map;
+		reg = <0x00 0x8e400000 0x00 0x500000>;
+	};
+	
+	/* device tree reserve is not working atm */	
+	linux,cma {
+		compatible = "shared-dma-pool";
+		reusable;
+		size = <0 0x4000000>;
+		alignment = <0 0x4000>;
+		linux,cma-default;
+	};
 };
 
 &camcc {
@@ -449,6 +457,7 @@
 		//confirmed
 		port@2 {
                         csiphy2_ep1: endpoint@1 {
+				link-frequencies = /bits/ 64 <480000000>;
                                 data-lanes = <0 1>;
                                 remote-endpoint = <&s5k5e9_ep0>;
 				status = "okay";
@@ -567,8 +576,7 @@ csiphy-sd-index = <2>;
 
 	                port@0 {
 		                s5k5e9_ep0: endpoint {
-		                        link-frequencies = /bits/ 64
-						<24000000 480000000>;
+					link-frequencies = /bits/ 64 <480000000>;
 	                                data-lanes = <0 1>;
 	                                remote-endpoint = <&csiphy2_ep1>;
 					status = "okay";
