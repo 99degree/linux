@@ -46,8 +46,24 @@ So if there are leave message, please feel free to leave a issue ticket, and the
 tree in case of question and query. I will response  as I back online and try to answer questions in my own knowledge.
 
 ## Freely redistribute
-The repo arrangement is simple too. Basically the branch 'working' is a force pushed workspace. Usually latest code will leave 
-and branch another working-2023xxxx or next-2024xxxx branch for each kernel release or important commit. 
+The repo arrangement is simple too. Basically the branch 'working' is a force pushed workspace. Usually latest mainline code will get a local branch-out and leave 
+a branch to the repo. Typical name of this local branch is as working-2023xxxx or next-2024xxxx, roughly for each kernel release with important commit. 
+
+Other short-named branches are for integrating as merge rebase. Lists as below are for merge use. So individual changes for particular device driver can be pickup more cleanly for other projects. The important thing is, just like nt36xxx branch, there are some changes stack up into one big change-set and might have different commit id by time-to-time. 
+>
+	sm7125 
+	clk 
+	power 
+	gpu 
+	panel 
+	nt36xxx 
+	wled 
+	camss 
+	cmos 
+	dm-user 
+	misc 
+	sound 
+	pd-mapper 
 
 Anyway, welcome to everybody come and visit here please find my changes useful, you are also welcome to refine the changeset 
 and make it up-stream, provided that quoting and credit me. I didnt add myself any copy-right-years into those files, but 
