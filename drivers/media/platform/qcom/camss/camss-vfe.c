@@ -578,7 +578,8 @@ static int vfe_set_clock_rates(struct vfe_device *vfe)
 
 			if (j == clock->nfreqs) {
 				dev_err(dev,
-					"Pixel clock is too high for VFE");
+					"Pixel clock(%s) is too high for VFE, at least set to %lld",
+					 clock->name, min_rate );
 				return -EINVAL;
 			}
 
@@ -1451,8 +1452,10 @@ int msm_vfe_subdev_init(struct camss *camss, struct vfe_device *vfe,
 		struct camss_clock *clock = &vfe->clock[i];
 
 		clock->clk = devm_clk_get(dev, res->clock[i]);
-		if (IS_ERR(clock->clk))
+		if (IS_ERR(clock->clk)) {
+			dev_err(dev, "missing clk %s", res->clock[i]);
 			return PTR_ERR(clock->clk);
+		}
 
 		clock->name = res->clock[i];
 
