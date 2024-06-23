@@ -629,7 +629,7 @@ int msm_csid_subdev_init(struct camss *camss, struct csid_device *csid,
 
 		clock->clk = devm_clk_get(dev, res->clock[i]);
 		if (IS_ERR(clock->clk)) {
-			dev_err("missing clk %s", res->clock[i]);
+			dev_err(dev, "missing clk %s", res->clock[i]);
 			return PTR_ERR(clock->clk);
 		}
 
