@@ -7,6 +7,7 @@
 &soc {
 	/* TODO: check csid2 and csid-lite */
 
+#if 0
 	camss: camss@acb3000 {
 		compatible = "qcom,sc7180-camss";
 
@@ -162,6 +163,7 @@
 			};
 		};
 	};
+#endif
 
 	cci0:
 	cci: cci@ac4a000 {
