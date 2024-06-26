@@ -5,8 +5,8 @@ SUBLEVEL = 0
 EXTRAVERSION = -rc5
 NAME = Hurr durr I'ma ninja sloth
 
-ARCH = arm64
-CROSS_COMPILE = aarch64-linux-gnu-
+ARCH ?= arm64
+CROSS_COMPILE ?= aarch64-linux-gnu-
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
