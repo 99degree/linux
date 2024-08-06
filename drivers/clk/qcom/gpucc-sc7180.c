@@ -6,6 +6,7 @@
 #include <linux/clk-provider.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 
 #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
@@ -219,6 +220,7 @@ static int gpu_cc_sc7180_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 	struct alpha_pll_config gpu_cc_pll_config = {};
 	unsigned int value, mask;
+	int ret;
 
 	regmap = qcom_cc_map(pdev, &gpu_cc_sc7180_desc);
 	if (IS_ERR(regmap))
@@ -241,7 +243,11 @@ static int gpu_cc_sc7180_probe(struct platform_device *pdev)
 	value = 0xF << CX_GMU_CBCR_WAKE_SHIFT | 0xF << CX_GMU_CBCR_SLEEP_SHIFT;
 	regmap_update_bits(regmap, 0x1098, mask, value);
 
-	return qcom_cc_really_probe(&pdev->dev, &gpu_cc_sc7180_desc, regmap);
+	ret = qcom_cc_really_probe(&pdev->dev, &gpu_cc_sc7180_desc, regmap);
+	if (ret)
+		return ret;
+
+	return devm_pm_runtime_enable(&pdev->dev);
 }
 
 static struct platform_driver gpu_cc_sc7180_driver = {
