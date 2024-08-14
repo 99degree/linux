@@ -2464,8 +2464,7 @@ static int gcc_sc7180_probe(struct platform_device *pdev)
 		return ret;
 
 	ret = devm_pm_runtime_enable(&pdev->dev);
-	if (ret)
-		return ret;
+	return ret;
 
 }
 

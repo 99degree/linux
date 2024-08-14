@@ -212,6 +212,7 @@ static int video_cc_sc7180_probe(struct platform_device *pdev)
 {
 	struct regmap *regmap;
 	struct alpha_pll_config video_pll0_config = {};
+	int ret;
 
 	regmap = qcom_cc_map(pdev, &video_cc_sc7180_desc);
 	if (IS_ERR(regmap))
@@ -232,8 +233,7 @@ static int video_cc_sc7180_probe(struct platform_device *pdev)
 		return ret;
 
 	ret = devm_pm_runtime_enable(&pdev->dev);
-	if (ret)
-		return ret;
+	return ret;
 }
 
 static struct platform_driver video_cc_sc7180_driver = {

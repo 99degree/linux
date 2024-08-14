@@ -701,6 +701,7 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 {
 	struct regmap *regmap;
 	struct alpha_pll_config disp_cc_pll_config = {};
+	int ret;
 
 	regmap = qcom_cc_map(pdev, &disp_cc_sc7180_desc);
 	if (IS_ERR(regmap))
@@ -718,9 +719,9 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	ret = devm_pm_runtime_enable(&pdev->dev);
-	if (ret)
-		return ret;
+	devm_pm_runtime_enable(&pdev->dev);
+
+	return ret;
 }
 
 static struct platform_driver disp_cc_sc7180_driver = {
