@@ -9,6 +9,7 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 
 #include <dt-bindings/clock/qcom,gcc-sc7180.h>
@@ -2458,7 +2459,11 @@ static int gcc_sc7180_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	return qcom_cc_really_probe(&pdev->dev, &gcc_sc7180_desc, regmap);
+	ret = qcom_cc_really_probe(&pdev->dev, &gcc_sc7180_desc, regmap);
+	if (ret)
+		return ret;
+
+	return devm_pm_runtime_enable(&pdev->dev);
 }
 
 static struct platform_driver gcc_sc7180_driver = {
