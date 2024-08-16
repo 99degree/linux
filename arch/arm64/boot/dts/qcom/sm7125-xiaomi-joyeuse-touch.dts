@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+#ifndef SM7125_XIAOMI_JOYEUSE_TOUCH_DTS
+#define SM7125_XIAOMI_JOYEUSE_TOUCH_DTS
+
+#include <dt-bindings/dma/qcom-gpi.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "sm7125-xiaomi-joyeuse-display.dts"
+
+&soc {
+	gpi_dma0: dma-controller@800000  {
+		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+		reg = <0 0x00800000 0 0x60000>;
+		interrupts = <GIC_SPI 244 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 245 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 246 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 247 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 248 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 249 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 250 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 251 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 252 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 253 IRQ_TYPE_LEVEL_HIGH>;
+		dma-channels = <10>;
+		dma-channel-mask = <0x1f>;
+		iommus = <&apps_smmu 0x56 0x0>;
+		#dma-cells = <3>;
+		
+		status = "disabled";
+	};
+
+	gpi_dma1: dma-controller@a00000 {
+		compatible = "qcom,sm7125-gpi-dma", "qcom,sm6350-gpi-dma";
+		reg = <0 0x00a00000 0 0x60000>;
+		interrupts = <GIC_SPI 645 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 646 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 647 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 648 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 649 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 650 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 651 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 652 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 653 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 654 IRQ_TYPE_LEVEL_HIGH>;
+		dma-channels = <10>;
+		dma-channel-mask = <0x3f>;
+		iommus = <&apps_smmu 0x4d6 0x0>;
+		#dma-cells = <3>;
+		
+		status = "disabled";
+	};
+};
+
+//spi@880000
+&spi0 {
+	dmas = <&gpi_dma0 0 0 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 0 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@884000
+&spi1 {
+	dmas = <&gpi_dma0 0 1 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 1 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+//spi@88c000
+&spi3 {
+	dmas = <&gpi_dma0 0 3 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 3 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@88c000
+&spi3 {
+	dmas = <&gpi_dma0 0 3 QCOM_GPI_SPI>,
+		<&gpi_dma0 1 3 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@894000
+&spi5 {
+        dmas = <&gpi_dma0 0 5 QCOM_GPI_SPI>,
+                <&gpi_dma0 1 5 QCOM_GPI_SPI>;
+        dma-names = "tx", "rx";
+};
+
+//spi@a80000
+&spi6 {
+	dmas = <&gpi_dma1 0 0 QCOM_GPI_SPI>,
+		<&gpi_dma1 1 0 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@a88000
+&spi8 {
+	dmas = <&gpi_dma1 0 2 QCOM_GPI_SPI>,
+		<&gpi_dma1 1 2 QCOM_GPI_SPI>;
+	dma-names = "tx", "rx";
+};
+
+//spi@a90000
+&spi10 {
+	dma-names = "tx", "rx";
+        dmas = <&gpi_dma1 0 4 QCOM_GPI_SPI>,
+                <&gpi_dma1 1 4 QCOM_GPI_SPI>;
+};
+
+//spi@a94000
+&spi11 {
+	dma-names = "tx", "rx";
+	dmas = <&gpi_dma1 0 5 QCOM_GPI_SPI>,
+		<&gpi_dma1 1 5 QCOM_GPI_SPI>;
+};
+
+&spi11 {
+        status = "okay";
+
+        touchscreen: touchscreen@0 {
+                compatible = "novatek,nt36675-spi",
+				"novatek,nt36xxx-spi",
+				"novatek,NVT-ts-spi";
+			
+                reg = <0>;
+
+                /* caught from joyeuse dtb*/
+                spi-max-frequency = <4000000>;
+
+                /* ts->irq report 194 */
+                /* interrupts = <&tlmm 194 IRQ_TYPE_EDGE_FALLING>; */
+                /* interrupt= <&tlmm 13 2>; */ //dtb specified, but GPIO13 is CAM_MCLK0
+
+                novatek,reset-gpio = <&tlmm 8 0x00>;
+                novatek,irq-gpio = <&tlmm 9 0x2001>;
+
+                /* 672C */
+                novatek,swrst-n8-addr = <0x03F0FE>;
+                novatek,spi-rd-fast-addr = <0x03F310>;
+
+                reset-gpio = <&tlmm 8 0x00>;
+                /* dtb show <&tlmm 13 2>*/
+                irq-gpio = <&tlmm 9 0x2001>;
+
+/*
+                touch_ibb-supply = <0x241>; //lcdb_ncp
+                touch_lab-supply = <0x240>; //qcom,qpnp-lcdb-regulator ldo
+                touch_vddio-supply = <0x33c>; //pm6150_l18
+*/
+
+                vio-supply = <&vreg_l18a_3p0>;
+                vdd-supply = <&vreg_l18a_3p0>;
+
+                panel = <&panel0>;
+                status = "okay";
+        };
+};
+
+
+&qup_spi11_spi {
+        drive-strength = <2>;
+        //bias-disable;
+};
+
+&qup_spi11_cs {
+        drive-strength = <2>;
+        //bias-disable;
+};
+
+&qup_spi11_cs_gpio {
+        drive-strength = <2>;
+        bias-disable;
+};
+
+&gpi_dma0 {
+	status = "okay";
+};
+
+&gpi_dma1 {
+        status = "okay";
+};
+
+#endif
