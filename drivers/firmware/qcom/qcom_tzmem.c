@@ -79,6 +79,7 @@ static bool qcom_tzmem_using_shm_bridge;
 static const char *const qcom_tzmem_blacklist[] = {
 	"qcom,sc8180x",
 	"qcom,sdm845", /* reset in rmtfs memory assignment */
+	"qcom,sm7125", /* leave it as old code works fine */
 	"qcom,sm8150", /* reset in rmtfs memory assignment */
 	NULL
 };
