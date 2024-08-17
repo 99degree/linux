@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+#ifndef SM7125_XIAOMI_JOYEUSE_DISPLAY_DTS
+#define SM7125_XIAOMI_JOYEUSE_DISPLAY_DTS
+
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include "sm7125-xiaomi-joyeuse.dts"
+
+&adreno_smmu {
+        status = "okay";
+};
+
+&apps_smmu {
+        status = "okay";
+};
+
+&dispcc {
+	status = "okay";
+};
+
+&gpu {
+	compatible = "qcom,adreno-618.0", "qcom,adreno";
+	firmware-name = "qcom/sm7125/miatoll/a615_zap.mbn";
+
+	status = "okay";
+
+	zap-shader {
+			memory-region = <&gpu_mem>;
+			firmware-name = "qcom/sm7125/miatoll/a615_zap.mbn";
+	};
+};
+
+&gpu_opp_table {
+	/* those are too high freq */
+	/delete-node/ opp-825000000;
+	/delete-node/ opp-800000000;
+        /delete-node/ opp-650000000;
+
+	/* those are too slow */
+//        /delete-node/ opp-430000000 ;
+        /delete-node/ opp-355000000 ;
+        /delete-node/ opp-267000000 ;
+        /delete-node/ opp-180000000 ;
+};
+
+&gmu {
+	firmware-name = "qcom/a618_gmu.bin";
+	status = "okay";
+};
+
+&mdp {
+	// TODO: check if mdss or mdp hold this memory
+	/* there was a handover problem happened to mdss probe */
+	//memory-region = <&cont_splash_mem>;
+
+	status = "okay";
+};
+
+&mdss {
+	// TODO: check if mdss or mdp hold this memory
+	//memory-region = <&cont_splash_mem>;
+
+	status = "okay";
+};
+
+&mdss_dp {
+        status = "okay";
+};
+
+&mdss_dsi0 {
+	vdda-supply = <&vreg_l3c_1p23>;
+	status = "okay";
+
+        panel0: panel@0 {
+        };
+};
+
+&mdss_dsi0_out {
+	remote-endpoint = <&panel0_in>;
+	data-lanes = <0 1 2 3>;
+
+	status = "okay";
+};
+
+&mdss_dsi0_phy {
+	vdds-supply = <&vreg_l4a_0p88>;
+
+	status = "okay";
+};
+
+&panel0 {
+	compatible = "mdss,nt36675-tianma", 
+			"mdss,nt36675-tianma-fhd";
+
+	reg = <0>;
+	
+	/* TODO: check vreg l3c/l3a */
+	//vdda-supply = <&vreg_l3c_1p23>; //from downstream, need to double check
+	//vdd3p3-supply = <&vreg_l18a_3p0>;
+	//vddio-supply = <&vreg_l13a_1p8>; //from sm7150-xiaomi-common.dtsi
+	vddio-supply = <&vreg_l18a_3p0>;
+
+#if 0
+	/* 
+		display_sde.dtsi
+			vddio-supply = <&L13A>;
+			vdda-3p3-supply = <&L18A>;
+		---
+		cust-atoll-sde-display.dtsi
+			/delete-property/ vdda-3p3-supply;
+
+		        vddio-supply = <&L18A>;
+	*/
+
+	lab-supply = <&lab>;
+	ibb-supply = <&ibb>;
+#endif
+	backlight = <&pm6150l_wled>;
+
+	pinctrl-names = "default", "te_pin"; //TODO: need to figure out how to handle te_pin
+	pinctrl-0 = <&disp_pins>;
+        pinctrl-1 = <&te_gpio>;
+
+	/* according to panel-nt36675-tianma.c this gpio is finally set to low */
+	reset-gpios = <&pm6150l_gpios 3 GPIO_ACTIVE_LOW>;
+	//disp-te-gpio = <&tlmm 10 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			panel0_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&venus {
+	compatible = "qcom,sm7125-venus", "qcom,sc7180-venus";
+	memory-region = <&venus_mem>;
+	firmware-name = "qcom/sm7125/miatoll/venus.mbn";
+
+	status = "okay";
+};
+
+/* PINCTRL - additions to nodes defined in sc7180.dtsi */
+&pm6150l_gpios {
+	disp_pins: disp-state {
+		pins = "gpio3";
+		function = PMIC_GPIO_FUNC_FUNC1;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
+		power-source = <0>;
+		bias-disable;
+		output-low;
+	};
+
+};
+
+&pm6150l_wled {
+	status = "okay";
+};
+
+&tlmm {
+        te_gpio: te-default {
+                pins = "gpio10";
+                function = "mdp_vsync";
+                drive-strength = <2>;   /* 2 mA */
+                bias-pull-down;         /* PULL DOWN */
+        };
+};
+
+#endif
