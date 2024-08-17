@@ -62,8 +62,7 @@ Other short-named branches are for integrating as merge rebase. Lists as below a
 	cmos 
 	dm-user 
 	misc 
-	sound 
-	pd-mapper 
+	sound
 
 Anyway, welcome to everybody come and visit here please find my changes useful, you are also welcome to refine the changeset 
 and make it up-stream, provided that quoting and credit me. I didnt add myself any copy-right-years into those files, but 
