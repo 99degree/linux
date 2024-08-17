@@ -1,0 +1,174 @@
+#ifndef SM7125_XIAOMI_JOYEUSE_SOUND_DTS
+#define SM7125_XIAOMI_JOYEUSE_SOUND_DTS
+
+#include "dt-bindings/sound/qcom,q6asm.h"
+
+#include "sm7125-xiaomi-joyeuse.dts"
+
+/ {
+	reserved-memory {
+                adsp_mem: memory@91100000 {
+                        reg = <0x0 0x91100000 0x0 0x2800000>;
+                        no-map;
+                };		
+	};
+};
+
+&q6afedai {
+        qi2s@20 {
+                reg = <TERTIARY_MI2S_RX>;
+                qcom,sd-lines = <0>;
+        };
+};
+
+&q6asmdai {
+	status = "okay";
+
+        dai@0 {
+                reg = <0>;
+        };
+
+        dai@1 {
+                reg = <1>;
+        };
+
+        dai@2 {
+                reg = <2>;
+        };
+
+        dai@3 {
+                reg = <3>;
+        };
+};
+
+#if 1
+/* use cpu or adsp */
+
+&remoteproc_adsp {
+	memory-region = <&adsp_mem>;
+        firmware-name = "qcom/sm7125/miatoll/adsp.mbn";
+	status = "okay";
+};
+
+&sound {
+        compatible = "qcom,sm8250-sndcard";
+        pinctrl-0 = <&ter_mi2s_active>;
+        pinctrl-names = "default";
+        model = "POCO X3";
+
+        mm1-dai-link {
+                link-name = "MultiMedia1";
+                cpu {
+                        sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+                };
+        };
+
+        i2s-dai-link {
+                link-name = "I2S Playback";
+                cpu {
+                        sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
+                };
+
+                platform {
+                        sound-dai = <&q6routing>;
+                };
+
+                codec {
+                        sound-dai = <&tas2562_9>;//, <&tas2562_4>;
+                };
+        };
+};
+
+#else
+
+&soc {
+    codec_dummy: codec_dummy {
+        compatible = "linux,snd-soc-dummy";
+        #sound-dai-cells = <0>;
+        status = "okay";
+    };
+
+    sound {
+        compatible = "simple-audio-card";
+        simple-audio-card,name = "DUMMY_SND";
+
+        simple-audio-card,format = "dsp_a";
+        simple-audio-card,bitclock-master = <&snd_cpu>;
+        simple-audio-card,frame-master = <&snd_cpu>;
+        simple-audio-card,mclk-fs = <512>;
+        status = "okay";
+
+        snd_cpu: simple-audio-card,cpu {
+            sound-dai = <&q6afedai TERTIARY_MI2S_RX>;
+            dai-tdm-slot-num = <2>;
+            dai-tdm-slot-width = <16>;
+        };
+
+        snd_codec: simple-audio-card,codec {
+		// sound-dai = <&codec_dummy>;
+            sound-dai = <&tas2562_9 0>, <&tas2562_4 0>;
+        };
+    };
+};
+
+#endif
+
+&i2c4 {
+        clock-frequency = <100000>;
+        status = "okay";
+
+        tas2562_4: codec@4c { /* SPK */
+		compatible = "ti,tas2562";
+		reg = <0x4c>;
+		#sound-dai-cells = <0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <33 IRQ_TYPE_NONE>;
+		shutdown-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+		ti,imon-slot-no = <0>;
+		ti,vmon-slot-no = <2>;
+		sound-name-prefix = "Left";
+		status = "disabled";
+        };
+};
+
+&i2c9 {
+	clock-frequency = <100000>;
+	status = "okay";
+
+	tas2562_9: codec@4c { /* SPK */
+		compatible = "ti,tas2562";
+		reg = <0x4c>;
+		#sound-dai-cells = <0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <33 IRQ_TYPE_NONE>;
+		shutdown-gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+		ti,imon-slot-no = <0>;
+		ti,vmon-slot-no = <2>;
+		sound-name-prefix = "Right";
+	};
+
+};
+
+&i2c4 {
+        dmas = <&gpi_dma0 0 4 QCOM_GPI_I2C>,
+                <&gpi_dma0 1 4 QCOM_GPI_I2C>;
+        dma-names = "tx", "rx";
+        status = "okay";
+};
+
+&i2c9 {
+        dmas = <&gpi_dma1 0 3 QCOM_GPI_I2C>,
+                <&gpi_dma1 1 3 QCOM_GPI_I2C>;
+        dma-names = "tx", "rx";
+        status = "okay";
+};
+
+&qupv3_id_0 {
+        status = "okay";
+};
+
+&qupv3_id_1 {
+        status = "okay";
+};
+
+#endif
