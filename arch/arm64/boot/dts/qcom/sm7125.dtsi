@@ -26,7 +26,7 @@
 		opp-hz = /bits/ 64 <750000000>;
 		opp-level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
 		opp-peak-kBps = <7216000>;
-		opp-supported-hw = <0x0f>;
+		opp-supported-hw = <0x08>;
 	};
 
 	opp-650000000 {
