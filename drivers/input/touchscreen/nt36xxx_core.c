@@ -703,12 +703,12 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	return 0;
 }
 
+static void nt36xxx_release_memory(void *data);
 static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	int i, ret;
 	size_t fw_need_write_size = 0;
 	const struct firmware *fw_entry;
 	void *data;
-	void *data2;
 
 	WARN_ON(ts->hw_crc != 2);
 
@@ -801,7 +801,7 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 
 	ts->status |= NT36XXX_STATUS_PREPARE_FIRMWARE;
 
-	ret = devm_add_action_or_reset(dev, nt36xxx_release_memory, ts);
+	ret = devm_add_action_or_reset(ts->dev, nt36xxx_release_memory, ts);
 	if (ret)
 		return ret;
 
