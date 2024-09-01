@@ -89,7 +89,7 @@
 };
 
 &panel0 {
-	compatible = "mdss,nt36675-tianma", 
+	compatible = "mdss,nt36675-tianma", "mdss,ft8756-huaxing",
 			"mdss,nt36675-tianma-fhd";
 
 	reg = <0>;
