@@ -21,6 +21,10 @@ struct ft8756_huaxing {
 	struct gpio_desc *reset_gpio;
 };
 
+struct ft8756_match_data {
+	int parse_cmdline;
+};
+
 static inline struct ft8756_huaxing *to_ft8756_huaxing(struct drm_panel *panel)
 {
 	return container_of(panel, struct ft8756_huaxing, panel);
@@ -176,8 +180,26 @@ static const struct drm_panel_funcs ft8756_huaxing_panel_funcs = {
 static int ft8756_huaxing_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
+	static const struct ft8756_match_data *match_data;
 	struct ft8756_huaxing *ctx;
 	int ret;
+
+	match_data = of_device_get_match_data(dev);
+        if (match_data && match_data->parse_cmdline) {
+                char *path = "chosen";
+                struct device_node *dt_node;
+                const char *bootargs;
+
+                dt_node = of_find_node_by_path(path);
+                if (!dt_node) {
+                        printk(KERN_ERR "(E) Failed to find device-tree node: %s\n", path);
+                        return -ENODEV;
+                }
+
+                if (!of_property_read_string(dt_node, "bootargs", &bootargs))
+                        if (!strstr(bootargs, "ft87"))
+				return -ENODEV;
+	}
 
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
@@ -226,8 +248,13 @@ static void ft8756_huaxing_remove(struct mipi_dsi_device *dsi)
 	drm_panel_remove(&ctx->panel);
 }
 
+static const struct ft8756_match_data cmdline_data = {
+        .parse_cmdline = true,
+};
+
 static const struct of_device_id ft8756_huaxing_of_match[] = {
-	{ .compatible = "mdss,ft8756-huaxing" }, // FIXME
+	{ .compatible = "mdss,ft8756-huaxing", .data = &cmdline_data }, // FIXME
+	{ .compatible = "focaltech,ft8756-huaxing", },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, ft8756_huaxing_of_match);
