@@ -30,6 +30,10 @@ struct nt36675_tianma {
 	bool enabled;
 };
 
+struct nt36675_match_data {
+        int parse_cmdline;
+};
+
 static inline struct nt36675_tianma *to_nt36675_tianma(struct drm_panel *panel)
 {
 	return container_of(panel, struct nt36675_tianma, panel);
@@ -367,10 +371,29 @@ static int nt36675_tianma_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
 	struct nt36675_tianma *ctx;
+	static const struct nt36675_match_data *match_data;
 	u32 max_brightness;
 	int ret;
 
 	dev_dbg(dev, "%s", __func__);
+
+	match_data = of_device_get_match_data(dev);
+	if (match_data && match_data->parse_cmdline) {
+		char *path = "chosen";
+		struct device_node *dt_node;
+		const char *bootargs;
+
+		dt_node = of_find_node_by_path(path);
+		if (!dt_node) {
+			printk(KERN_ERR "(E) Failed to find device-tree node: %s\n", path);
+			return -ENODEV;
+		}
+
+		if (!of_property_read_string(dt_node, "bootargs", &bootargs))
+			if (!strstr(bootargs, "tianma"))
+				return -ENODEV;
+	}
+
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
@@ -436,8 +459,13 @@ static void nt36675_tianma_remove(struct mipi_dsi_device *dsi)
 
 }
 
+static const struct nt36675_match_data cmdline_data = {
+	.parse_cmdline = true,
+};
+
 static const struct of_device_id nt36675_tianma_of_match[] = {
-	{ .compatible = "mdss,nt36675-tianma" },
+	{ .compatible = "mdss,nt36675-tianma", .data = &cmdline_data },
+	{ .compatible = "novatek,nt36675-tianma" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, nt36675_tianma_of_match);
