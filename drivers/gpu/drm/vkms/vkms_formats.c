@@ -96,6 +96,14 @@ static void XRGB8888_to_argb_u16(u8 *src_pixels, struct pixel_argb_u16 *out_pixe
 	out_pixel->b = (u16)src_pixels[0] * 257;
 }
 
+static void ABGR8888_to_argb_u16(u8 *src_pixels, struct pixel_argb_u16 *out_pixel)
+{
+	out_pixel->a = (u16)src_pixels[3] * 257;
+	out_pixel->b = (u16)src_pixels[2] * 257;
+	out_pixel->g = (u16)src_pixels[1] * 257;
+	out_pixel->r = (u16)src_pixels[0] * 257;
+}
+
 static void ARGB16161616_to_argb_u16(u8 *src_pixels, struct pixel_argb_u16 *out_pixel)
 {
 	__le16 *pixels = (__force __le16 *)src_pixels;
@@ -198,6 +206,14 @@ static void argb_u16_to_XRGB8888(u8 *dst_pixels, struct pixel_argb_u16 *in_pixel
 	dst_pixels[0] = DIV_ROUND_CLOSEST(in_pixel->b, 257);
 }
 
+static void argb_u16_to_ABGR8888(u8 *dst_pixels, struct pixel_argb_u16 *in_pixel)
+{
+	dst_pixels[3] = DIV_ROUND_CLOSEST(in_pixel->a, 257);
+	dst_pixels[2] = DIV_ROUND_CLOSEST(in_pixel->b, 257);
+	dst_pixels[1] = DIV_ROUND_CLOSEST(in_pixel->g, 257);
+	dst_pixels[0] = DIV_ROUND_CLOSEST(in_pixel->r, 257);
+}
+
 static void argb_u16_to_ARGB16161616(u8 *dst_pixels, struct pixel_argb_u16 *in_pixel)
 {
 	__le16 *pixels = (__force __le16 *)dst_pixels;
@@ -271,6 +287,8 @@ void *get_pixel_conversion_function(u32 format)
 		return &ARGB8888_to_argb_u16;
 	case DRM_FORMAT_XRGB8888:
 		return &XRGB8888_to_argb_u16;
+	case DRM_FORMAT_ABGR8888:
+		return &ABGR8888_to_argb_u16;
 	case DRM_FORMAT_ARGB16161616:
 		return &ARGB16161616_to_argb_u16;
 	case DRM_FORMAT_XRGB16161616:
@@ -296,6 +314,8 @@ void *get_pixel_write_function(u32 format)
 		return &argb_u16_to_ARGB8888;
 	case DRM_FORMAT_XRGB8888:
 		return &argb_u16_to_XRGB8888;
+	case DRM_FORMAT_ABGR8888:
+		return &argb_u16_to_ABGR8888;
 	case DRM_FORMAT_ARGB16161616:
 		return &argb_u16_to_ARGB16161616;
 	case DRM_FORMAT_XRGB16161616:
