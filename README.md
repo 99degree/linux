@@ -9,7 +9,7 @@ of Linus's public tree with my own periodic merge into local change and git reba
 ```
 UFS
 sd card
-LCD display and its dsi drm display controller
+LCD display and its dsi drm display controller (tianma panel)
 touchscreen nt36675 of my own written regmap driver, yay! 
 cpufreq
 usb peri/adb shell
@@ -25,15 +25,22 @@ pd-mapper(software to bringup sound/wifi/bt)
 ## Yet to test 
 This repo have a simple philosophy, which is basically minimal change to mainline source. Here are functionality not tested:
 ```
+LCD panel from branded huaxing panel
 modem
 rmtfs
-slpi(sensors, largely broken, not supported)
 bluetooth/wifi
-fingerprint(largely broken, not supported)
 sound/mic/headphone/ampifier dai (ported device tree, boots up, not tested)
-gpu(display comtroller is working, drm)
+tas2562 amplifier ic (compiled as modules already)
+gpu 3d (display comtroller is working, drm)
 camera cmos sensors except s5k5e9
 pwm
+```
+
+## Do not work atm
+```
+slpi(sensors, largely broken, not supported)
+focaltech touch panel
+fingerprint(largely broken, not supported)
 ```
 
 ## Wiki, Wiki, Wiki
