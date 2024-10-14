@@ -186,19 +186,21 @@ static int ft8756_huaxing_probe(struct mipi_dsi_device *dsi)
 
 	match_data = of_device_get_match_data(dev);
         if (match_data && match_data->parse_cmdline) {
-                char *path = "chosen";
+                char *path = "/chosen";
                 struct device_node *dt_node;
                 const char *bootargs;
 
                 dt_node = of_find_node_by_path(path);
                 if (!dt_node) {
-                        printk(KERN_ERR "(E) Failed to find device-tree node: %s\n", path);
+                        dev_err(dev, "Failed to find device-tree node: %s\n", path);
                         return -ENODEV;
                 }
 
                 if (!of_property_read_string(dt_node, "bootargs", &bootargs))
                         if (!strstr(bootargs, "ft87"))
 				return -ENODEV;
+
+		dev_info(dev, "Found focaltech/huaxing panel as specified in chosen/bootargs.");
 	}
 
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
