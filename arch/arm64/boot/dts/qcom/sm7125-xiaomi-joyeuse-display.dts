@@ -90,7 +90,7 @@
 
 &panel0 {
 	compatible = "mdss,nt36675-tianma", "mdss,ft8756-huaxing",
-			"mdss,nt36675-tianma-fhd";
+			"mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
 
 	reg = <0>;
 	
