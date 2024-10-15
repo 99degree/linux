@@ -43,7 +43,6 @@ enum nt36xxx_chips {
         NT36676F_IC,
         NT36772_IC,
         NT36675_IC,
-        NT36870_IC,
         NTMAX_IC,
 };
 
@@ -120,6 +119,8 @@ struct nt36xxx_chip_data {
 	unsigned int abs_y_max;
 	unsigned int max_button;
 	const struct input_id *id;
+
+	unsigned int mapid;
 };
 
 struct nt36xxx_trim_table {
