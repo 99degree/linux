@@ -165,7 +165,6 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 				   &nt36xxx_spi_input_id, regmap);
 }
 
-/* do not need to fw download */
 const struct nt36xxx_chip_data default_config = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36676f_memory_maps,
@@ -173,7 +172,7 @@ const struct nt36xxx_chip_data default_config = {
 	.max_y = 2400,
 	.abs_x_max = 1080,
 	.abs_y_max = 2400,
-	/* purposely neglete .id element and bail-out at probe */
+	.id = &nt36xxx_spi_input_id,
 };
 
 const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
@@ -229,7 +228,12 @@ static const struct of_device_id nt36xxx_spi_of_match[] = {
 	{ .compatible = "novatek,nt36676f-spi", .data = &generic_nt36676f, },
 	{ .compatible = "novatek,nt36772-spi", .data = &generic_nt36772, },
 	{ .compatible = "novatek,nt36525-spi", .data = &generic_nt36525, },
-	/* this is fordetect/display model only, and bail out in the end */
+	/*
+	 * this is served for two special purpose.
+	 * (1) detect/display model only, and bail out in the end
+	 * (2) checking device varients, mixed use of novatek and focaltech spi ic
+	 * TODO: might add auto select mmap for unknown nvt device.
+	 */
 	{ .compatible = "novatek,NVT-default-spi", .data = &default_config, },
 	{ }
 };
