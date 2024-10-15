@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 %YAML 1.2
 ---
-$id: http://devicetree.org/schemas/input/touchscreen/nt36xxx.yaml#
+$id: http://devicetree.org/schemas/input/touchscreen/novatek,nt36675-spi.yaml#
 $schema: http://devicetree.org/meta-schemas/core.yaml#
 
-title: Novatek NT36xxx series touchscreen controller Bindings
+title: Novatek NT36xxx series touchscreen controller
 
 maintainers:
-  - AngeloGioacchino Del Regno <kholk11@gmail.com>
   - George Chan <gchan9527@gmail.com>
 
 allOf:
@@ -15,12 +14,30 @@ allOf:
 
 properties:
   compatible:
-    enum:
-        - novatek,nt36525-spi
-        - novatek,nt36672a-spi
-        - novatek,nt36675-spi
-        - novatek,nt36676f-spi
-        - novatek,nt36772-spi
+    oneOf:
+      - description: Implements extra matching in bootargs for keywords like "tianma" or "nt36"
+        items:
+          - enum:
+            - novatek,nt36525-spi
+            - novatek,nt36672a-spi
+            - novatek,nt36675-spi
+            - novatek,nt36676f-spi
+            - novatek,nt36772-spi
+          - const: novatek,NVT-default-spi
+
+      - description: Implements simple compatible string to nt36xxx IC
+        items:
+          - enum:
+            - novatek,nt36525-spi
+            - novatek,nt36672a-spi
+            - novatek,nt36675-spi
+            - novatek,nt36676f-spi
+            - novatek,nt36772-spi
+
+      - description: Implements simple compatible string to probe only nt36xxx IC and fail.
+        items:
+          - enum:
+            - novatek,NVT-default-spi
 
   reg:
     maxItems: 1
@@ -35,8 +52,8 @@ properties:
     description: Power supply regulator on VDD-IO pin
 
   firmware-name:
-    description: Firmware for device initialization, if unspecify, all
-                  other IC treat as no firmware needed. For nt36675, default
+    description: Firmware for device init, if unspecify, all
+                  treat as no firmware needed except nt36675, default
                   to "novatek_ts_tianma_fw.bin".
 
   spi-max-frequency:
