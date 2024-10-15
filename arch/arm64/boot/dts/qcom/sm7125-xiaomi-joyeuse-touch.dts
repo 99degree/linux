@@ -152,6 +152,7 @@
                 vdd-supply = <&vreg_l18a_3p0>;
 
                 panel = <&panel0>;
+                firmware-name = "novatek_ts_tianma_fw.bin";
                 status = "okay";
         };
 };
