@@ -109,6 +109,7 @@ struct nt36xxx_ts {
 	 */
 	u32 *mmap;
 	u32 mmap_data[MMAP_MAX_ADDR];
+	int mapid;
 
 	struct nvt_fw_parse_data fw_data;
 	struct nvt_ts_bin_map *bin_map;
@@ -352,6 +353,14 @@ const u32 nt36525_memory_maps[] = {
 	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
+};
+
+static const u32 *nt36xxx_mmap_table[] = {
+	[NT36525_IC] = nt36525_memory_maps,
+	[NT36672A_IC] = nt36672a_memory_maps,
+	[NT36676F_IC] = nt36676f_memory_maps,
+	[NT36772_IC] = nt36772_memory_maps,
+	[NT36675_IC] = nt36675_memory_maps,
 };
 
 void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line) {
@@ -642,6 +651,9 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 				dev_dbg(ts->dev, "hw crc support=%d\n", ts->hw_crc);
 
 				dev_info(ts->dev, "This is NVT touch IC, %06x, mapid %d", *(int*)&buf[4], mapid);
+
+				ts->mapid = mapid;
+
 				return 0;
 			}
 
@@ -1253,13 +1265,12 @@ skip_regulators:
 		return ret;
 	}
 
-	if (!chip_data->id) {
-		dev_err(dev, "Please use proper compatible string\n");
-		return -ENODEV;
-	}
+	/* enable auto-detect */
+	if (!chip_data->mapid)
+		memcpy(ts->mmap_data, nt36xxx_mmap_table[ts->mapid], sizeof(ts->mmap_data));
+	else
+		memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
 
-	/* copy the const mmap into drvdata */
-	memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
 	ts->mmap = ts->mmap_data;
 
 	ret = nt36xxx_input_dev_config(ts, ts->data->id);
