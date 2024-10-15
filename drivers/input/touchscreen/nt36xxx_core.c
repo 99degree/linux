@@ -1,4 +1,4 @@
-/*  SPDX-License-Identifier: GPL-2.0-only
+//  SPDX-License-Identifier: GPL-2.0-only
 /*
  * Driver for Novatek NT36xxx series touchscreens
  *
@@ -407,7 +407,7 @@ static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 {
 	int ret = 0;
 
-	/* in spi version, need to set page to SWRST_N8_ADDR
+	/* in spi version, need to set page to SWRST_N8_ADDR */
 	if (ts->mmap[MMAP_SWRST_N8_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
 			   NT36XXX_CMD_BOOTLOADER_RESET);
@@ -1138,7 +1138,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	return 0;
 }
 
-static int nt36xxx_of_compatible(struct device *dev)
+int nt36xxx_of_compatible(struct device *dev)
 {
 	struct device_node *np = dev->of_node;
 
@@ -1253,9 +1253,9 @@ skip_regulators:
 		return ret;
 	}
 
-	ret = nt36xxx_of_compatible(dev);
-	if (ret) {
-		return ret;
+	if (!chip_data->id) {
+		dev_err(dev, "Please use proper compatible string\n");
+		return -ENODEV;
 	}
 
 	/* copy the const mmap into drvdata */
