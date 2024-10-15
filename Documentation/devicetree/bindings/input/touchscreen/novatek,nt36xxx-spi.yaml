@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 %YAML 1.2
 ---
-$id: http://devicetree.org/schemas/input/touchscreen/novatek,nt36675-spi.yaml#
+$id: http://devicetree.org/schemas/input/touchscreen/novatek,nt36xxx-spi.yaml#
 $schema: http://devicetree.org/meta-schemas/core.yaml#
 
 title: Novatek NT36xxx series touchscreen controller
@@ -18,26 +18,13 @@ properties:
       - description: Implements extra matching in bootargs for keywords like "tianma" or "nt36"
         items:
           - enum:
-            - novatek,nt36525-spi
-            - novatek,nt36672a-spi
-            - novatek,nt36675-spi
-            - novatek,nt36676f-spi
-            - novatek,nt36772-spi
+            - novatek,nt36xxx-spi
           - const: novatek,NVT-default-spi
 
       - description: Implements simple compatible string to nt36xxx IC
         items:
           - enum:
-            - novatek,nt36525-spi
-            - novatek,nt36672a-spi
-            - novatek,nt36675-spi
-            - novatek,nt36676f-spi
-            - novatek,nt36772-spi
-
-      - description: Implements simple compatible string to probe only nt36xxx IC and fail.
-        items:
-          - enum:
-            - novatek,NVT-default-spi
+            - novatek,nt36xxx-spi
 
   reg:
     maxItems: 1
@@ -52,9 +39,9 @@ properties:
     description: Power supply regulator on VDD-IO pin
 
   firmware-name:
-    description: Firmware for device init, if unspecify, all
-                  treat as no firmware needed except nt36675, default
-                  to "novatek_ts_tianma_fw.bin".
+    description: Firmware name for device init, no needed if unspecify.
+                  For IC like nt36675, need to set a string value,
+                  for example, "novatek_ts_tianma_fw.bin".
 
   spi-max-frequency:
     description: Set max frequency to spi bus communication. This is optional.
@@ -71,15 +58,28 @@ examples:
     #include <dt-bindings/interrupt-controller/irq.h>
     #include <dt-bindings/gpio/gpio.h>
 
-    spi {
+    spi@0 {
       #address-cells = <1>;
       #size-cells = <0>;
 
       touchscreen@0 {
-        compatible = "novatek,nt36675-spi";
+        compatible = "novatek,nt36xxx-spi";
         reg = <0>;
         spi-max-frequency = <4000000>;
         irq-gpio = <&tlmm 9 0x2001>;
+        firmware-name = "novatek_ts_tianma_fw.bin";
+      };
+    };
+
+    spi@1 {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      touchscreen@0 {
+        compatible = "novatek,nt36xxx-spi", "novatek,NVT-default-spi";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+        irq-gpio = <&tlmm 19 0x2001>;
         firmware-name = "novatek_ts_tianma_fw.bin";
       };
     };
