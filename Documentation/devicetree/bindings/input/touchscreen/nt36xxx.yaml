@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/input/touchscreen/nt36xxx.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Novatek NT36xxx series touchscreen controller Bindings
+
+maintainers:
+  - AngeloGioacchino Del Regno <kholk11@gmail.com>
+  - George Chan <gchan9527@gmail.com>
+
+allOf:
+  - $ref: touchscreen.yaml#
+
+properties:
+  compatible:
+    enum:
+        - novatek,nt36525-spi
+        - novatek,nt36672a-spi
+        - novatek,nt36675-spi
+        - novatek,nt36676f-spi
+        - novatek,nt36772-spi
+
+  reg:
+    maxItems: 1
+
+  irq-gpio:
+    maxItems: 1
+
+  vdd-supply:
+    description: Power supply regulator for VDD pin
+
+  vio-supply:
+    description: Power supply regulator on VDD-IO pin
+
+  firmware-name:
+    description: Firmware for device initialization, if unspecify, all
+                  other IC treat as no firmware needed. For nt36675, default
+                  to "novatek_ts_tianma_fw.bin".
+
+  spi-max-frequency:
+    description: Set max frequency to spi bus communication. This is optional.
+
+unevaluatedProperties: false
+
+required:
+  - compatible
+  - reg
+  - irq-gpio
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+    #include <dt-bindings/gpio/gpio.h>
+
+    spi {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      touchscreen@0 {
+        compatible = "novatek,nt36675-spi";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+        irq-gpio = <&tlmm 9 0x2001>;
+        firmware-name = "novatek_ts_tianma_fw.bin";
+      };
+    };
+
+...
