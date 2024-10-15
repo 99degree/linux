@@ -132,6 +132,10 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 
 	dev_dbg(&spi->dev, "%s %d", __func__, __LINE__);
 
+	ret = nt36xxx_of_compatible(&spi->dev);
+	if (ret)
+		return ret;
+
 	regmap_config = devm_kmemdup(&spi->dev, &nt36xxx_regmap_config_32bit,
 				     sizeof(*regmap_config), GFP_KERNEL);
 	if (!regmap_config) {
@@ -172,7 +176,7 @@ const struct nt36xxx_chip_data default_config = {
 	.max_y = 2400,
 	.abs_x_max = 1080,
 	.abs_y_max = 2400,
-	.id = &nt36xxx_spi_input_id,
+	/* purposely remove id element for probe only */
 };
 
 const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
@@ -184,6 +188,17 @@ const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
 	.abs_x_max = 1080,
 	.abs_y_max = 2400,
 	.id = &nt36xxx_spi_input_id,
+};
+
+const struct nt36xxx_chip_data xiaomi_tianma_nt36672a = {
+        .config = &nt36xxx_regmap_config_32bit,
+        .mmap = nt36672a_memory_maps,
+        .fw_name = "novatek_ts_tianma_fw.bin",
+        .max_x = 1080,
+        .max_y = 2400,
+        .abs_x_max = 1080,
+        .abs_y_max = 2400,
+        .id = &nt36xxx_spi_input_id,
 };
 
 const struct nt36xxx_chip_data generic_nt36676f = {
@@ -224,7 +239,7 @@ MODULE_DEVICE_TABLE(spi, nt36xxx_spi_ids);
 
 static const struct of_device_id nt36xxx_spi_of_match[] = {
 	{ .compatible = "novatek,nt36675-spi", .data = &miatoll_tianma_nt36675, },
-	{ .compatible = "novatek,nt36672a-spi", .data = &miatoll_tianma_nt36675, },
+	{ .compatible = "novatek,nt36672a-spi", .data = &xiaomi_tianma_nt36672a, },
 	{ .compatible = "novatek,nt36676f-spi", .data = &generic_nt36676f, },
 	{ .compatible = "novatek,nt36772-spi", .data = &generic_nt36772, },
 	{ .compatible = "novatek,nt36525-spi", .data = &generic_nt36525, },
