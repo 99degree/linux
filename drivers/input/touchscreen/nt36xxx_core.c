@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+/*  SPDX-License-Identifier: GPL-2.0-only
 /*
  * Driver for Novatek NT36xxx series touchscreens
  *
@@ -243,16 +243,16 @@ const u32 nt36672a_memory_maps[] = {
 	/* Phase 2 Host Download */
 	[MMAP_BOOT_RDY_ADDR] = 0x3F10D,
 	/* BLD CRC */
-	[MMAP_BLD_LENGTH_ADDR] = 0x3F10E,    //0x3F10E ~ 0x3F10F     (2 bytes)
-	[MMAP_ILM_LENGTH_ADDR] = 0x3F118,    //0x3F118 ~ 0x3F119     (2 bytes)
-	[MMAP_DLM_LENGTH_ADDR] = 0x3F130,    //0x3F130 ~ 0x3F131     (2 bytes)
-	[MMAP_BLD_DES_ADDR] = 0x3F114,    //0x3F114 ~ 0x3F116     (3 bytes)
-	[MMAP_ILM_DES_ADDR] = 0x3F128,    //0x3F128 ~ 0x3F12A     (3 bytes)
-	[MMAP_DLM_DES_ADDR] = 0x3F12C,    //0x3F12C ~ 0x3F12E     (3 bytes)
-	[MMAP_G_ILM_CHECKSUM_ADDR] = 0x3F100,    //0x3F100 ~ 0x3F103     (4 bytes)
-	[MMAP_G_DLM_CHECKSUM_ADDR] = 0x3F104,    //0x3F104 ~ 0x3F107     (4 bytes)
-	[MMAP_R_ILM_CHECKSUM_ADDR] = 0x3F120,    //0x3F120 ~ 0x3F123 (4 bytes)
-	[MMAP_R_DLM_CHECKSUM_ADDR] = 0x3F124,    //0x3F124 ~ 0x3F127 (4 bytes)
+	[MMAP_BLD_LENGTH_ADDR] = 0x3F10E,    /* 0x3F10E ~ 0x3F10F     (2 bytes) */
+	[MMAP_ILM_LENGTH_ADDR] = 0x3F118,    /* 0x3F118 ~ 0x3F119     (2 bytes) */
+	[MMAP_DLM_LENGTH_ADDR] = 0x3F130,    /* 0x3F130 ~ 0x3F131     (2 bytes) */
+	[MMAP_BLD_DES_ADDR] = 0x3F114,    /* 0x3F114 ~ 0x3F116     (3 bytes) */
+	[MMAP_ILM_DES_ADDR] = 0x3F128,    /* 0x3F128 ~ 0x3F12A     (3 bytes) */
+	[MMAP_DLM_DES_ADDR] = 0x3F12C,    /* 0x3F12C ~ 0x3F12E     (3 bytes) */
+	[MMAP_G_ILM_CHECKSUM_ADDR] = 0x3F100,    /* 0x3F100 ~ 0x3F103     (4 bytes) */
+	[MMAP_G_DLM_CHECKSUM_ADDR] = 0x3F104,    /* 0x3F104 ~ 0x3F107     (4 bytes) */
+	[MMAP_R_ILM_CHECKSUM_ADDR] = 0x3F120,    /* 0x3F120 ~ 0x3F123 (4 bytes) */
+	[MMAP_R_DLM_CHECKSUM_ADDR] = 0x3F124,    /* 0x3F124 ~ 0x3F127 (4 bytes) */
 	[MMAP_BLD_CRC_EN_ADDR] = 0x3F30E,
 	[MMAP_DMA_CRC_EN_ADDR] = 0x3F132,
 	[MMAP_BLD_ILM_DLM_CRC_ADDR] = 0x3F133,
@@ -407,7 +407,7 @@ static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 {
 	int ret = 0;
 
-	//in spi version, need to set page to SWRST_N8_ADDR
+	/* in spi version, need to set page to SWRST_N8_ADDR
 	if (ts->mmap[MMAP_SWRST_N8_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
 			   NT36XXX_CMD_BOOTLOADER_RESET);
@@ -1220,8 +1220,6 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	/* These supplies are optional, also shared with LCD panel */
 	ts->supplies[0].supply = "vdd";
 	ts->supplies[1].supply = "vio";
-	ts->supplies[2].supply = "vio2";
-	ts->supplies[3].supply = "vio3";
 	ret = devm_regulator_bulk_get(dev,
 				      NT36XXX_NUM_SUPPLIES,
 				      ts->supplies);
