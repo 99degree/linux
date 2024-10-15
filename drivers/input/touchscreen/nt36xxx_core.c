@@ -269,7 +269,7 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 	return ret;
 }
 
-/**
+/*
  * nt36xxx_bootloader_reset - Reset MCU to bootloader
  * @ts: Main driver structure
  *
@@ -543,7 +543,7 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 
 	/* Find the header size */
 	end = fwdata[0] + (fwdata[1] << 8) + (fwdata[2] << 16) + (fwdata[3] << 24);
-	pos = 0x30;	// info section start at 0x30 offset
+	pos = 0x30;	/* info section start at 0x30 offset */
 	while (pos < end) {
 		info_sec_num ++;
 		pos += 0x10;	/* each header info is 16 bytes */
@@ -895,7 +895,6 @@ check_fw:
 	return 0;
 }
 
-/*yell*/
 static void nt36xxx_download_firmware(struct work_struct *work) {
 	struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 	int ret;
@@ -933,7 +932,7 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 		goto unlock;
 	}
 
-	dev_info(ts->dev, "ts->status=0x%x", ts->status);
+	dev_dbg(ts->dev, "ts->status=0x%x", ts->status);
 
 	_nt36xxx_boot_download_firmware(ts);
 unlock:
@@ -943,7 +942,6 @@ unlock:
 	pm_runtime_put(ts->dev);
 exit:
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
-		//cancel_delayed_work(&ts->work);
 		schedule_delayed_work(&ts->work, 4000);
 	}
 }
@@ -1236,10 +1234,10 @@ static int panel_prepared(struct drm_panel_follower *follower)
 	if (ts->status & NT36XXX_STATUS_SUSPEND)
 		enable_irq(ts->irq);
 
-	/* supposed to clear the flag, but leave to internal_pm_resume
-	for greater purpose */
-	/* ts->status &= ~NT36XXX_STATUS_SUSPEND; */
-
+	/* supposed to clear the flag here, but leave to internal_pm_resume
+	 * for greater purpose, then clear flag as:
+	 * ts->status &= ~NT36XXX_STATUS_SUSPEND;
+	 */
 	return nt36xxx_internal_pm_resume(ts->dev);
 }
 
