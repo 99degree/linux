@@ -130,8 +130,6 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 	size_t max_size;
 	int ret = 0;
 
-	dev_dbg(&spi->dev, "%s %d", __func__, __LINE__);
-
 	ret = nt36xxx_of_compatible(&spi->dev);
 	if (ret)
 		return ret;
@@ -171,64 +169,13 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 
 const struct nt36xxx_chip_data default_config = {
 	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36676f_memory_maps,
-	.max_x = 1080,
-	.max_y = 2400,
-	.abs_x_max = 1080,
-	.abs_y_max = 2400,
-	/* purposely remove id element for probe only */
-};
-
-const struct nt36xxx_chip_data miatoll_tianma_nt36675 = {
-	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36675_memory_maps,
-	.fw_name = "novatek_ts_tianma_fw.bin",
+	.mmap = nt36676f_memory_maps, /* by luck that magic addr are same */
 	.max_x = 1080,
 	.max_y = 2400,
 	.abs_x_max = 1080,
 	.abs_y_max = 2400,
 	.id = &nt36xxx_spi_input_id,
-};
-
-const struct nt36xxx_chip_data xiaomi_tianma_nt36672a = {
-        .config = &nt36xxx_regmap_config_32bit,
-        .mmap = nt36672a_memory_maps,
-        .fw_name = "novatek_ts_tianma_fw.bin",
-        .max_x = 1080,
-        .max_y = 2400,
-        .abs_x_max = 1080,
-        .abs_y_max = 2400,
-        .id = &nt36xxx_spi_input_id,
-};
-
-const struct nt36xxx_chip_data generic_nt36676f = {
-	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36676f_memory_maps,
-	.max_x = 1080,
-	.max_y = 2400,
-	.abs_x_max = 1080,
-	.abs_y_max = 2400,
-	.id = &nt36xxx_spi_input_id,
-};
-
-const struct nt36xxx_chip_data generic_nt36772 = {
-	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36772_memory_maps,
-	.max_x = 1080,
-	.max_y = 2400,
-	.abs_x_max = 1080,
-	.abs_y_max = 2400,
-	.id = &nt36xxx_spi_input_id,
-};
-
-const struct nt36xxx_chip_data generic_nt36525 = {
-	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36525_memory_maps,
-	.max_x = 1080,
-	.max_y = 2400,
-	.abs_x_max = 1080,
-	.abs_y_max = 2400,
-	.id = &nt36xxx_spi_input_id,
+	.mapid = 0,
 };
 
 static const struct spi_device_id nt36xxx_spi_ids[] = {
@@ -238,25 +185,14 @@ static const struct spi_device_id nt36xxx_spi_ids[] = {
 MODULE_DEVICE_TABLE(spi, nt36xxx_spi_ids);
 
 static const struct of_device_id nt36xxx_spi_of_match[] = {
-	{ .compatible = "novatek,nt36675-spi", .data = &miatoll_tianma_nt36675, },
-	{ .compatible = "novatek,nt36672a-spi", .data = &xiaomi_tianma_nt36672a, },
-	{ .compatible = "novatek,nt36676f-spi", .data = &generic_nt36676f, },
-	{ .compatible = "novatek,nt36772-spi", .data = &generic_nt36772, },
-	{ .compatible = "novatek,nt36525-spi", .data = &generic_nt36525, },
-	/*
-	 * this is served for two special purpose.
-	 * (1) detect/display model only, and bail out in the end
-	 * (2) checking device varients, mixed use of novatek and focaltech spi ic
-	 * TODO: might add auto select mmap for unknown nvt device.
-	 */
-	{ .compatible = "novatek,NVT-default-spi", .data = &default_config, },
+	{ .compatible = "novatek,nt36xxx-spi", .data = &default_config, },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, nt36xxx_spi_of_match);
 
 static struct spi_driver nt36xxx_spi_driver = {
 	.driver = {
-		.name   = "nt36675-spi",
+		.name = "nt36675-spi",
 		.of_match_table = nt36xxx_spi_of_match,
 		.pm = pm_sleep_ptr(&nt36xxx_pm_ops),
 	},
