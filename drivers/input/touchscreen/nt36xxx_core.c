@@ -1138,6 +1138,30 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	return 0;
 }
 
+static int nt36xxx_of_compatible(struct device *dev)
+{
+	struct device_node *np = dev->of_node;
+
+	if (!of_device_is_compatible(np, "novatek,NVT-default-spi")) {
+		const char *path = "/chosen";
+		struct device_node *dt_node;
+		const char *bootargs;
+
+		dt_node = of_find_node_by_path(path);
+		if (!dt_node) {
+			dev_err(dev, "Failed to find device-tree node: %s\n", path);
+			return -ENODEV;
+		}
+
+		if (!of_property_read_string(dt_node, "bootargs", &bootargs))
+			if (!strstr(bootargs, "tianma"))
+				return -ENODEV;
+
+		dev_info(dev, "Try to probe novatek/tianma panel as specified in chosen/bootargs.");
+	}
+	return 0;
+}
+
 int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 			struct regmap *regmap)
 {
@@ -1231,10 +1255,9 @@ skip_regulators:
 		return ret;
 	}
 
-	/* this  is to check if generic compatible string is being used */
-	if (!chip_data->id) {
-		dev_err(dev, "Please use dedicated device tree compatible string instead!");
-		return -ENODEV;
+	ret = nt36xxx_of_compatible(dev);
+	if (ret) {
+		return ret;
 	}
 
 	/* copy the const mmap into drvdata */
@@ -1276,8 +1299,8 @@ skip_regulators:
 		/* make the driver sleep while waiting tasklet fw download */
 		pm_runtime_suspend(dev);
 
-        	devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
-	        schedule_delayed_work(&ts->work, 0);
+		devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
+		schedule_delayed_work(&ts->work, 0);
 	}
 
 	dev_info(dev, "probe ok!");
