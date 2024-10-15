@@ -1154,7 +1154,7 @@ static int nt36xxx_of_compatible(struct device *dev)
 		}
 
 		if (!of_property_read_string(dt_node, "bootargs", &bootargs))
-			if (!strstr(bootargs, "tianma"))
+			if (!strstr(bootargs, "tianma") && !strstr(bootargs, "nt36"))
 				return -ENODEV;
 
 		dev_info(dev, "Try to probe novatek/tianma panel as specified in chosen/bootargs.");
