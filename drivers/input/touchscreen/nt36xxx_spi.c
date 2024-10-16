@@ -176,10 +176,13 @@ const struct nt36xxx_chip_data default_config = {
 	.abs_y_max = 2400,
 	.id = &nt36xxx_spi_input_id,
 	.mapid = 0,
+	.fw_name = "novatek_ts_tianma_fw.bin",
+	.ic_fw_needed = BIT(NT36675_IC),
 };
 
 static const struct spi_device_id nt36xxx_spi_ids[] = {
 	{ "nt36675-spi", 0 },
+	{ "nt36xxx-spi", 1 },
 	{ },
 };
 MODULE_DEVICE_TABLE(spi, nt36xxx_spi_ids);
