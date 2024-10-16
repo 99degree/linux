@@ -121,6 +121,7 @@ struct nt36xxx_chip_data {
 	const struct input_id *id;
 
 	unsigned int mapid;
+	unsigned int ic_fw_needed;
 };
 
 struct nt36xxx_trim_table {
