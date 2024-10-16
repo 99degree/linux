@@ -1287,7 +1287,9 @@ skip_regulators:
 	}
 
 	/* init with default name */
-	ts->fw_name = ts->data->fw_name;
+	if (ts->data->ic_fw_needed & BIT(ts->mapid))
+		ts->fw_name = ts->data->fw_name;
+
 	/* support overriding fw name */
 	of_property_read_string_index(ts->dev->of_node, "firmware-name", 0, &signed_fwname);
 	if (signed_fwname)
