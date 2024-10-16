@@ -37,12 +37,14 @@
 #define NT36XXX_MAX_RETRIES	 5
 #define NT36XXX_MAX_FW_RST_RETRY 50
 
+/* mapid */
 enum nt36xxx_chips {
         NT36525_IC = 0x1,
         NT36672A_IC,
         NT36676F_IC,
         NT36772_IC,
         NT36675_IC,
+	NT36870_IC,
         NTMAX_IC,
 };
 
@@ -121,6 +123,8 @@ struct nt36xxx_chip_data {
 	const struct input_id *id;
 
 	unsigned int mapid;
+
+	/* defined as BIT(NT36675_IC) | BIT(NT36672C_IC)... */
 	unsigned int ic_fw_needed;
 };
 
