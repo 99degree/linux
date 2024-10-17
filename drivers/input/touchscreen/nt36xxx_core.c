@@ -1266,7 +1266,10 @@ skip_regulators:
 	}
 
 	/* enable auto-detect */
-	if (!chip_data->mapid)
+	if  (chip_data->mapid > NTMAX_IC) {
+		dev_info(dev, "Probe diag ended, please use approprate of compatible string. Exiting...");
+		return -ENODEV;
+	} else if (!chip_data->mapid)
 		memcpy(ts->mmap_data, nt36xxx_mmap_table[ts->mapid], sizeof(ts->mmap_data));
 	else
 		memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
