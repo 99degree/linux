@@ -180,15 +180,29 @@ const struct nt36xxx_chip_data default_config = {
 	.ic_fw_needed = BIT(NT36675_IC),
 };
 
+const struct nt36xxx_chip_data probe_default_config = {
+	.config = &nt36xxx_regmap_config_32bit,
+	.mmap = nt36676f_memory_maps, /* by luck that magic addr are same */
+	.max_x = 1080,
+	.max_y = 2400,
+	.abs_x_max = 1080,
+	.abs_y_max = 2400,
+	.id = &nt36xxx_spi_input_id,
+	.mapid = 100,
+};
+
 static const struct spi_device_id nt36xxx_spi_ids[] = {
 	{ "nt36675-spi", 0 },
 	{ "nt36xxx-spi", 1 },
+	{ "NVT-default-spi", 2},
 	{ },
 };
 MODULE_DEVICE_TABLE(spi, nt36xxx_spi_ids);
 
 static const struct of_device_id nt36xxx_spi_of_match[] = {
 	{ .compatible = "novatek,nt36xxx-spi", .data = &default_config, },
+	/* this is only for probe only, return -ENODEV in the end */
+	{ .compatible = "novatek,NVT-default-spi", .data = &probe_default_config, },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, nt36xxx_spi_of_match);
