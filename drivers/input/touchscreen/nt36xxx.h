@@ -16,12 +16,16 @@
 
 #define NT36XXX_TRANSFER_LEN	(63*1024)
 
+#define NT36XXX_READ_PREFIX_LEN     1
+#define NT36XXX_WRITE_PREFIX_LEN    1
+
 /* due to extra framework layer, the transfer trunk is as small as
  * 128 otherwize dma error happened, all routed to spi_sync()
 */
 
 /* Number of bytes for chip identification */
 #define NT36XXX_ID_LEN_MAX	6
+#define NT36XXX_ID_LIST_MAX	32
 
 /* Touch info */
 #define TOUCH_DEFAULT_MAX_WIDTH  1080
@@ -39,13 +43,24 @@
 
 /* mapid */
 enum nt36xxx_chips {
-        NT36525_IC = 0x1,
-        NT36672A_IC,
-        NT36676F_IC,
-        NT36772_IC,
-        NT36675_IC,
+	NT_AUTO_DET_IC,
+	NT36525_IC = 0x1,
+	NT36672A_IC,
+	NT36676F_IC,
+	NT36772_IC,
+	NT36675_IC,
+
+	NT_NIL_IC,
+	/* below are not supported atm */
+	NT36526_IC,
 	NT36870_IC,
-        NTMAX_IC,
+
+	NT51900_IC,
+	NT51920_IC,
+	NT51923_IC,
+	NT51926_IC,
+
+	NTMAX_IC,
 };
 
 enum nt36xxx_cmds {
@@ -113,6 +128,7 @@ struct nt36xxx_fw_info {
 struct nt36xxx_chip_data {
 	const u32 *mmap;
 	const struct regmap_config *config;
+	const struct nt36xxx_trim_table *trim_table;
 
 	const char* fw_name;
 	unsigned int max_x;
@@ -147,4 +163,7 @@ extern const u32 nt36672a_memory_maps[];
 extern const u32 nt36772_memory_maps[];
 extern const u32 nt36676f_memory_maps[];
 extern const u32 nt36525_memory_maps[];
+extern const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[];
+extern const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[];
+extern const struct nt36xxx_trim_table nt51xxx_trim_id_table[];
 #endif
