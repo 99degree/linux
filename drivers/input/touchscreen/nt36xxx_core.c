@@ -121,7 +121,7 @@ struct nt36xxx_ts {
 	const struct nt36xxx_chip_data *data;
 };
 
-static const struct nt36xxx_trim_table trim_id_table[] = {
+const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[NT36XXX_ID_LIST_MAX] = {
 	/* TODO: port and test all related module */
 	{
 		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
@@ -184,10 +184,174 @@ static const struct nt36xxx_trim_table trim_id_table[] = {
 		.mapid = NT36676F_IC,
 	},
 	{
-		.id = { 0xFF, 0xFF, 0xFF, 0x75, 0x66, 0x03},
+		.id = { 0xFF, 0xFF, 0xFF, 0x75, 0x66, 0x03 },
 		.mask = { 0, 0, 0, 1, 1, 1 },
 		.mapid = NT36675_IC,
 		.hw_crc = 2,
+	},
+	{ },
+};
+
+
+/*
+ * below are extract from i2c vendor driver url:
+ * https://github.com/Rasenkai/caf-tsoft-Novatek-nt36xxx/blob/master/nt36xxx_mem_map.h
+ */
+const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[NT36XXX_ID_LIST_MAX] = {
+	{
+		.id = { 0x20, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36675_IC,
+	},
+	{
+		.id = { 0x00, 0xFF, 0xFF, 0x80, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36675_IC,
+	},
+	{
+		.id = { 0x0C, 0xFF, 0xFF, 0x25, 0x65, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0E, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36675_IC,
+	},
+	{
+		.id = { 0x0C, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36675_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x26, 0x65, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36526_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x75, 0x66, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36675_IC,
+	},
+	{
+		.id = { 0x0B, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0B, 0xFF, 0xFF, 0x82, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0B, 0xFF, 0xFF, 0x25, 0x65, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x65, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0A, 0xFF, 0xFF, 0x82, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0A, 0xFF, 0xFF, 0x70, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0B, 0xFF, 0xFF, 0x70, 0x66, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x67, 0x03 },
+		.mask = { 1, 0, 0, 1, 1, 1 },
+		.mapid = NT36672A_IC,
+	},
+	{
+		.id = { 0x55, 0x00, 0xFF, 0x00, 0x00, 0x00 },
+		.mask = { 1, 1, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0x55, 0x72, 0xFF, 0x00, 0x00, 0x00 },
+		.mask = { 1, 1, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xAA, 0x00, 0xFF, 0x00, 0x00, 0x00 },
+		.mask = { 1, 1, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xAA, 0x72, 0xFF, 0x00, 0x00, 0x00 },
+		.mask = { 1, 1, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x72, 0x67, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x70, 0x66, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x70, 0x67, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36772_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x25, 0x65, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36525_IC,
+	},
+	{
+		.id = { 0xFF, 0xFF, 0xFF, 0x76, 0x66, 0x03 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT36676F_IC,
+	},
+	{ },
+};
+
+const struct __maybe_unused nt36xxx_trim_table nt51xxx_trim_id_table[NT36XXX_ID_LIST_MAX] = {
+	/* TODO: below are from NT519XX driver, this is not supported  */
+	{
+		.id = { 0x00, 0x00, 0x00, 0x00, 0x19, 0x05 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT51900_IC,
+	},
+	{
+		.id = { 0x00, 0x00, 0x01, 0x20, 0x19, 0x05 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT51920_IC,
+	},
+	{
+		.id = { 0x00, 0x00, 0x00, 0x23, 0x19, 0x05 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT51923_IC,
+	},
+	{
+		.id = { 0x00, 0x00, 0x00, 0x26, 0x19, 0x05 },
+		.mask = { 0, 0, 0, 1, 1, 1 },
+		.mapid = NT51926_IC,
 	},
 	{ },
 };
@@ -606,8 +770,17 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 {
 	u8 buf[32] = { 0 };
 	int retry = NT36XXX_MAX_RETRIES;
-	int sz = sizeof(trim_id_table) / sizeof(struct nt36xxx_trim_table);
-	int i, list, mapid, ret;
+	int i, list, mapid, ret = -ENOENT;
+
+	if (!ts->data) {
+		dev_err(ts->dev, "ts->data empty!");
+		return -EIO;
+	}
+
+	if (!ts->data->trim_table) {
+		dev_err(ts->dev, "ts->data->trim_table empty!");
+		return -EIO;
+	}
 
 	ret = nt36xxx_bootloader_reset(ts);
 	if (ret) {
@@ -621,24 +794,26 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 		if (ret)
 			continue;
 
-		dev_dbg(ts->dev, "%s buf[0]=0x%02X, buf[1]=0x%02X, buf[2]=0x%02X, buf[3]=0x%02X, buf[4]=0x%02X, buf[5]=0x%02X, buf[6]=0x%02X sz=%d\n",
-			__func__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], sz);
+		dev_dbg(ts->dev, "%s buf[0..3-4..6]=%02X%02X%02X%02X-%02X%02X%02X \n",
+			__func__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
 		/* Compare read chip id with trim list */
-		for (list = 0; list < sz; list++) {
+		for (list = 0; list < NT36XXX_ID_LIST_MAX; list++) {
+			if (!ts->data->trim_table[list].mapid)
+				break;
 
 			/* Compare each not masked byte */
 			for (i = 0; i < NT36XXX_ID_LEN_MAX; i++) {
-				if (trim_id_table[list].mask[i] &&
-				    buf[i + 1] != trim_id_table[list].id[i])
+				if (ts->data->trim_table[list].mask[i] &&
+				    buf[i + 1] != ts->data->trim_table[list].id[i])
 					break;
 			}
 
 			/* found and match with mask */
 			if (i == NT36XXX_ID_LEN_MAX) {
-				mapid = trim_id_table[list].mapid;
+				mapid = ts->data->trim_table[list].mapid;
 				ret = 0;
-				ts->hw_crc = trim_id_table[list].hw_crc;
+				ts->hw_crc = ts->data->trim_table[list].hw_crc;
 
 				if (mapid == 0) {
 					dev_info(ts->dev, "NVT touch IC hw not found i=%d list=%d\n", i, list);
@@ -802,6 +977,8 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	uint32_t list = 0;
 	uint32_t bin_addr, sram_addr, size;
 	struct nvt_ts_bin_map *bin_map = ts->bin_map;
+	int max_write = min(regmap_get_raw_write_max(ts->regmap)
+			- NT36XXX_WRITE_PREFIX_LEN, NT36XXX_TRANSFER_LEN) >>3 <<3;
 
         nt36xxx_bootloader_reset(ts);
 
@@ -824,14 +1001,14 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 
 		bin_map[list].loaded = 1;
 
-		if (size / NT36XXX_TRANSFER_LEN)
+		if (size / max_write)
 			dev_dbg(ts->dev, "%s %d paged write [%s] 0x%x, window 0x%x, residue 0x%x",
 					__func__, __LINE__, bin_map[list].name, size,
-					NT36XXX_TRANSFER_LEN, size % NT36XXX_TRANSFER_LEN);
+					max_write, size % max_write);
 
-		for (j = 0; j < size; j += NT36XXX_TRANSFER_LEN) {
-			int window_size = ((size - j) / NT36XXX_TRANSFER_LEN) ? NT36XXX_TRANSFER_LEN :
-						((size - j) % NT36XXX_TRANSFER_LEN);
+		for (j = 0; j < size; j += max_write) {
+			int window_size = ((size - j) / max_write) ? max_write :
+						((size - j) % max_write);
 
 			regmap_bulk_write(ts->regmap, sram_addr + j, &ts->fw_entry.data[bin_addr + j],
 							 window_size);
@@ -1061,7 +1238,7 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 
 	ret = nt36xxx_eng_reset_idle(ts);
 	if (ret) {
-		dev_err(ts->dev, "Failed to check chip version\n");
+		dev_err(ts->dev, "Failed to reset chip\n");
 		goto unlock;
 	}
 
@@ -1266,13 +1443,14 @@ skip_regulators:
 	}
 
 	/* enable auto-detect */
-	if  (chip_data->mapid > NTMAX_IC) {
+	if  (chip_data->mapid > NT_NIL_IC) {
 		dev_info(dev, "Probe diag ended, please use approprate of compatible string. Exiting...");
 		return -ENODEV;
-	} else if (!chip_data->mapid)
+	} else if (0 == chip_data->mapid) {
 		memcpy(ts->mmap_data, nt36xxx_mmap_table[ts->mapid], sizeof(ts->mmap_data));
-	else
+	} else {
 		memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
+	}
 
 	ts->mmap = ts->mmap_data;
 
