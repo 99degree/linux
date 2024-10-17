@@ -664,8 +664,13 @@ config TOUCHSCREEN_IMAGIS
 	  module will be called imagis.
 
 config TOUCHSCREEN_NT36XXX
+	tristate
+
+config TOUCHSCREEN_NT36XXX_I2C
 	tristate "Novatek NT36XXX In-Cell I2C touchscreen controller"
 	depends on I2C
+	select REGMAP_I2C
+	select TOUCHSCREEN_NT36XXX
 	help
 	  Say Y here if you have a Novatek NT36xxx series In-Cell
 	  touchscreen connected to your system over I2C.
@@ -679,6 +684,7 @@ config TOUCHSCREEN_NT36XXX_SPI
 	tristate "Novatek NT36XXX In-Cell SPI touchscreen controller"
 	depends on SPI_MASTER
 	select REGMAP
+	select TOUCHSCREEN_NT36XXX
         help
           Say Y here if you have a Novatek NT36xxx series In-Cell
           touchscreen connected to your system over SPI.
