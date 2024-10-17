@@ -18,13 +18,13 @@ properties:
       - description: Implements extra matching in bootargs for keywords like "tianma" or "nt36"
         items:
           - enum:
-            - novatek,nt36xxx-spi
+              - novatek,nt36xxx-spi
           - const: novatek,NVT-default-spi
 
       - description: Implements simple compatible string to nt36xxx IC
-        items:
-          - enum:
-            - novatek,nt36xxx-spi
+        enum:
+          - novatek,nt36xxx-spi
+          - novatek,NVT-default-spi
 
   reg:
     maxItems: 1
@@ -40,8 +40,8 @@ properties:
 
   firmware-name:
     description: Firmware name for device init, no needed if unspecify.
-                  For IC like nt36675, need to set a string value,
-                  for example, "novatek_ts_tianma_fw.bin".
+                  For IC like nt36675, default fw file will be
+                  "novatek_ts_tianma_fw.bin" if unspecify.
 
   spi-max-frequency:
     description: Set max frequency to spi bus communication. This is optional.
@@ -58,28 +58,16 @@ examples:
     #include <dt-bindings/interrupt-controller/irq.h>
     #include <dt-bindings/gpio/gpio.h>
 
-    spi@0 {
+    spi {
       #address-cells = <1>;
       #size-cells = <0>;
+      #ranges = <0>;
 
       touchscreen@0 {
         compatible = "novatek,nt36xxx-spi";
         reg = <0>;
         spi-max-frequency = <4000000>;
         irq-gpio = <&tlmm 9 0x2001>;
-        firmware-name = "novatek_ts_tianma_fw.bin";
-      };
-    };
-
-    spi@1 {
-      #address-cells = <1>;
-      #size-cells = <0>;
-
-      touchscreen@0 {
-        compatible = "novatek,nt36xxx-spi", "novatek,NVT-default-spi";
-        reg = <0>;
-        spi-max-frequency = <4000000>;
-        irq-gpio = <&tlmm 19 0x2001>;
         firmware-name = "novatek_ts_tianma_fw.bin";
       };
     };
