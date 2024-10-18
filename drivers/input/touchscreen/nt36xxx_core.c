@@ -121,7 +121,12 @@ struct nt36xxx_ts {
 	const struct nt36xxx_chip_data *data;
 };
 
-const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[NT36XXX_ID_LIST_MAX] = {
+struct nt36xxx_trim_data {
+	const struct nt36xxx_trim_table *id_table;
+	int sz_id_table;
+};
+
+const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[] = {
 	/* TODO: port and test all related module */
 	{
 		.id = { 0x0A, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
@@ -197,7 +202,7 @@ const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[NT36XXX_ID_LIST_MAX] =
  * below are extract from i2c vendor driver url:
  * https://github.com/Rasenkai/caf-tsoft-Novatek-nt36xxx/blob/master/nt36xxx_mem_map.h
  */
-const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[NT36XXX_ID_LIST_MAX] = {
+const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[] = {
 	{
 		.id = { 0x20, 0xFF, 0xFF, 0x72, 0x66, 0x03 },
 		.mask = { 1, 0, 0, 1, 1, 1 },
@@ -331,7 +336,7 @@ const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[NT36XXX_ID_LIST_MAX] =
 	{ },
 };
 
-const struct __maybe_unused nt36xxx_trim_table nt51xxx_trim_id_table[NT36XXX_ID_LIST_MAX] = {
+const struct __maybe_unused nt36xxx_trim_table nt51xxx_trim_id_table[] = {
 	/* TODO: below are from NT519XX driver, this is not supported  */
 	{
 		.id = { 0x00, 0x00, 0x00, 0x00, 0x19, 0x05 },
@@ -354,6 +359,21 @@ const struct __maybe_unused nt36xxx_trim_table nt51xxx_trim_id_table[NT36XXX_ID_
 		.mapid = NT51926_IC,
 	},
 	{ },
+};
+
+const struct nt36xxx_trim_data nt36xxx_spi_trim_data = {
+	.id_table = nt36xxx_spi_trim_id_table,
+	.sz_id_table = ARRAY_SIZE(nt36xxx_spi_trim_id_table),
+};
+
+const struct nt36xxx_trim_data nt36xxx_i2c_trim_data = {
+        .id_table = nt36xxx_i2c_trim_id_table,
+        .sz_id_table = ARRAY_SIZE(nt36xxx_i2c_trim_id_table),
+};
+
+const struct nt36xxx_trim_data nt51xxx_i2c_trim_data = {
+        .id_table = nt51xxx_trim_id_table,
+        .sz_id_table = ARRAY_SIZE(nt51xxx_trim_id_table),
 };
 
 const u32 nt36675_memory_maps[] = {
@@ -647,10 +667,10 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 	struct nt36xxx_abs_object *obj = &ts->abs_obj;
 	struct input_dev *input = ts->input;
 	u8 input_id = 0;
-	u8 point[POINT_DATA_LEN + 1] = { 0 };
+	u8 point[NT36XXX_POINT_DATA_LEN + 1] = { 0 };
 	unsigned int ppos = 0;
 	int i, ret, finger_cnt = 0;
-	uint8_t press_id[TOUCH_MAX_FINGER_NUM] = {0};
+	uint8_t press_id[NT36XXX_TOUCH_MAX_FINGER_NUM] = {0};
 
 	ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR],
 				point, sizeof(point));
@@ -672,11 +692,11 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 		goto xfer_error;
 	}
 
-	for (i = 0; i < TOUCH_MAX_FINGER_NUM; i++) {
+	for (i = 0; i < NT36XXX_TOUCH_MAX_FINGER_NUM; i++) {
 		ppos = 6 * i + 1;
 		input_id = point[ppos + 0] >> 3;
 
-		if ((input_id == 0) || (input_id > TOUCH_MAX_FINGER_NUM)) {
+		if ((input_id == 0) || (input_id > NT36XXX_TOUCH_MAX_FINGER_NUM)) {
 			continue;
 		}
 
@@ -698,8 +718,8 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 			obj->z = point[ppos + 5];
 			if (i < 2) {
 				obj->z += point[i + 63] << 8;
-				if (obj->z > TOUCH_MAX_PRESSURE)
-					obj->z = TOUCH_MAX_PRESSURE;
+				if (obj->z > NT36XXX_TOUCH_MAX_PRESSURE)
+					obj->z = NT36XXX_TOUCH_MAX_PRESSURE;
 			}
 
 			if (obj->z == 0)
@@ -770,17 +790,22 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 {
 	u8 buf[32] = { 0 };
 	int retry = NT36XXX_MAX_RETRIES;
-	int i, list, mapid, ret = -ENOENT;
+	int i, list, mapid, sz_id_table;
+	const struct nt36xxx_trim_table *trim_table;
+	int ret = -ENOENT;
 
 	if (!ts->data) {
 		dev_err(ts->dev, "ts->data empty!");
 		return -EIO;
 	}
 
-	if (!ts->data->trim_table) {
-		dev_err(ts->dev, "ts->data->trim_table empty!");
+	if (!ts->data->trim_data) {
+		dev_err(ts->dev, "ts->data->trim_data empty!");
 		return -EIO;
 	}
+
+	trim_table = ts->data->trim_data->id_table;
+	sz_id_table =  ts->data->trim_data->sz_id_table;
 
 	ret = nt36xxx_bootloader_reset(ts);
 	if (ret) {
@@ -799,21 +824,27 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 
 		/* Compare read chip id with trim list */
 		for (list = 0; list < NT36XXX_ID_LIST_MAX; list++) {
-			if (!ts->data->trim_table[list].mapid)
+			if (!trim_table[list].mapid)
+				break;
+
+			if (trim_table[list].mapid > NTMAX_IC)
+				break;
+
+			if (list >= sz_id_table)
 				break;
 
 			/* Compare each not masked byte */
 			for (i = 0; i < NT36XXX_ID_LEN_MAX; i++) {
-				if (ts->data->trim_table[list].mask[i] &&
-				    buf[i + 1] != ts->data->trim_table[list].id[i])
+				if (trim_table[list].mask[i] &&
+				    buf[i + 1] != trim_table[list].id[i])
 					break;
 			}
 
 			/* found and match with mask */
 			if (i == NT36XXX_ID_LEN_MAX) {
-				mapid = ts->data->trim_table[list].mapid;
+				mapid = trim_table[list].mapid;
 				ret = 0;
-				ts->hw_crc = ts->data->trim_table[list].hw_crc;
+				ts->hw_crc = trim_table[list].hw_crc;
 
 				if (mapid == 0) {
 					dev_info(ts->dev, "NVT touch IC hw not found i=%d list=%d\n", i, list);
@@ -1298,7 +1329,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	ts->input->id = *id;
 
 	input_set_abs_params(ts->input, ABS_MT_PRESSURE, 0,
-						 TOUCH_MAX_PRESSURE, 0, 0);
+						 NT36XXX_TOUCH_MAX_PRESSURE, 0, 0);
 	input_set_abs_params(ts->input, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
 
 	input_set_abs_params(ts->input, ABS_MT_POSITION_X, 0,
@@ -1310,7 +1341,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 
 	WARN_ON(ts->prop.max_x < 1);
 
-	ret = input_mt_init_slots(ts->input, TOUCH_MAX_FINGER_NUM,
+	ret = input_mt_init_slots(ts->input, NT36XXX_TOUCH_MAX_FINGER_NUM,
 				  INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
 	if (ret) {
 		dev_err(dev, "Cannot init MT slots (%d)\n", ret);

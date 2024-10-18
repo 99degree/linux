@@ -185,7 +185,7 @@ static int nt36xxx_i2c_probe(struct i2c_client *i2c)
 static const struct nt36xxx_chip_data nt36xxx_default_config = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36676f_memory_maps, /* by luck that magic addr are same */
-	.trim_table = nt36xxx_i2c_trim_id_table,
+	.trim_data = &nt36xxx_i2c_trim_data,
 	.max_x = 1080,
 	.max_y = 2400,
 	.abs_x_max = 1080,
@@ -194,18 +194,6 @@ static const struct nt36xxx_chip_data nt36xxx_default_config = {
 	.mapid = 0,
 	.fw_name = "novatek_ts_tianma_fw.bin",
 	.ic_fw_needed = BIT(NT36675_IC),
-};
-
-static const struct nt36xxx_chip_data nt36xxx_probe_default_config = {
-	.config = &nt36xxx_regmap_config_32bit,
-	.mmap = nt36676f_memory_maps, /* by luck that magic addr are same */
-	.trim_table = nt36xxx_i2c_trim_id_table,
-	.max_x = 1080,
-	.max_y = 2400,
-	.abs_x_max = 1080,
-	.abs_y_max = 2400,
-	.id = &nt36xxx_i2c_input_id,
-	.mapid = 100,
 };
 
 static const struct i2c_device_id nt36xxx_i2c_ids[] = {

@@ -28,13 +28,13 @@
 #define NT36XXX_ID_LIST_MAX	32
 
 /* Touch info */
-#define TOUCH_DEFAULT_MAX_WIDTH  1080
-#define TOUCH_DEFAULT_MAX_HEIGHT 2246
-#define TOUCH_MAX_FINGER_NUM	 10
-#define TOUCH_MAX_PRESSURE	 1000
+#define NT36XXX_TOUCH_DEFAULT_MAX_WIDTH  1080
+#define NT36XXX_TOUCH_DEFAULT_MAX_HEIGHT 2246
+#define NT36XXX_TOUCH_MAX_FINGER_NUM	 10
+#define NT36XXX_TOUCH_MAX_PRESSURE	 1000
 
 /* Point data length */
-#define POINT_DATA_LEN		65
+#define NT36XXX_POINT_DATA_LEN		65
 
 /* Misc */
 #define NT36XXX_NUM_SUPPLIES	 2
@@ -88,6 +88,7 @@ enum nt36xxx_fw_state {
 };
 
 struct nt36xxx_ts;
+struct nt36xxx_trim_data;
 
 struct nvt_fw_parse_data {
 	uint8_t partition;
@@ -128,7 +129,7 @@ struct nt36xxx_fw_info {
 struct nt36xxx_chip_data {
 	const u32 *mmap;
 	const struct regmap_config *config;
-	const struct nt36xxx_trim_table *trim_table;
+	const struct nt36xxx_trim_data *trim_data;
 
 	const char* fw_name;
 	unsigned int max_x;
@@ -158,12 +159,18 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 int nt36xxx_of_compatible(struct device *dev);
 
 extern const struct dev_pm_ops nt36xxx_pm_ops;
+
 extern const u32 nt36675_memory_maps[];
 extern const u32 nt36672a_memory_maps[];
 extern const u32 nt36772_memory_maps[];
 extern const u32 nt36676f_memory_maps[];
 extern const u32 nt36525_memory_maps[];
+
 extern const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[];
 extern const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[];
 extern const struct nt36xxx_trim_table nt51xxx_trim_id_table[];
+
+extern const struct nt36xxx_trim_data nt36xxx_spi_trim_data;
+extern const struct nt36xxx_trim_data nt36xxx_i2c_trim_data;
+extern const struct nt36xxx_trim_data nt51xxx_i2c_trim_data;
 #endif
