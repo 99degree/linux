@@ -59,7 +59,6 @@ static int nt36xxx_i2c_write(void *dev, const void *data,
                                    size_t len)
 {
 	int32_t ret;
-
 	void *data1 = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
 	if (!data1)
 		return -ENOMEM;
@@ -84,6 +83,36 @@ static int nt36xxx_i2c_write(void *dev, const void *data,
 
 	kfree(data1);
 	return ret;
+}
+
+static int nt519xx_i2c_write(void *dev, const void *data,
+                                   size_t len)
+{
+        int32_t ret;
+        void *data1 = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
+        if (!data1)
+                return -ENOMEM;
+
+        u8 addr[4] = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 8,  (*(u32 *)data & 0x7f) | 0x80};
+        memcpy(data1, addr, 4);
+
+        dev_dbg(dev, "%s len=0x%lx", __func__, len);
+
+        _nt36xxx_i2c_write(dev, data1, 3);
+        ret = _nt36xxx_i2c_write(dev, data1 + 3, len - 3);
+        if (ret)
+                dev_err(dev, "transfer err %d\n ", ret);
+        else if (DEBUG) {
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                        16, 1, data, 3, true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                        16, 1, data + 3, (len - 3) > 0x20 ? 0x20 : len - 3 , true);
+        }
+
+        kfree(data1);
+        return ret;
 }
 
 static int _nt36xxx_i2c_read(void *context,
@@ -147,6 +176,39 @@ static int nt36xxx_i2c_read(void *dev, const void *reg_buf,
 	return ret;
 }
 
+static int nt519xx_i2c_read(void *dev, const void *reg_buf,
+                                  size_t reg_size, void *val_buf,
+                                  size_t val_size)
+{
+        int ret;
+        u8 addr[4] = { 0xff, *(u32 *)reg_buf >> 15, *(u32 *)reg_buf >> 8,  *(u32 *)reg_buf & 0x7f };
+
+        ret = _nt36xxx_i2c_write(dev, addr, 3);
+        if (ret) {
+                dev_err(dev, "transfer0 err %s %d ret=%d", __func__, __LINE__, ret);
+                return ret;
+        }
+
+        ret = _nt36xxx_i2c_read(dev, &addr[3] , 1, val_buf, val_size);
+        if (ret) {
+                dev_err(dev, "transfer1 err %s %d ret=%d", __func__, __LINE__, ret);
+                return ret;
+        }
+
+        if (DEBUG) {
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                        16, 1, addr, 3, true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                        16, 1, addr, (val_size) > 0x20 ? 0x20 : val_size % 0x20 , true);
+
+                print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
+                        16, 1, val_buf, (val_size > 0x20) ? 0x20 : val_size % 0x20 , true);
+        }
+
+        return ret;
+}
+
 const struct regmap_config nt36xxx_regmap_config_32bit = {
 	.name = "nt36xxx_hw",
 	.reg_bits = 32,
@@ -156,6 +218,17 @@ const struct regmap_config nt36xxx_regmap_config_32bit = {
 
 	.zero_flag_mask = true, /* this is needed to make sure addr is not write_masked */
 	.cache_type = REGCACHE_NONE,
+};
+
+const struct regmap_config nt519xx_regmap_config_32bit = {
+        .name = "nt36xxx_hw",
+        .reg_bits = 32,
+        .val_bits = 8,
+        .read = nt519xx_i2c_read,
+        .write = nt519xx_i2c_write,
+
+        .zero_flag_mask = true, /* this is needed to make sure addr is not write_masked */
+        .cache_type = REGCACHE_NONE,
 };
 
 static const struct input_id nt36xxx_i2c_input_id = {
@@ -196,6 +269,19 @@ static const struct nt36xxx_chip_data nt36xxx_default_config = {
 	.ic_fw_needed = BIT(NT36675_IC),
 };
 
+static const struct nt36xxx_chip_data nt519xx_default_config = {
+	.config = &nt519xx_regmap_config_32bit,
+	.mmap = nt51900_memory_maps, /* by luck that magic addr are same */
+	.trim_data = &nt51xxx_i2c_trim_data,
+	.max_x = 1080,
+	.max_y = 2400,
+	.abs_x_max = 1080,
+	.abs_y_max = 2400,
+	.id = &nt36xxx_i2c_input_id,
+	.mapid = 0,
+	.ic_fw_needed = 0,
+};
+
 static const struct i2c_device_id nt36xxx_i2c_ids[] = {
 	{ "nt36675-i2c", 0 },
 	{ "nt36xxx-i2c", 1 },
@@ -207,6 +293,10 @@ static const struct of_device_id nt36xxx_i2c_of_match[] = {
 	{
 		.compatible = "novatek,nt36xxx-i2c",
 		.data = &nt36xxx_default_config,
+	},
+	{
+		.compatible = "novatek,nt519xx-i2c",
+		.data = &nt519xx_default_config,
 	},
 	{ }
 };
