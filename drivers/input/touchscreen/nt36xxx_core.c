@@ -38,6 +38,7 @@ enum {
 	MMAP_BLD_DES_ADDR,
 	MMAP_BLD_ILM_DLM_CRC_ADDR,
 	MMAP_BLD_LENGTH_ADDR,
+	MMAP_BLD_SPE_PUPS_ADDR,	/* added nt519xx */
 	MMAP_BOOT_RDY_ADDR,
 	MMAP_DIFF_BTN_PIPE0_ADDR,
 	MMAP_DIFF_BTN_PIPE1_ADDR,
@@ -48,11 +49,13 @@ enum {
 	MMAP_DMA_CRC_EN_ADDR,
 	MMAP_DMA_CRC_FLAG_ADDR,
 	MMAP_ENG_RST_ADDR,
+	MMAP_SW_RST_ADDR,  /* added nt519xx, since need extra crc reset-idle */
 	MMAP_EVENT_BUF_ADDR,
 	MMAP_G_DLM_CHECKSUM_ADDR,
 	MMAP_G_ILM_CHECKSUM_ADDR,
 	MMAP_ILM_DES_ADDR,
 	MMAP_ILM_LENGTH_ADDR,
+	MMAP_IC_NUM_ADDR,	/* added nt519xx */
 	MMAP_POR_CD_ADDR,
 	MMAP_RAW_BTN_PIPE0_ADDR,
 	MMAP_RAW_BTN_PIPE1_ADDR,
@@ -66,10 +69,15 @@ enum {
 	MMAP_SWRST_N8_ADDR,
 
 	/* below are magic numbers in source code */
-	MMAP_MAGIC_NUMBER_0X1F64E_ADDR,
+	MMAP_MAGIC_NUMBER_PROBE_ADDR,
 
 	/* this addr is not specific to */
 	MMAP_TOP_ADDR,
+
+	/* for identical address with different naming put here */
+	MMAP_ENB_CASC_ADDR = MMAP_IC_NUM_ADDR,     /* added nt519xx */
+	MMAP_SDLOC_ADDR = MMAP_IC_NUM_ADDR,	/* added nt519xx */
+
 	MMAP_MAX_ADDR = MMAP_TOP_ADDR,
 } nt36xxx_ts_mem_map;
 
@@ -406,7 +414,7 @@ const u32 nt36675_memory_maps[] = {
 	[MMAP_SWRST_N8_ADDR] = 0x03F0FE,
 
 	[MMAP_ENG_RST_ADDR] = 0x7FFF80,
-	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0x1F64E,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
@@ -448,7 +456,7 @@ const u32 nt36672a_memory_maps[] = {
 	[MMAP_SWRST_N8_ADDR] = 0x03F0FE,
 
 	[MMAP_ENG_RST_ADDR] = 0x7FFF80,
-	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0x1F64E,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
@@ -473,7 +481,7 @@ const u32 nt36676f_memory_maps[] = {
 	[MMAP_SWRST_N8_ADDR] = 0x03F0FE,
 
 	[MMAP_ENG_RST_ADDR] = 0x7FFF80,
-	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0x1F64E,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
@@ -503,7 +511,7 @@ const u32 nt36772_memory_maps[] = {
 	[MMAP_SWRST_N8_ADDR] = 0x03F0FE,
 
 	[MMAP_ENG_RST_ADDR] = 0x7FFF80,
-	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0x1F64E,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
@@ -534,7 +542,57 @@ const u32 nt36525_memory_maps[] = {
 	[MMAP_SWRST_N8_ADDR] = 0x03F0FE,
 
 	[MMAP_ENG_RST_ADDR] = 0x7FFF80,
-	[MMAP_MAGIC_NUMBER_0X1F64E_ADDR] = 0x1F64E,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0x1F64E,
+
+	[MMAP_TOP_ADDR] = 0xffffff,
+};
+
+/* nt51xxx series use 8bit page shift */
+const u32 nt51900_memory_maps[] = {
+	[MMAP_BLD_SPE_PUPS_ADDR] = 0xFF135,
+	[MMAP_ENB_CASC_ADDR] = 0x3F02C,
+	[MMAP_EVENT_BUF_ADDR] = 0x2A800,
+
+	[MMAP_ENG_RST_ADDR] = 0xFF0FE,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0xFF004,
+
+	[MMAP_TOP_ADDR] = 0xffffff,
+};
+
+const u32 nt51920_memory_maps[] = {
+	[MMAP_BLD_SPE_PUPS_ADDR] = 0xFF135,
+	[MMAP_ENB_CASC_ADDR] = 0x3F02C,
+	[MMAP_EVENT_BUF_ADDR] = 0x30500,
+
+	[MMAP_SW_RST_ADDR] = 0xFF0FE,
+	[MMAP_SWRST_N8_ADDR] = 0xFF0FE,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0xFF004,
+
+	[MMAP_TOP_ADDR] = 0xffffff,
+};
+
+const u32 nt51923_memory_maps[] = {
+	[MMAP_BLD_SPE_PUPS_ADDR] = 0xFF135,
+	[MMAP_EVENT_BUF_ADDR] = 0x94000,
+
+	[MMAP_SDLOC_ADDR] = 0xFF02C,
+
+	[MMAP_SW_RST_ADDR] = 0xFF0FE,
+	[MMAP_SWRST_N8_ADDR] = 0xFF0FE,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0xFF004,
+
+	[MMAP_TOP_ADDR] = 0xffffff,
+};
+
+const u32 nt51926_memory_maps[] = {
+	[MMAP_BLD_SPE_PUPS_ADDR] = 0xFF135,
+	[MMAP_EVENT_BUF_ADDR] = 0x94000,
+
+	[MMAP_IC_NUM_ADDR] = 0xFF02C,
+
+	[MMAP_SW_RST_ADDR] = 0xFF0FE,
+	[MMAP_SWRST_N8_ADDR] = 0xFF0FE,
+	[MMAP_MAGIC_NUMBER_PROBE_ADDR] = 0xFF004,
 
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
@@ -542,9 +600,13 @@ const u32 nt36525_memory_maps[] = {
 static const u32 *nt36xxx_mmap_table[] = {
 	[NT36525_IC] = nt36525_memory_maps,
 	[NT36672A_IC] = nt36672a_memory_maps,
+	[NT36675_IC] = nt36675_memory_maps,
 	[NT36676F_IC] = nt36676f_memory_maps,
 	[NT36772_IC] = nt36772_memory_maps,
-	[NT36675_IC] = nt36675_memory_maps,
+	[NT51900_IC] = nt51900_memory_maps,
+	[NT51920_IC] = nt51920_memory_maps,
+	[NT51923_IC] = nt51923_memory_maps,
+	[NT51926_IC] = nt51926_memory_maps,
 };
 
 void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line) {
@@ -570,13 +632,11 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 	}
 
 	if(ts->mmap[MMAP_ENG_RST_ADDR] == 0) {
-		dev_err(ts->dev, "%s %s empty", __func__, "MMAP_ENG_RST_ADDR");
-		return -EINVAL;
+		return 0;
 	}
 
 	/* HACK to output something without read */
-	ret = regmap_write(ts->regmap, ts->mmap[MMAP_ENG_RST_ADDR],
-					   0x5a);
+	ret = regmap_write(ts->regmap, ts->mmap[MMAP_ENG_RST_ADDR], 0x5a);
 	if (ret) {
 		dev_err(ts->dev, "%s regmap write error\n", __func__);
 		return ret;
@@ -814,13 +874,52 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 	}
 
 	do {
-		ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_MAGIC_NUMBER_0X1F64E_ADDR], buf, 7);
+	        if (ts->mmap[MMAP_SW_RST_ADDR]) {
+	                ret = regmap_write(ts->regmap, ts->mmap[MMAP_SW_RST_ADDR],
+						NT36XXX_CMD_SOFTWARE_RESET);
+	                if (ret) {
+				usleep_range(10000, 11000);
+				continue;
+			}
+		}
 
-		if (ret)
+		ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_MAGIC_NUMBER_PROBE_ADDR], buf, 7);
+		if (ret) {
+			usleep_range(10000, 11000);
 			continue;
+		}
 
 		dev_dbg(ts->dev, "%s buf[0..3-4..6]=%02X%02X%02X%02X-%02X%02X%02X \n",
 			__func__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
+
+		if (ts->mmap[MMAP_SW_RST_ADDR]) {
+		/* Stop CRC check to prevent IC auto reboot */
+			if (((buf[1] == 0xFB) && (buf[2] == 0xFB) &&
+				(buf[3] == 0xFB)) ||
+				((buf[1] == 0xFC) && (buf[2] == 0xFC) &&
+				(buf[3] == 0xFC)) ||
+				((buf[1] == 0xFF) && (buf[2] == 0xFF) &&
+				(buf[3] == 0xFF))) {
+
+				usleep_range(10000, 11000);
+				ret = regmap_write(ts->regmap, ts->mmap[MMAP_BLD_SPE_PUPS_ADDR], 0xa5);
+				if (ret) {
+					usleep_range(10000, 11000);
+					continue;
+				}
+
+				ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_BLD_SPE_PUPS_ADDR], buf, 1);
+				if (ret) {
+					usleep_range(10000, 11000);
+					continue;
+				}
+
+				if (buf[0] != 0xa5) {
+					usleep_range(10000, 11000);
+                                        continue;
+				}
+			}
+		}
 
 		/* Compare read chip id with trim list */
 		for (list = 0; list < NT36XXX_ID_LIST_MAX; list++) {
@@ -1484,6 +1583,15 @@ skip_regulators:
 	}
 
 	ts->mmap = ts->mmap_data;
+
+	/* for nt519xx chip */
+	if (ts->mmap[MMAP_SW_RST_ADDR]) {
+		ret = nt36xxx_check_reset_state(ts, NT36XXX_STATE_INIT);
+		if (ret) {
+			dev_info(dev, "Autodetect and reset fail...\n");
+			return -ENODEV;
+		}
+	}
 
 	ret = nt36xxx_input_dev_config(ts, ts->data->id);
 	if (ret) {
