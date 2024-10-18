@@ -164,7 +164,7 @@ static int nt36xxx_spi_probe(struct spi_device *spi)
 static const struct nt36xxx_chip_data nt36xxx_default_config = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36675_memory_maps, /* by luck that magic addr are same */
-	.trim_table = nt36xxx_spi_trim_id_table,
+	.trim_data = &nt36xxx_spi_trim_data,
 	.max_x = 1080,
 	.max_y = 2400,
 	.abs_x_max = 1080,
@@ -178,7 +178,7 @@ static const struct nt36xxx_chip_data nt36xxx_default_config = {
 static const struct nt36xxx_chip_data nt36xxx_probe_default_config = {
 	.config = &nt36xxx_regmap_config_32bit,
 	.mmap = nt36675_memory_maps, /* by luck that magic addr are same */
-	.trim_table = nt36xxx_spi_trim_id_table,
+	.trim_data = &nt36xxx_spi_trim_data,
 	.max_x = 1080,
 	.max_y = 2400,
 	.abs_x_max = 1080,
@@ -211,7 +211,7 @@ MODULE_DEVICE_TABLE(of, nt36xxx_spi_of_match);
 
 static struct spi_driver nt36xxx_spi_driver = {
 	.driver = {
-		.name = "nt36675-spi",
+		.name = "nt36xxx-spi",
 		.of_match_table = nt36xxx_spi_of_match,
 		.pm = pm_sleep_ptr(&nt36xxx_pm_ops),
 	},
