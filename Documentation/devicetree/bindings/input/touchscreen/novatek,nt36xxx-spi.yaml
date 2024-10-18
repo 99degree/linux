@@ -23,6 +23,7 @@ properties:
 
       - description: Implements simple compatible string to nt36xxx IC
         enum:
+          - novatek,nt36xxx-i2c
           - novatek,nt36xxx-spi
           - novatek,NVT-default-spi
 
