@@ -50,15 +50,15 @@ enum nt36xxx_chips {
 	NT36772_IC,
 	NT36675_IC,
 
-	NT_NIL_IC,
-	/* below are not supported atm */
-	NT36526_IC,
-	NT36870_IC,
-
 	NT51900_IC,
 	NT51920_IC,
 	NT51923_IC,
 	NT51926_IC,
+
+	NT_NIL_IC,
+	/* below are not supported atm */
+	NT36526_IC,
+	NT36870_IC,
 
 	NTMAX_IC,
 };
@@ -66,6 +66,7 @@ enum nt36xxx_chips {
 enum nt36xxx_cmds {
 	NT36XXX_CMD_ENTER_SLEEP = 0x11,
 	NT36XXX_CMD_BOOTLOADER_RESET = 0x69,
+	NT36XXX_CMD_SOFTWARE_RESET = 0xaa,
 };
 
 enum nt36xxx_events {
@@ -165,6 +166,7 @@ extern const u32 nt36672a_memory_maps[];
 extern const u32 nt36772_memory_maps[];
 extern const u32 nt36676f_memory_maps[];
 extern const u32 nt36525_memory_maps[];
+extern const u32 nt51900_memory_maps[];
 
 extern const struct nt36xxx_trim_table nt36xxx_spi_trim_id_table[];
 extern const struct nt36xxx_trim_table nt36xxx_i2c_trim_id_table[];
