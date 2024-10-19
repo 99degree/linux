@@ -89,7 +89,7 @@ struct nt36xxx_ts {
 	struct input_dev *input;
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
-        struct gpio_desc *irq_gpio;
+	struct gpio_desc *irq_gpio;
 	int irq;
 	struct device *dev;
 
@@ -99,7 +99,7 @@ struct nt36xxx_ts {
 #define NT36XXX_STATUS_DOWNLOAD_COMPLETE	BIT(1)
 #define NT36XXX_STATUS_DOWNLOAD_RECOVER		BIT(2)
 #define NT36XXX_STATUS_PREPARE_FIRMWARE		BIT(3)
-#define NT36XXX_STATUS_NEED_FIRMWARE      	BIT(4)
+#define NT36XXX_STATUS_NEED_FIRMWARE		BIT(4)
 
 	unsigned int status;
 
@@ -124,7 +124,7 @@ struct nt36xxx_ts {
 
 	uint8_t hw_crc;
 
-	const char * fw_name;
+	const char *fw_name;
 	struct firmware fw_entry; /* containing request fw data */
 	const struct nt36xxx_chip_data *data;
 };
@@ -375,13 +375,13 @@ const struct nt36xxx_trim_data nt36xxx_spi_trim_data = {
 };
 
 const struct nt36xxx_trim_data nt36xxx_i2c_trim_data = {
-        .id_table = nt36xxx_i2c_trim_id_table,
-        .sz_id_table = ARRAY_SIZE(nt36xxx_i2c_trim_id_table),
+	.id_table = nt36xxx_i2c_trim_id_table,
+	.sz_id_table = ARRAY_SIZE(nt36xxx_i2c_trim_id_table),
 };
 
 const struct nt36xxx_trim_data nt51xxx_i2c_trim_data = {
-        .id_table = nt51xxx_trim_id_table,
-        .sz_id_table = ARRAY_SIZE(nt51xxx_trim_id_table),
+	.id_table = nt51xxx_trim_id_table,
+	.sz_id_table = ARRAY_SIZE(nt51xxx_trim_id_table),
 };
 
 const u32 nt36675_memory_maps[] = {
@@ -609,10 +609,12 @@ static const u32 *nt36xxx_mmap_table[] = {
 	[NT51926_IC] = nt51926_memory_maps,
 };
 
-void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line) {
-        struct irq_desc *desc;
-        desc = irq_data_to_desc( irq_get_irq_data(ts->irq));
-        dev_info(ts->dev, "%d irq_desc depth=%d", line, desc->depth );
+void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line)
+{
+	struct irq_desc *desc;
+
+	desc = irq_data_to_desc(irq_get_irq_data(ts->irq));
+	dev_info(ts->dev, "%d irq_desc depth=%d", line, desc->depth);
 }
 
 #define debug_irq(a) _debug_irq(a, __LINE__)
@@ -621,19 +623,18 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 {
 	int ret;
 
-	if(!ts) {
+	if (!ts) {
 		dev_err(ts->dev, "%s %s empty", __func__, "nt36xxx_ts");
 		return -EINVAL;
 	}
 
-	if(!ts->mmap) {
+	if (!ts->mmap) {
 		dev_err(ts->dev, "%s %s empty", __func__, "ts->mmap");
 		return -EINVAL;
 	}
 
-	if(ts->mmap[MMAP_ENG_RST_ADDR] == 0) {
+	if (ts->mmap[MMAP_ENG_RST_ADDR] == 0)
 		return 0;
-	}
 
 	/* HACK to output something without read */
 	ret = regmap_write(ts->regmap, ts->mmap[MMAP_ENG_RST_ADDR], 0x5a);
@@ -664,7 +665,7 @@ static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 	if (ts->mmap[MMAP_SWRST_N8_ADDR]) {
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_SWRST_N8_ADDR],
 			   NT36XXX_CMD_BOOTLOADER_RESET);
-	        if (ret)
+		if (ret)
 			return ret;
 	} else {
 		pr_info("plz make sure MMAP_SWRST_N8_ADDR is set!\n");
@@ -675,9 +676,9 @@ static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 	msleep(35);
 
 	if (ts->mmap[MMAP_SPI_RD_FAST_ADDR]) {
-                ret = regmap_write(ts->regmap, ts->mmap[MMAP_SPI_RD_FAST_ADDR], 0);
-                if (ret)
-                        return ret;
+		ret = regmap_write(ts->regmap, ts->mmap[MMAP_SPI_RD_FAST_ADDR], 0);
+		if (ret)
+			return ret;
 	}
 
 	return ret;
@@ -742,9 +743,8 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 
 	/* wdt recovery and esd check */
 	for (i = 0; i < 7; i++) {
-		if ((point[i] != 0xFD) && (point[i] != 0xFE) && (point[i] != 0x77)) {
+		if ((point[i] != 0xFD) && (point[i] != 0xFE) && (point[i] != 0x77))
 			break;
-		}
 
 		mutex_lock(&ts->lock);
 		ts->status |= NT36XXX_STATUS_DOWNLOAD_RECOVER;
@@ -756,9 +756,8 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 		ppos = 6 * i + 1;
 		input_id = point[ppos + 0] >> 3;
 
-		if ((input_id == 0) || (input_id > NT36XXX_TOUCH_MAX_FINGER_NUM)) {
+		if ((input_id == 0) || (input_id > NT36XXX_TOUCH_MAX_FINGER_NUM))
 			continue;
-		}
 
 		if (((point[ppos] & 0x07) == 0x01) ||
 		    ((point[ppos] & 0x07) == 0x02)) {
@@ -828,7 +827,8 @@ exit:
 		ts->status &= ~NT36XXX_STATUS_DOWNLOAD_RECOVER;
 		mutex_unlock(&ts->lock);
 		/* TODO: other builtin eeprom model might have another reset
-		 * approach other than download, might add here afterward */
+		 * approach other than download, might add here afterward
+		 */
 		if (ts->fw_name)
 			schedule_delayed_work(&ts->work, 40000);
 	}
@@ -874,10 +874,10 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 	}
 
 	do {
-	        if (ts->mmap[MMAP_SW_RST_ADDR]) {
-	                ret = regmap_write(ts->regmap, ts->mmap[MMAP_SW_RST_ADDR],
+		if (ts->mmap[MMAP_SW_RST_ADDR]) {
+			ret = regmap_write(ts->regmap, ts->mmap[MMAP_SW_RST_ADDR],
 						NT36XXX_CMD_SOFTWARE_RESET);
-	                if (ret) {
+			if (ret) {
 				usleep_range(10000, 11000);
 				continue;
 			}
@@ -889,7 +889,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 			continue;
 		}
 
-		dev_dbg(ts->dev, "%s buf[0..3-4..6]=%02X%02X%02X%02X-%02X%02X%02X \n",
+		dev_dbg(ts->dev, "%s buf[0..3-4..6]=%02X%02X%02X%02X-%02X%02X%02X\n",
 			__func__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
 		if (ts->mmap[MMAP_SW_RST_ADDR]) {
@@ -916,7 +916,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 
 				if (buf[0] != 0xa5) {
 					usleep_range(10000, 11000);
-                                        continue;
+					continue;
 				}
 			}
 		}
@@ -955,7 +955,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 
 				dev_dbg(ts->dev, "hw crc support=%d\n", ts->hw_crc);
 
-				dev_info(ts->dev, "This is NVT touch IC, %06x, mapid %d", *(int*)&buf[4], mapid);
+				dev_info(ts->dev, "This is NVT touch IC, %06x, mapid %d", *(int *)&buf[4], mapid);
 
 				ts->mapid = mapid;
 
@@ -974,7 +974,7 @@ exit:
 
 /*
  * this function is nearly direct copy from vendor source
-*/
+ */
 static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *fwdata, size_t fwsize, struct nvt_ts_bin_map **bin_map_ptr, uint8_t *partition_ptr, uint8_t ilm_dlm_num)
 {
 	uint8_t list = 0;
@@ -990,7 +990,7 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 	end = fwdata[0] + (fwdata[1] << 8) + (fwdata[2] << 16) + (fwdata[3] << 24);
 	pos = 0x30;	/* info section start at 0x30 offset */
 	while (pos < end) {
-		info_sec_num ++;
+		info_sec_num++;
 		pos += 0x10;	/* each header info is 16 bytes */
 	}
 
@@ -1011,8 +1011,8 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 			ovly_info, ilm_dlm_num, ovly_sec_num, info_sec_num, partition);
 
 	/* allocated memory for header info */
-	*bin_map_ptr = bin_map = (struct nvt_ts_bin_map *)kzalloc((partition + 1) * sizeof(struct nvt_ts_bin_map), GFP_KERNEL);
-	if(bin_map == NULL) {
+	*bin_map_ptr = bin_map = kzalloc((partition + 1) * sizeof(struct nvt_ts_bin_map), GFP_KERNEL);
+	if (bin_map == NULL) {
 		dev_err(dev, "kzalloc for bin_map failed!\n");
 		return -ENOMEM;
 	}
@@ -1029,7 +1029,7 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 			memcpy(&bin_map[list].size, &(fwdata[8 + list*12]), 4);
 			memcpy(&bin_map[list].crc, &(fwdata[0x18 + list*4]), 4);
 
-                        if (!hw_crc) {
+			if (!hw_crc) {
 				dev_err(dev, "%s %d sw-crc not support", __func__, __LINE__);
 				return -EINVAL;
 			}
@@ -1052,7 +1052,7 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 			memcpy(&bin_map[list].sram_addr, &(fwdata[pos]), 4);
 			memcpy(&bin_map[list].size, &(fwdata[pos+4]), 4);
 			memcpy(&bin_map[list].bin_addr, &(fwdata[pos+8]), 4);
-                        memcpy(&bin_map[list].crc, &(fwdata[pos+12]), 4);
+			memcpy(&bin_map[list].crc, &(fwdata[pos+12]), 4);
 
 			if (!hw_crc) {
 				dev_info(dev, "ok, hw_crc not presents!");
@@ -1060,11 +1060,10 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 			}
 
 			/* detect header end to protect parser function */
-			if ((bin_map[list].bin_addr == 0) && (bin_map[list].size != 0)) {
+			if ((bin_map[list].bin_addr == 0) && (bin_map[list].size != 0))
 				sprintf(bin_map[list].name, "Header");
-			} else {
+			else
 				sprintf(bin_map[list].name, "Info-%d", (list - ilm_dlm_num));
-			}
 		}
 
 		/*
@@ -1073,7 +1072,7 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 		 */
 		if (list >= (ilm_dlm_num + info_sec_num)) {
 			/* overlay info located at DLM (list = 1) start addr */
-			pos = bin_map[1].bin_addr + (0x10 * (list- ilm_dlm_num - info_sec_num));
+			pos = bin_map[1].bin_addr + (0x10 * (list - ilm_dlm_num - info_sec_num));
 
 			memcpy(&bin_map[list].sram_addr, &(fwdata[pos]), 4);
 			memcpy(&bin_map[list].size, &(fwdata[pos+4]), 4);
@@ -1081,11 +1080,11 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 			memcpy(&bin_map[list].crc, &(fwdata[pos+12]), 4);
 
 			if (!hw_crc) {
-                                dev_err(dev, "%s %d sw_crc not support", __func__, __LINE__);
-                                return -EINVAL;
+				dev_err(dev, "%s %d sw_crc not support", __func__, __LINE__);
+				return -EINVAL;
 			}
 
-			sprintf(bin_map[list].name, "Overlay-%d", (list- ilm_dlm_num - info_sec_num));
+			sprintf(bin_map[list].name, "Overlay-%d", (list - ilm_dlm_num - info_sec_num));
 		}
 
 		/* BIN size error detect */
@@ -1096,21 +1095,22 @@ static int32_t nvt_bin_header_parser(struct device *dev, int hw_crc, const u8 *f
 		}
 
 		dev_dbg(dev, "[%d][%s] SRAM (0x%08X), SIZE (0x%08X), BIN (0x%08X), CRC (0x%08X)\n",
-                              list, bin_map[list].name,
-                              bin_map[list].sram_addr, bin_map[list].size,  bin_map[list].bin_addr, bin_map[list].crc);
+				list, bin_map[list].name, bin_map[list].sram_addr, bin_map[list].size,
+				bin_map[list].bin_addr, bin_map[list].crc);
 	}
 
 	return 0;
 }
 
-static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
+static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts)
+{
 	uint32_t list = 0;
 	uint32_t bin_addr, sram_addr, size;
 	struct nvt_ts_bin_map *bin_map = ts->bin_map;
 	int max_write = min(regmap_get_raw_write_max(ts->regmap)
-			- NT36XXX_WRITE_PREFIX_LEN, NT36XXX_TRANSFER_LEN) >>3 <<3;
+			- NT36XXX_WRITE_PREFIX_LEN, NT36XXX_TRANSFER_LEN) >> 3 << 3;
 
-        nt36xxx_bootloader_reset(ts);
+	nt36xxx_bootloader_reset(ts);
 
 	for (list = 0; list < ts->fw_data.partition; list++) {
 		int j;
@@ -1150,7 +1150,8 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 }
 
 static void nt36xxx_release_memory(void *data);
-static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
+static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts)
+{
 	int i, ret;
 	size_t fw_need_write_size = 0;
 	const struct firmware *fw_entry;
@@ -1203,11 +1204,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 
 	if (fw_need_write_size == 0) {
 		dev_err(ts->dev, "fw parsing error\n");
-		kfree (data);
-		if (ts->bin_map) {
-			kfree(ts->bin_map);
-			ts->bin_map = NULL;
-		}
+		kfree(data);
+		kfree(ts->bin_map);
+		ts->bin_map = NULL;
 		return -EIO;
 	}
 
@@ -1218,11 +1217,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 			*(ts->fw_entry.data+(fw_need_write_size - 4096)),
 			*(ts->fw_entry.data+(fw_need_write_size - 4096 + 1)));
 
-		kfree (data);
-		if (ts->bin_map) {
-			kfree(ts->bin_map);
-			ts->bin_map = NULL;
-		}
+		kfree(data);
+		kfree(ts->bin_map);
+		ts->bin_map = NULL;
 		return -EIO;
 	}
 
@@ -1231,13 +1228,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	ret = nvt_bin_header_parser(ts->dev, ts->hw_crc, ts->fw_entry.data, ts->fw_entry.size,
 			&ts->bin_map, &ts->fw_data.partition, ts->fw_data.ilm_dlm_num);
 	if (ret) {
-		kfree (data);
-		if(ret != -ENOMEM){
-			if (ts->bin_map) {
-				kfree(ts->bin_map);
-				ts->bin_map = NULL;
-			}
-		}
+		kfree(data);
+		kfree(ts->bin_map);
+		ts->bin_map = NULL;
 
 		/* really dont let the tasklet re-enter since no needed for broken fw data */
 		ts->status |= NT36XXX_STATUS_DOWNLOAD_COMPLETE;
@@ -1254,9 +1247,10 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	return 0;
 }
 
-static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
-        int i, ret, retry = 0;
-        u8 val[8 * 4] = {0};
+static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts)
+{
+	int i, ret, retry = 0;
+	u8 val[8 * 4] = {0};
 
 	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
 		return -EIO;
@@ -1275,7 +1269,7 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 
 	/* set ilm & dlm reg bank */
 	for (i = 0; i < ts->fw_data.partition; i++) {
-		if (0 == strncmp(ts->bin_map[i].name, "ILM", 3)) {
+		if (strncmp(ts->bin_map[i].name == 0, "ILM", 3)) {
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_ILM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_ILM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
@@ -1283,7 +1277,7 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_G_ILM_CHECKSUM_ADDR], &ts->bin_map[i].crc,
 						sizeof(ts->bin_map[i].crc));
 		}
-		if (0 == strncmp(ts->bin_map[i].name, "DLM", 3)) {
+		if (strncmp(ts->bin_map[i].name == 0, "DLM", 3)) {
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_DLM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_DLM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
@@ -1342,7 +1336,8 @@ check_fw:
 	return 0;
 }
 
-static void nt36xxx_download_firmware(struct work_struct *work) {
+static void nt36xxx_download_firmware(struct work_struct *work)
+{
 	struct nt36xxx_ts *ts = container_of(work, struct nt36xxx_ts, work.work);
 	int ret;
 
@@ -1388,14 +1383,14 @@ unlock:
 
 	pm_runtime_put(ts->dev);
 exit:
-	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
+	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE))
 		schedule_delayed_work(&ts->work, 4000);
-	}
 }
 
 static void nt36xxx_release_memory(void *data)
 {
 	struct nt36xxx_ts *ts = data;
+
 	kfree(ts->bin_map);
 	kfree(ts->fw_entry.data);
 }
@@ -1412,9 +1407,9 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 	struct device *dev = ts->dev;
 	int ret;
 
-        ts->input = devm_input_allocate_device(dev);
-        if (!ts->input)
-                return -ENOMEM;
+	ts->input = devm_input_allocate_device(dev);
+	if (!ts->input)
+		return -ENOMEM;
 
 	input_set_drvdata(ts->input, ts);
 
@@ -1487,15 +1482,16 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	const struct nt36xxx_chip_data *chip_data;
 	const char *signed_fwname = NULL;
 	int ret;
+	struct nt36xxx_ts *ts
 
-	struct nt36xxx_ts *ts = devm_kzalloc(dev, sizeof(struct nt36xxx_ts), GFP_KERNEL);
+	ts = devm_kzalloc(dev, sizeof(struct nt36xxx_ts), GFP_KERNEL);
 	if (!ts)
 		return -ENOMEM;
 
 	dev_set_drvdata(dev, ts);
 
 	chip_data = of_device_get_match_data(dev);
-	if(!chip_data)
+	if (!chip_data)
 		return -EINVAL;
 
 	ts->dev = dev;
@@ -1523,7 +1519,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	if (irq <= 0) {
 		ts->irq = gpiod_to_irq(ts->irq_gpio);
-		if (ts->irq <=0) {
+		if (ts->irq <= 0) {
 			dev_err(dev, "either need irq or irq-gpio specified in devicetree node!\n");
 			return -EINVAL;
 		}
@@ -1560,10 +1556,10 @@ skip_regulators:
 	mutex_init(&ts->lock);
 
 	ret = nt36xxx_eng_reset_idle(ts);
-        if (ret) {
-                dev_err(dev, "Failed to check chip version\n");
-                return ret;
-        }
+	if (ret) {
+		dev_err(dev, "Failed to check chip version\n");
+		return ret;
+	}
 
 	/* Set memory maps for the specific chip version */
 	ret = nt36xxx_chip_version_init(ts);
@@ -1576,7 +1572,7 @@ skip_regulators:
 	if  (chip_data->mapid > NT_NIL_IC) {
 		dev_info(dev, "Probe diag ended, please use approprate of compatible string. Exiting...");
 		return -ENODEV;
-	} else if (0 == chip_data->mapid) {
+	} else if (chip_data->mapid == 0) {
 		memcpy(ts->mmap_data, nt36xxx_mmap_table[ts->mapid], sizeof(ts->mmap_data));
 	} else {
 		memcpy(ts->mmap_data, ts->data->mmap, sizeof(ts->mmap_data));
@@ -1623,7 +1619,8 @@ skip_regulators:
 	pm_runtime_enable(dev);
 
 	/* have to make sure this is first time schedule work, if devm_drm_panel_add_follower
-	 * called into internal resume with schedule_delay_work, then block it over there */
+	 * called into internal resume with schedule_delay_work, then block it over there
+	 */
 	if (ts->fw_name) {
 		ts->status |= NT36XXX_STATUS_NEED_FIRMWARE;
 
@@ -1637,7 +1634,6 @@ skip_regulators:
 	dev_info(dev, "probe ok!");
 	return 0;
 }
-
 EXPORT_SYMBOL_GPL(nt36xxx_probe);
 
 static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
@@ -1653,9 +1649,8 @@ static int __maybe_unused nt36xxx_internal_pm_suspend(struct device *dev)
 
 	/* adding the mutex is to protect concurrent with download_task */
 	mutex_lock(&ts->lock);
-	if (ts->mmap[MMAP_EVENT_BUF_ADDR]) {
+	if (ts->mmap[MMAP_EVENT_BUF_ADDR])
 		ret = regmap_write(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR], NT36XXX_CMD_ENTER_SLEEP);
-	}
 
 	if (ret)
 		dev_err(ts->dev, "Cannot enter suspend!\n");

@@ -21,7 +21,7 @@
 
 /* due to extra framework layer, the transfer trunk is as small as
  * 128 otherwize dma error happened, all routed to spi_sync()
-*/
+ */
 
 /* Number of bytes for chip identification */
 #define NT36XXX_ID_LEN_MAX	6
@@ -70,22 +70,22 @@ enum nt36xxx_cmds {
 };
 
 enum nt36xxx_events {
-        NT36XXX_EVT_REPORT              = 0x00,
-        NT36XXX_EVT_CRC                 = 0x35,
-        NT36XXX_EVT_HOST_CMD            = 0x50,
-        NT36XXX_EVT_HS_OR_SUBCMD        = 0x51, /* Handshake or subcommand byte */
-        NT36XXX_EVT_RESET_COMPLETE      = 0x60,
-        NT36XXX_EVT_FWINFO              = 0x78,
-        NT36XXX_EVT_READ_PID            = 0x80,
-        NT36XXX_EVT_PROJECTID           = 0x9a, /* Excess 0x80 write bit, messed trouble, ignored */
+	NT36XXX_EVT_REPORT = 0x00,
+	NT36XXX_EVT_CRC	= 0x35,
+	NT36XXX_EVT_HOST_CMD = 0x50,
+	NT36XXX_EVT_HS_OR_SUBCMD = 0x51, /* Handshake or subcommand byte */
+	NT36XXX_EVT_RESET_COMPLETE = 0x60,
+	NT36XXX_EVT_FWINFO = 0x78,
+	NT36XXX_EVT_READ_PID = 0x80,
+	NT36XXX_EVT_PROJECTID = 0x9a, /* Excess 0x80 write bit, messed trouble, ignored */
 };
 
 enum nt36xxx_fw_state {
-        NT36XXX_STATE_INIT = 0xa0,              /* IC Reset */
-        NT36XXX_STATE_REK = 0xa1,               /* ReK baseline */
-        NT36XXX_STATE_REK_FINISH = 0xa2,        /* Baseline is ready */
-        NT36XXX_STATE_NORMAL_RUN = 0xa3,        /* Firmware is running */
-        NT36XXX_STATE_MAX = 0xaf
+	NT36XXX_STATE_INIT = 0xa0,              /* IC Reset */
+	NT36XXX_STATE_REK = 0xa1,               /* ReK baseline */
+	NT36XXX_STATE_REK_FINISH = 0xa2,        /* Baseline is ready */
+	NT36XXX_STATE_NORMAL_RUN = 0xa3,        /* Firmware is running */
+	NT36XXX_STATE_MAX = 0xaf
 };
 
 struct nt36xxx_ts;
@@ -132,7 +132,7 @@ struct nt36xxx_chip_data {
 	const struct regmap_config *config;
 	const struct nt36xxx_trim_data *trim_data;
 
-	const char* fw_name;
+	const char *fw_name;
 	unsigned int max_x;
 	unsigned int max_y;
 	unsigned int abs_x_max;
