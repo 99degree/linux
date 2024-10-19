@@ -57,15 +57,21 @@ extern touchscreen_usb_plugin_data_t g_touchscreen_usb_pulgin;
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 u8 fw_file[] = {
+#if EMBED_FW
 #include FTS_UPGRADE_FW_FILE
+#endif
 };
 
 u8 fw_file2[] = {
+#if EMBED_FW
 #include FTS_UPGRADE_FW2_FILE
+#endif
 };
 
 u8 fw_file3[] = {
+#if EMBED_FW
 #include FTS_UPGRADE_FW3_FILE
+#endif
 };
 
 struct upgrade_module module_list[] = {
@@ -729,10 +735,13 @@ static int fts_read_file(char *file_name, u8 **file_buf)
 	int ret = 0;
 	char file_path[FILE_NAME_LENGTH] = { 0 };
 	struct file *filp = NULL;
+
+#if 0
 	struct inode *inode;
 	mm_segment_t old_fs;
 	loff_t pos;
 	loff_t file_len = 0;
+#endif
 
 	if ((NULL == file_name) || (NULL == file_buf)) {
 		FTS_ERROR("filename/filebuf is NULL");
@@ -740,6 +749,9 @@ static int fts_read_file(char *file_name, u8 **file_buf)
 	}
 
 	snprintf(file_path, FILE_NAME_LENGTH, "%s%s", FTS_FW_BIN_FILEPATH, file_name);
+
+#if 0
+
 	filp = filp_open(file_path, O_RDONLY, 0);
 	if (IS_ERR(filp)) {
 		FTS_ERROR("open %s file fail", file_path);
@@ -769,6 +781,26 @@ static int fts_read_file(char *file_name, u8 **file_buf)
 	filp_close(filp, NULL);
 	set_fs(old_fs);
 
+#endif
+	if (1) {
+		const struct firmware *fw_entry;
+	        ret = request_firmware(&fw_entry, file_path, NULL);
+        	if (ret) {
+                	FTS_ERROR("request fw fail name=%s\n", file_path);
+	                return -ENOMEM;
+		}
+
+	        *file_buf = (u8 *) vmalloc(fw_entry->size);
+        	if (NULL == *file_buf) {
+	                FTS_ERROR("file buf malloc fail");
+        	        //filp_close(filp, NULL);
+                	return -ENOMEM;
+        	}
+
+		memcpy(file_buf, fw_entry->data, fw_entry->size);
+
+		release_firmware(fw_entry);
+	}
 	return ret;
 }
 
@@ -1067,13 +1099,13 @@ static int fts_fwupg_get_fw_file(struct fts_upgrade *upg)
 		FTS_ERROR("upg/ts_data is null");
 		return -EINVAL;
 	}
-
+#if EMBED_FW
 	ret = fts_fwupg_get_module_info(upg);
 	if ((ret < 0) || (!upg->module_info)) {
 		FTS_ERROR("get module info fail");
 		return ret;
 	}
-
+#endif
 	if (FTS_FW_REQUEST_SUPPORT) {
 		msleep(500);
 		ret = fts_get_fw_file_via_request_firmware(upg);
