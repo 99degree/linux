@@ -184,7 +184,7 @@
 /*
  *enable tp usb plugin feature
  */
-#define LCT_TP_USB_PLUGIN                       1
+#define LCT_TP_USB_PLUGIN                       0
 
 /****************************************************/
 
