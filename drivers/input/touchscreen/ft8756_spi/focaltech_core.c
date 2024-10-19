@@ -87,6 +87,12 @@ extern void lcd_esd_enable(bool on);
 static bool delay_gesture;
 static bool g_regulator_status;
 
+__weak void lcd_esd_enable(bool on) {
+}
+
+__weak void set_lcd_reset_gpio_keep_high(bool en) {
+}
+
 int lct_fts_tp_gesture_callback(bool flag)
 {
 	struct fts_ts_data *ts_data = fts_data;
@@ -1238,11 +1244,11 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 	}
 
 	/* reset, irq gpio info */
-	pdata->reset_gpio = of_get_named_gpio_flags(np, "focaltech,reset-gpio", 0, &pdata->reset_gpio_flags);
+	pdata->reset_gpio = of_get_named_gpio(np, "focaltech,reset-gpio", 0);
 	if (pdata->reset_gpio < 0)
 		FTS_ERROR("Unable to get reset_gpio");
 
-	pdata->irq_gpio = of_get_named_gpio_flags(np, "focaltech,irq-gpio", 0, &pdata->irq_gpio_flags);
+	pdata->irq_gpio = of_get_named_gpio(np, "focaltech,irq-gpio", 0);
 	if (pdata->irq_gpio < 0)
 		FTS_ERROR("Unable to get irq_gpio");
 
@@ -1849,9 +1855,9 @@ static int fts_ts_probe(struct spi_device *spi)
 	return 0;
 }
 
-static int fts_ts_remove(struct spi_device *spi)
+static void fts_ts_remove(struct spi_device *spi)
 {
-	return fts_ts_remove_entry(spi_get_drvdata(spi));
+	int ret = fts_ts_remove_entry(spi_get_drvdata(spi));
 }
 
 #ifdef CONFIG_PM
