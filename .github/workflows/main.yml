@@ -1,6 +1,6 @@
 name: Build nightly images
 on:
-  push:
+  #push:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 5' # Run every friday at midnight
@@ -58,6 +58,7 @@ jobs:
           mkdir out_raw
           cp arch/arm64/boot/Image out/Image
           cp arch/arm64/boot/dts/qcom/*.dtb out/
+          find -name "*.ko" -not -path "./out/*" -exec cp {} out/ \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
