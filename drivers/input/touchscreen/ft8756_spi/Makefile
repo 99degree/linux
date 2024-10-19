@@ -12,3 +12,5 @@ obj-$(CONFIG_TOUCHSCREEN_FTS_SPI) +=  focaltech_point_report_check.o
 obj-$(CONFIG_TOUCHSCREEN_FTS_SPI) +=  focaltech_spi.o
 
 obj-$(CONFIG_TOUCHSCREEN_FTS_SPI) +=  focaltech_flash.o
+
+cc_flag += -Idrivers/input/touchscreen/ft8756_spi/include/
