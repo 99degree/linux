@@ -24,29 +24,30 @@
 
 /*
  * there are two kinds of spi read/write:
- * 	(a)spi_read()/spi_write()/spi_write_then_read(),
- * 	(b)and the spi_sync itself.
+ * (a)spi_read()/spi_write()/spi_write_then_read(),
+ * (b)and the spi_sync itself.
  *
  * we have to choose one and stick together, cross-use otherwise caused problem.
  * the addressing mode is | 0xff 0xXX 0xYY | 0xZ1 ... data1...| 0xZ2 ...data2... | ...
- * 	0xXX is bit[23..16]
- * 	0xYY is bit[15..7]
+ * - 0xXX is bit[23..16]
+ * - 0xYY is bit[15..7]
  * above describe a 'page select' ops
- * 	0xZ1 is bit[7..0], addr for read ops
- *	0xZ2 is bit[7..0] | 0x80, addr for write ops
+ * - 0xZ1 is bit[7..0], addr for read ops
+ * - 0xZ2 is bit[7..0] | 0x80, addr for write ops
  * there is no restriction on the read write order.
-*/
-static int nt36xxx_spi_write(void *dev, const void *data,
-                                   size_t len)
+ */
+static int nt36xxx_spi_write(void *dev, const void *data, size_t len)
 {
 	struct spi_device *spi = to_spi_device((struct device *)dev);
 	int32_t ret;
+	void *data1;
+	u8 addr[4];
 
-	void *data1 = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
+	data = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
 	if (!data1)
 		return -ENOMEM;
 
-	u8 addr[4] = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 7,  (*(u32 *)data & 0x7f) | 0x80};
+	addr = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 7,  (*(u32 *)data & 0x7f) | 0x80};
 	memcpy(data1, addr, 4);
 
 	dev_dbg(dev, "%s len=0x%lx", __func__, len);
@@ -61,7 +62,7 @@ static int nt36xxx_spi_write(void *dev, const void *data,
 			16, 1, data, 3, true);
 
 		print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
-			16, 1, data + 3, (len - 3) > 0x20 ? 0x20 : len - 3 , true);
+			16, 1, data + 3, (len - 3) > 0x20 ? 0x20 : len - 3, true);
 	}
 
 	kfree(data1);
@@ -69,8 +70,8 @@ static int nt36xxx_spi_write(void *dev, const void *data,
 }
 
 static int nt36xxx_spi_read(void *dev, const void *reg_buf,
-                                  size_t reg_size, void *val_buf,
-                                  size_t val_size)
+				size_t reg_size, void *val_buf,
+				size_t val_size)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	int ret;
@@ -82,7 +83,7 @@ static int nt36xxx_spi_read(void *dev, const void *reg_buf,
 		return ret;
 	}
 
-	ret = spi_write_then_read(spi, &addr[3] , 1, val_buf, val_size);
+	ret = spi_write_then_read(spi, &addr[3], 1, val_buf, val_size);
 	if (ret) {
 		dev_err(dev, "transfer1 err %s %d ret=%d", __func__, __LINE__, ret);
 		return ret;
@@ -93,10 +94,10 @@ static int nt36xxx_spi_read(void *dev, const void *reg_buf,
 			16, 1, addr, 3, true);
 
 		print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
-			16, 1, addr, (val_size) > 0x20 ? 0x20 : val_size % 0x20 , true);
+			16, 1, addr, (val_size) > 0x20 ? 0x20 : val_size % 0x20, true);
 
 		print_hex_dump(KERN_INFO, __func__, DUMP_PREFIX_OFFSET,
-			16, 1, val_buf, (val_size > 0x20) ? 0x20 : val_size % 0x20 , true);
+			16, 1, val_buf, (val_size > 0x20) ? 0x20 : val_size % 0x20, true);
 	}
 
 	return ret;
