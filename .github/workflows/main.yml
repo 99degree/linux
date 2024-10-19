@@ -1,0 +1,72 @@
+name: Build nightly images
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 5' # Run every friday at midnight
+
+jobs:
+  build-image:
+    strategy:
+      matrix:
+        version: ["next"]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out build configurations
+        uses: actions/checkout@v4
+        
+      - name: Substitute placeholders in configs
+        run: |
+          #sudo apt update
+          #sudo apt-get install -y gcc-aarch64-linux-gnu
+          #sudo apt-get install -y binutils-aarch64-linux-gnu
+          find . -type f -name "*.cfg" -exec sed -i "s|HOME|$(echo $HOME)|;s|NPROC|$(nproc)|" {} +  
+          echo "KERNEL_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
+  
+      - name: Clone kernel sources
+        run: |
+          git clone https://github.com/99degree/linux.git --single-branch --branch ${{ matrix.version }} --depth 1
+
+      - name: Compile kernel with envkernel
+        run: |
+          # there are many intermediate file generated and deleted by gcc, 
+          # use tmpfs to hold and speed up the process. 
+          # in case pmbootstrap or envkernel.sh have such thing this hack can removed.
+          # sounds like running mount non-root not allowed
+          # unshare is not working as well
+          # unshare -m
+          # mount -t tmpfs none ~/.local/var/pmbootstrap/chroot_native/tmp
+          # mount -t tmpfs none /tmp
+          cd linux
+          shopt -s expand_aliases
+
+          # fetch local config
+          git fetch origin config
+          git branch config FETCH_HEAD
+          git checkout config -- arch/arm64/configs/sm71xx-xiaomi.config          
+
+          # apply local config
+          make defconfig sm71xx-xiaomi.config
+
+          # make it
+          make -j$(nproc)
+          
+      - name: Create artifact directory
+        run: |
+          mkdir out
+          mkdir out_raw
+
+      - name: Build xiaomi-miatoll
+        run: |
+
+          cp arch/arm64/boot/Image out/
+		  mkdir out/dtb
+		  cp -r arch/arm64/boot/dts/qcom/*.dtb out/dtb
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-kernel-${{ matrix.version }}
+          path: out/*
+          retention-days: 15
