@@ -56,12 +56,9 @@ jobs:
         run: |
           mkdir out
           mkdir out_raw
+          cp arch/arm64/boot/Image out/Image
+          cp arch/arm64/boot/dts/qcom/*.dtb out/
 
-      - name: Build xiaomi-miatoll
-        run: |
-					cp arch/arm64/boot/Image out/Image
-					cp arch/arm64/boot/dts/qcom/*.dtb out/
-		 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
