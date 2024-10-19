@@ -19,8 +19,8 @@ jobs:
       - name: Substitute placeholders in configs
         run: |
           #sudo apt update
-          #sudo apt-get install -y gcc-aarch64-linux-gnu
-          #sudo apt-get install -y binutils-aarch64-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo apt-get install -y binutils-aarch64-linux-gnu
           find . -type f -name "*.cfg" -exec sed -i "s|HOME|$(echo $HOME)|;s|NPROC|$(nproc)|" {} +  
           echo "KERNEL_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
   
