@@ -56,8 +56,8 @@ jobs:
         run: |
           mkdir out
           mkdir out_raw
-          cp arch/arm64/boot/Image out/Image
-          cp arch/arm64/boot/dts/qcom/*.dtb out/
+          cp linux/arch/arm64/boot/Image out/Image
+          cp linux/arch/arm64/boot/dts/qcom/*.dtb out/
           find -name "*.ko" -not -path "./out/*" -exec cp {} out/ \;
 
       - name: Upload artifacts
