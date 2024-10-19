@@ -120,6 +120,7 @@
         touchscreen: touchscreen@0 {
                 compatible = "novatek,nt36675-spi",
 				"novatek,nt36xxx-spi",
+				"focaltech,fts",
 				"novatek,NVT-ts-spi";
 			
                 reg = <0>;
@@ -147,6 +148,14 @@
                 touch_lab-supply = <0x240>; //qcom,qpnp-lcdb-regulator ldo
                 touch_vddio-supply = <0x33c>; //pm6150_l18
 */
+
+                /* Focaltech GPIO configuration */
+                focaltech,reset-gpio = <&tlmm 8 0x01>;
+                focaltech,irq-gpio = <&tlmm 9 0x02>;
+
+                focaltech,max-touch-number = <10>;
+                focaltech,display-coords = <0 0 1080 2400>;
+
 
                 vio-supply = <&vreg_l18a_3p0>;
                 vdd-supply = <&vreg_l18a_3p0>;
