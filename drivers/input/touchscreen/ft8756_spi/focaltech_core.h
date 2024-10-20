@@ -2,8 +2,8 @@
  *
  * FocalTech TouchScreen driver.
  *
- * Copyright (c) 2012-2019, Focaltech Ltd. All rights reserved.
- * Copyright (C) 2020 XiaoMi, Inc.
+ * Copyright (c) 2012-2020, Focaltech Ltd. All rights reserved.
+ * Copyright (C) 2021-2022 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -47,7 +47,6 @@
 #include <linux/vmalloc.h>
 #include <linux/gpio.h>
 #include <linux/regulator/consumer.h>
-#include <asm/uaccess.h>
 #include <linux/uaccess.h>
 #include <linux/firmware.h>
 #include <linux/debugfs.h>
@@ -64,14 +63,17 @@
 #include <linux/kthread.h>
 #include <linux/dma-mapping.h>
 #include "focaltech_common.h"
-#ifdef CONFIG_PM
-#include <linux/pm_runtime.h>
+#include <linux/power_supply.h>
+
+
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+#include "../xiaomi/xiaomi_touch.h"
 #endif
 
 /*****************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
-#define FTS_MAX_POINTS_SUPPORT              10	/* constant value, can't be changed */
+#define FTS_MAX_POINTS_SUPPORT              10 /* constant value, can't be changed */
 #define FTS_MAX_KEYS                        4
 #define FTS_KEY_DIM                         10
 #define FTS_ONE_TCH_LEN                     6
@@ -93,9 +95,8 @@
 #define FTS_COORDS_ARR_SIZE                 4
 #define FTS_X_MIN_DISPLAY_DEFAULT           0
 #define FTS_Y_MIN_DISPLAY_DEFAULT           0
-#define FTS_X_MAX_DISPLAY_DEFAULT           1080
-#define FTS_Y_MAX_DISPLAY_DEFAULT           2400
-#define FTS_SET_ANGLE                       0x8c
+#define FTS_X_MAX_DISPLAY_DEFAULT           720
+#define FTS_Y_MAX_DISPLAY_DEFAULT           1280
 
 #define FTS_TOUCH_DOWN                      0
 #define FTS_TOUCH_UP                        1
@@ -107,17 +108,32 @@
 #define FTX_MAX_COMPATIBLE_TYPE             4
 #define FTX_MAX_COMMMAND_LENGTH             16
 
-#define FTS_REG_MONITOR_MODE                0x8600
-#define FTS_REG_THDIFF                      0x9E00
-#define FTS_REG_SENSIVITY                   0x9D00
-#define FTS_REG_EDGE_FILTER_LEVEL           0x9C00
-#define FTS_REG_EDGE_FILTER_ORIENTATION     0x8C00
+#define FTS_LOCKDOWN_INFO_ADDR                      0x1F000
+#define FTS_LOCKDOWN_INFO_SIZE                      8
+
+#define FTS_TEST_OPEN_MIN                       	3000
+
+#define EXPERT_ARRAY_SIZE          3
+
+/*****************************************************************************
+*  Alternative mode (When something goes wrong, the modules may be able to solve the problem.)
+*****************************************************************************/
+/*
+ * For commnication error in PM(deep sleep) state
+ */
+#define FTS_PATCH_COMERR_PM                     1
+#define FTS_TIMEOUT_COMERR_PM                   700
+
 
 /*****************************************************************************
 * Private enumerations, structures and unions using typedef
 *****************************************************************************/
 struct ftxxxx_proc {
 	struct proc_dir_entry *proc_entry;
+	struct proc_dir_entry *tp_test_data_proc;
+	struct proc_dir_entry *tp_test_result_proc;
+	struct proc_dir_entry *tp_selftest_proc;
+	struct proc_dir_entry *tp_data_dump_proc;
 	u8 opmode;
 	u8 cmd_len;
 	u8 cmd[FTX_MAX_COMMMAND_LENGTH];
@@ -138,14 +154,20 @@ struct fts_ts_platform_data {
 	u32 x_min;
 	u32 y_min;
 	u32 max_touch_number;
+	u32 open_min;
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	u32 touch_range_array[5];
+	u32 touch_def_array[4];
+	u32 touch_expert_array[4 * EXPERT_ARRAY_SIZE];
+#endif
 };
 
 struct ts_event {
-	int x;			/*x coordinate */
-	int y;			/*y coordinate */
-	int p;			/* pressure */
-	int flag;		/* touch event flag: 0 -- down; 1-- up; 2 -- contact */
-	int id;			/*touch ID */
+	int x;      /*x coordinate */
+	int y;      /*y coordinate */
+	int p;      /* pressure */
+	int flag;   /* touch event flag: 0 -- down; 1-- up; 2 -- contact */
+	int id;     /*touch ID */
 	int area;
 };
 
@@ -167,8 +189,12 @@ struct fts_ts_data {
 	struct mutex bus_lock;
 	int irq;
 	int log_level;
-	int fw_is_running;	/* confirm fw is running when using spi:default 0 */
+	int fw_is_running;      /* confirm fw is running when using spi:default 0 */
 	int dummy_byte;
+#if defined(CONFIG_PM) && FTS_PATCH_COMERR_PM
+	struct completion pm_completion;
+	bool pm_suspend;
+#endif
 	bool suspended;
 	bool fw_loading;
 	bool irq_disabled;
@@ -176,14 +202,12 @@ struct fts_ts_data {
 	bool glove_mode;
 	bool cover_mode;
 	bool charger_mode;
-	bool gesture_mode;	/* gesture enable or disable, default: disable */
-#ifdef CONFIG_PM
-	bool dev_pm_suspend;
-#endif
+	bool gesture_mode;      /* gesture enable or disable, default: disable */
 	/* multi-touch */
 	struct ts_event *events;
 	u8 *bus_tx_buf;
 	u8 *bus_rx_buf;
+	int bus_type;
 	u8 *point_buf;
 	int pnt_buf_size;
 	int touchs;
@@ -192,36 +216,49 @@ struct fts_ts_data {
 	int point_num;
 	struct regulator *vdd;
 	struct regulator *vcc_i2c;
-	struct regulator *pwr_vdd;	/* IOVCC 1.8V */
-	struct regulator *pwr_lab;	/* VSP +5V */
-	struct regulator *pwr_ibb;	/* VSN -5V */
-#ifdef CONFIG_PM
-	struct completion dev_pm_suspend_completion;
-#endif
+	u8 lockdown_info[FTS_LOCKDOWN_INFO_SIZE];
 #if FTS_PINCTRL_EN
 	struct pinctrl *pinctrl;
 	struct pinctrl_state *pins_active;
 	struct pinctrl_state *pins_suspend;
 	struct pinctrl_state *pins_release;
 #endif
-#if defined(CONFIG_FB)
+#if defined(CONFIG_DRM)
 	struct notifier_block fb_notif;
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
 
-	struct mutex reg_lock;
-	struct device *fts_touch_dev;
-	struct class *fts_tp_class;
+	bool poweroff_on_sleep;
+	/* power supply */
+	struct mutex power_supply_lock;
+	struct work_struct power_supply_work;
+	struct notifier_block power_supply_notifier;
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	u8 gesture_status;
+	bool gamemode_enabled;
+	struct mutex cmd_update_mutex;
+	int palm_sensor_switch;
+	bool power_status;
+	bool is_expert_mode;
+	u8 gesture_cmd;
+	bool gesture_cmd_delay;
+#endif
 };
 
-#if LCT_TP_USB_PLUGIN
-typedef struct touchscreen_usb_plugin_data {
-	bool valid;
-	bool usb_plugged_in;
-	void (*event_callback) (void);
-} touchscreen_usb_plugin_data_t;
-#endif
+enum GESTURE_MODE_TYPE {
+	GESTURE_DOUBLETAP,
+	GESTURE_AOD,
+};
+
+
+enum _FTS_BUS_TYPE {
+	BUS_TYPE_NONE,
+	BUS_TYPE_I2C,
+	BUS_TYPE_SPI,
+	BUS_TYPE_SPI_V2,
+};
+
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
@@ -244,7 +281,10 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data);
 int fts_gesture_suspend(struct fts_ts_data *ts_data);
 int fts_gesture_resume(struct fts_ts_data *ts_data);
 
-int lct_fts_tp_gesture_callback(bool flag);
+/* Apk and functions */
+int fts_create_proc(struct fts_ts_data *ts_data);
+void fts_remove_proc(struct fts_ts_data *ts_data);
+
 
 /* ADB functions */
 int fts_create_sysfs(struct fts_ts_data *ts_data);
@@ -261,6 +301,12 @@ int fts_esdcheck_suspend(void);
 int fts_esdcheck_resume(void);
 #endif
 
+/* Production test */
+#if FTS_TEST_EN
+int fts_test_init(struct fts_ts_data *ts_data);
+int fts_test_exit(struct fts_ts_data *ts_data);
+#endif
+
 /* Point Report Check*/
 #if FTS_POINT_REPORT_CHECK_EN
 int fts_point_report_check_init(struct fts_ts_data *ts_data);
@@ -271,8 +317,6 @@ void fts_prc_queue_work(struct fts_ts_data *ts_data);
 /* FW upgrade */
 int fts_fwupg_init(struct fts_ts_data *ts_data);
 int fts_fwupg_exit(struct fts_ts_data *ts_data);
-int fts_fw_resume(void);
-int fts_fw_recovery(void);
 int fts_upgrade_bin(char *fw_name, bool force);
 int fts_enter_test_environment(bool test_state);
 
@@ -284,7 +328,6 @@ void fts_tp_state_recovery(struct fts_ts_data *ts_data);
 int fts_ex_mode_init(struct fts_ts_data *ts_data);
 int fts_ex_mode_exit(struct fts_ts_data *ts_data);
 int fts_ex_mode_recovery(struct fts_ts_data *ts_data);
-int lct_fts_set_charger_mode(bool en);
 
 void fts_irq_disable(void);
 void fts_irq_enable(void);

@@ -2,8 +2,8 @@
  *
  * FocalTech TouchScreen driver.
  *
- * Copyright (c) 2012-2019, Focaltech Ltd. All rights reserved.
- * Copyright (C) 2020 XiaoMi, Inc.
+ * Copyright (c) 2012-2020, Focaltech Ltd. All rights reserved.
+ * Copyright (C) 2021-2022 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -34,14 +34,11 @@
 * 1.Included header files
 *****************************************************************************/
 #include "focaltech_core.h"
-#ifdef CONFIG_TOUCHSCREEN_COMMON
-#include <linux/input/tp_common.h>
-#endif
 
 /******************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
-#define KEY_GESTURE_U                           KEY_WAKEUP
+#define KEY_GESTURE_U                           KEY_U
 #define KEY_GESTURE_UP                          KEY_UP
 #define KEY_GESTURE_DOWN                        KEY_DOWN
 #define KEY_GESTURE_LEFT                        KEY_LEFT
@@ -61,6 +58,7 @@
 #define GESTURE_UP                              0x22
 #define GESTURE_DOWN                            0x23
 #define GESTURE_DOUBLECLICK                     0x24
+#define GESTURE_SINGLETAP                       0x25
 #define GESTURE_O                               0x30
 #define GESTURE_W                               0x31
 #define GESTURE_M                               0x32
@@ -100,16 +98,11 @@ static struct fts_gesture_st fts_gesture_data;
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 
-bool fts_ts_is_gesture_mode(void)
-{
-	struct fts_ts_data *ts_data = fts_data;
-	return ts_data->gesture_mode == ENABLE;
-}
-
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
-static ssize_t fts_gesture_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t fts_gesture_show(
+	struct device *dev, struct device_attribute *attr, char *buf)
 {
 	int count = 0;
 	u8 val = 0;
@@ -117,31 +110,35 @@ static ssize_t fts_gesture_show(struct device *dev, struct device_attribute *att
 
 	mutex_lock(&ts_data->input_dev->mutex);
 	fts_read_reg(FTS_REG_GESTURE_EN, &val);
-	count = snprintf(buf, PAGE_SIZE, "Gesture Mode:%s\n", ts_data->gesture_mode ? "On" : "Off");
+	count = snprintf(buf, PAGE_SIZE, "Gesture Mode:%s\n",
+					 ts_data->gesture_mode ? "On" : "Off");
 	count += snprintf(buf + count, PAGE_SIZE, "Reg(0xD0)=%d\n", val);
 	mutex_unlock(&ts_data->input_dev->mutex);
 
 	return count;
 }
 
-static ssize_t fts_gesture_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t fts_gesture_store(
+	struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct fts_ts_data *ts_data = fts_data;
 
 	mutex_lock(&ts_data->input_dev->mutex);
 	if (FTS_SYSFS_ECHO_ON(buf)) {
 		FTS_DEBUG("enable gesture");
-		lct_fts_tp_gesture_callback(true);
+		ts_data->gesture_mode = ENABLE;
 	} else if (FTS_SYSFS_ECHO_OFF(buf)) {
 		FTS_DEBUG("disable gesture");
-		lct_fts_tp_gesture_callback(false);
+		ts_data->gesture_mode = DISABLE;
 	}
 	mutex_unlock(&ts_data->input_dev->mutex);
 
 	return count;
 }
 
-static ssize_t fts_gesture_buf_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t fts_gesture_buf_show(
+	struct device *dev, struct device_attribute *attr, char *buf)
 {
 	int count = 0;
 	int i = 0;
@@ -150,13 +147,14 @@ static ssize_t fts_gesture_buf_show(struct device *dev, struct device_attribute 
 
 	mutex_lock(&input_dev->mutex);
 	count = snprintf(buf, PAGE_SIZE, "Gesture ID:%d\n", gesture->gesture_id);
-	count += snprintf(buf + count, PAGE_SIZE, "Gesture PointNum:%d\n", gesture->point_num);
+	count += snprintf(buf + count, PAGE_SIZE, "Gesture PointNum:%d\n",
+					  gesture->point_num);
 	count += snprintf(buf + count, PAGE_SIZE, "Gesture Points Buffer:\n");
 
 	/* save point data,max:6 */
 	for (i = 0; i < FTS_GESTURE_POINTS_MAX; i++) {
 		count += snprintf(buf + count, PAGE_SIZE, "%3d(%4d,%4d) ", i,
-				  gesture->coordinate_x[i], gesture->coordinate_y[i]);
+						  gesture->coordinate_x[i], gesture->coordinate_y[i]);
 		if ((i + 1) % 4 == 0)
 			count += snprintf(buf + count, PAGE_SIZE, "\n");
 	}
@@ -166,21 +164,26 @@ static ssize_t fts_gesture_buf_show(struct device *dev, struct device_attribute 
 	return count;
 }
 
-static ssize_t fts_gesture_buf_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t fts_gesture_buf_store(
+	struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
 {
 	return -EPERM;
 }
+
 
 /* sysfs gesture node
  *   read example: cat  fts_gesture_mode       ---read gesture mode
  *   write example:echo 1 > fts_gesture_mode   --- write gesture mode to 1
  *
  */
-static DEVICE_ATTR(fts_gesture_mode, S_IRUGO | S_IWUSR, fts_gesture_show, fts_gesture_store);
+static DEVICE_ATTR(fts_gesture_mode, S_IRUGO | S_IWUSR, fts_gesture_show,
+				   fts_gesture_store);
 /*
  *   read example: cat fts_gesture_buf        --- read gesture buf
  */
-static DEVICE_ATTR(fts_gesture_buf, S_IRUGO | S_IWUSR, fts_gesture_buf_show, fts_gesture_buf_store);
+static DEVICE_ATTR(fts_gesture_buf, S_IRUGO | S_IWUSR,
+				   fts_gesture_buf_show, fts_gesture_buf_store);
 
 static struct attribute *fts_gesture_mode_attrs[] = {
 	&dev_attr_fts_gesture_mode.attr,
@@ -191,33 +194,6 @@ static struct attribute *fts_gesture_mode_attrs[] = {
 static struct attribute_group fts_gesture_group = {
 	.attrs = fts_gesture_mode_attrs,
 };
-
-#ifdef CONFIG_TOUCHSCREEN_COMMON
-static ssize_t double_tap_show(struct kobject *kobj,
-                               struct kobj_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", fts_data->gesture_mode);
-}
-
-static ssize_t double_tap_store(struct kobject *kobj,
-                                struct kobj_attribute *attr, const char *buf,
-                                size_t count)
-{
-	int rc, val;
-
-	rc = kstrtoint(buf, 10, &val);
-	if (rc)
-	return -EINVAL;
-
-	lct_fts_tp_gesture_callback(!!val);
-	return count;
-}
-
-static struct tp_common_ops double_tap_ops = {
-	.show = double_tap_show,
-	.store = double_tap_store
-};
-#endif
 
 static int fts_create_gesture_sysfs(struct device *dev)
 {
@@ -252,7 +228,10 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
 		gesture = KEY_GESTURE_DOWN;
 		break;
 	case GESTURE_DOUBLECLICK:
-		gesture = KEY_GESTURE_U;
+		gesture = KEY_WAKEUP;
+		break;
+	case GESTURE_SINGLETAP:
+		gesture = KEY_GOTO;
 		break;
 	case GESTURE_O:
 		gesture = KEY_GESTURE_O;
@@ -278,7 +257,7 @@ static void fts_gesture_report(struct input_dev *input_dev, int gesture_id)
 	case GESTURE_Z:
 		gesture = KEY_GESTURE_Z;
 		break;
-	case GESTURE_C:
+	case  GESTURE_C:
 		gesture = KEY_GESTURE_C;
 		break;
 	default:
@@ -334,20 +313,30 @@ int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
 		return 1;
 	}
 
+
 	/* init variable before read gesture point */
 	memset(gesture->coordinate_x, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
 	memset(gesture->coordinate_y, 0, FTS_GESTURE_POINTS_MAX * sizeof(u16));
 	gesture->gesture_id = buf[2];
 	gesture->point_num = buf[3];
+
 	FTS_DEBUG("gesture_id=%d, point_num=%d", gesture->gesture_id, gesture->point_num);
+
+	if (gesture->gesture_id == GESTURE_DOUBLECLICK && !(ts_data->gesture_status & 0x01)) {
+		FTS_INFO("double click is not enabled!");
+		return 0;
+	} else if (gesture->gesture_id == GESTURE_SINGLETAP && !(ts_data->gesture_status & 0x02)) {
+		FTS_INFO("single tap is not enabled!");
+		return 0;
+	}
 
 	/* save point data,max:6 */
 	for (i = 0; i < FTS_GESTURE_POINTS_MAX; i++) {
 		index = 4 * i + 4;
-		gesture->coordinate_x[i] = (u16) (((buf[0 + index] & 0x0F) << 8)
-						  + buf[1 + index]);
-		gesture->coordinate_y[i] = (u16) (((buf[2 + index] & 0x0F) << 8)
-						  + buf[3 + index]);
+		gesture->coordinate_x[i] = (u16)(((buf[0 + index] & 0x0F) << 8)
+										 + buf[1 + index]);
+		gesture->coordinate_y[i] = (u16)(((buf[2 + index] & 0x0F) << 8)
+										 + buf[3 + index]);
 	}
 
 	/* report gesture to OS */
@@ -359,13 +348,14 @@ void fts_gesture_recovery(struct fts_ts_data *ts_data)
 {
 	if (ts_data->gesture_mode && ts_data->suspended) {
 		FTS_DEBUG("gesture recovery...");
-		fts_write_reg(0xD1, 0xFF);
+		//fts_write_reg(0xD1, 0xFF);
 		fts_write_reg(0xD2, 0xFF);
 		fts_write_reg(0xD5, 0xFF);
 		fts_write_reg(0xD6, 0xFF);
 		fts_write_reg(0xD7, 0xFF);
 		fts_write_reg(0xD8, 0xFF);
 		fts_write_reg(FTS_REG_GESTURE_EN, ENABLE);
+		fts_write_reg(FTS_GESTURE_CTRL, ts_data->gesture_cmd);
 	}
 }
 
@@ -380,13 +370,14 @@ int fts_gesture_suspend(struct fts_ts_data *ts_data)
 	}
 
 	for (i = 0; i < 5; i++) {
-		fts_write_reg(0xD1, 0xFF);
+		//fts_write_reg(0xD1, 0xFF);
 		fts_write_reg(0xD2, 0xFF);
 		fts_write_reg(0xD5, 0xFF);
 		fts_write_reg(0xD6, 0xFF);
 		fts_write_reg(0xD7, 0xFF);
 		fts_write_reg(0xD8, 0xFF);
 		fts_write_reg(FTS_REG_GESTURE_EN, ENABLE);
+		fts_write_reg(FTS_GESTURE_CTRL, ts_data->gesture_cmd);
 		msleep(1);
 		fts_read_reg(FTS_REG_GESTURE_EN, &state);
 		if (state == ENABLE)
@@ -429,33 +420,11 @@ int fts_gesture_resume(struct fts_ts_data *ts_data)
 	return 0;
 }
 
-#define WAKEUP_OFF 4
-#define WAKEUP_ON 5
-int fts_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
-{
-	FTS_INFO("Enter. type = %u, code = %u, value = %d", type, code, value);
-	if (type == EV_SYN && code == SYN_CONFIG) {
-		if (value == WAKEUP_OFF)
-			lct_fts_tp_gesture_callback(false);
-		else if (value == WAKEUP_ON)
-			lct_fts_tp_gesture_callback(true);
-	}
-	FTS_INFO("Exit");
-	return 0;
-}
-
 int fts_gesture_init(struct fts_ts_data *ts_data)
 {
 	struct input_dev *input_dev = ts_data->input_dev;
-#ifdef CONFIG_TOUCHSCREEN_COMMON
-	int ret;
-#endif
 
 	FTS_FUNC_ENTER();
-
-	input_dev->event = fts_gesture_switch;
-
-	input_set_capability(input_dev, EV_KEY, KEY_SLEEP);
 	input_set_capability(input_dev, EV_KEY, KEY_POWER);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_U);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_UP);
@@ -472,7 +441,6 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_Z);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_C);
 
-	__set_bit(KEY_SLEEP, input_dev->keybit);
 	__set_bit(KEY_GESTURE_RIGHT, input_dev->keybit);
 	__set_bit(KEY_GESTURE_LEFT, input_dev->keybit);
 	__set_bit(KEY_GESTURE_UP, input_dev->keybit);
@@ -489,14 +457,6 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
 	__set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
 	fts_create_gesture_sysfs(ts_data->dev);
-
-#ifdef CONFIG_TOUCHSCREEN_COMMON
-	ret = tp_common_set_double_tap_ops(&double_tap_ops);
-	if (ret < 0) {
-		FTS_ERROR("%s: Failed to create double_tap node err=%d\n",
-                	  __func__, ret);
-    }
-#endif
 
 	memset(&fts_gesture_data, 0, sizeof(struct fts_gesture_st));
 	ts_data->gesture_mode = FTS_GESTURE_EN;
