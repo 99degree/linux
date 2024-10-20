@@ -12,6 +12,7 @@ ifneq ($(KERNELRELEASE),)
                          focaltech_test/focaltech_test.o \
                          focaltech_test/focaltech_test_ini.o \
                          focaltech_test/supported_ic/focaltech_test_ft3658u.o
+
 else
     KDIR = $(OUT)/obj/KERNEL_OBJ
     CROSS_COMPILE = $(ANDROID_TOOLCHAIN)/aarch64-linux-android-
