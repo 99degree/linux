@@ -16,7 +16,7 @@
 * included header files
 *****************************************************************************/
 #include "../focaltech_test.h"
-
+#if FTS_TEST_EN
 /*****************************************************************************
 * private constant and macro definitions using #define
 *****************************************************************************/
@@ -1514,3 +1514,4 @@ struct test_funcs test_func_ft5652 = {
 	.short_test = ft3658_short_test,
 	.data_dump = ft3658_data_dump,
 };
+#endif
