@@ -965,6 +965,12 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 			ret = -ENOENT;
 		}
 
+		/* loop through the list and no match, print it */
+		if ((list >= sz_id_table) && retry == 1)
+	                dev_info(ts->dev, "%s buf[0..3-4..6]=%02X%02X%02X%02X-%02X%02X%02X not supported yet\n",
+	                        __func__, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
+
+		/* althrough it might be not match, but some case it need some reset */
 		usleep_range(10000, 11000);
 	} while (--retry);
 
