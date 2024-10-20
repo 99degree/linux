@@ -98,6 +98,32 @@ static struct fts_gesture_st fts_gesture_data;
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 
+__weak int fts_gesture_exit(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
+
+__weak void fts_gesture_recovery(struct fts_ts_data *ts_data)
+{
+}
+
+__weak int fts_gesture_readdata(struct fts_ts_data *ts_data, u8 *data)
+{
+	return 0;
+}
+
+__weak int fts_gesture_init(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
+
+__weak int fts_gesture_resume(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
+
+#if FTS_GESTURE_EN
+
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
@@ -472,3 +498,4 @@ int fts_gesture_exit(struct fts_ts_data *ts_data)
 	FTS_FUNC_EXIT();
 	return 0;
 }
+#endif
