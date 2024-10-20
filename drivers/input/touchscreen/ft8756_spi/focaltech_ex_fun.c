@@ -483,6 +483,18 @@ proc_read_err:
 }
 #endif
 
+
+#if 1
+int fts_create_proc(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
+
+void fts_remove_proc(struct fts_ts_data *ts_data)
+{
+	return;
+}
+#else
 int fts_create_proc(struct fts_ts_data *ts_data)
 {
 	struct ftxxxx_proc *proc = &ts_data->proc;
@@ -505,7 +517,7 @@ void fts_remove_proc(struct fts_ts_data *ts_data)
 		proc_remove(proc->proc_entry);
 	proc->proc_entry = NULL;
 }
-
+#endif
 
 /************************************************************************
  * sysfs interface
