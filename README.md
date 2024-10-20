@@ -5,6 +5,9 @@ This repo is tracking latest mainline kernel as updated as possible. The idea is
 The development machine is a XiaoMi redmi note 9 pro int'l version. Currently the working branch is based on latest code
 of Linus's public tree with my own periodic merge into local change and git rebase for every push.
 
+Github action manually build with 
+latest 'next' branch weekly for test use, please find it useful.
+
 ## Tested good:
 ```
 UFS
