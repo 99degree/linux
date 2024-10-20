@@ -43,11 +43,14 @@ static int nt36xxx_spi_write(void *dev, const void *data, size_t len)
 	void *data1;
 	u8 addr[4];
 
-	data = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
+	data1 = kmemdup(data, len, GFP_KERNEL|GFP_DMA);
 	if (!data1)
 		return -ENOMEM;
 
-	addr = { 0xff, *(u32 *)data >> 15, *(u32 *)data >> 7,  (*(u32 *)data & 0x7f) | 0x80};
+	addr[0] = 0xff;
+	addr[1] = (u8)((*(u32 *)data & 0x7f) | 0x80);
+	addr[2] = (u8)((*(u32 *)data) >> 7);
+	addr[3] = (u8)((*(u32 *)data) >> 15);
 	memcpy(data1, addr, 4);
 
 	dev_dbg(dev, "%s len=0x%lx", __func__, len);
