@@ -44,14 +44,30 @@
 *****************************************************************************/
 struct fts_test *fts_ftest;
 
+#if FTS_TEST_EN
 struct test_funcs *test_func_list[] = {
 	&test_func_ft5652,
 };
+#endif
 
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
+__weak int fts_test_init(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
 
+__weak int fts_test_exit(struct fts_ts_data *ts_data)
+{
+	return 0;
+}
+
+__weak void print_buffer(int *buffer, int length, int line_num)
+{
+}
+
+#if FTS_TEST_EN
 /*****************************************************************************
 * functions body
 *****************************************************************************/
@@ -2531,3 +2547,4 @@ int fts_test_exit(struct fts_ts_data *ts_data)
 	FTS_TEST_FUNC_EXIT();
 	return 0;
 }
+#endif
