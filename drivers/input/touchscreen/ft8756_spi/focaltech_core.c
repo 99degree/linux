@@ -2252,7 +2252,22 @@ static int fts_get_touch_super_resolution_factor(void)
 
 #endif
 
+static int panel_prepared(struct drm_panel_follower *follower)
+{
+        struct fts_ts_data *ts = container_of(follower, struct fts_ts_data, panel_follower);
+	return fts_ts_resume(ts->dev);
+}
 
+static int panel_unpreparing(struct drm_panel_follower *follower)
+{
+        struct fts_ts_data *ts = container_of(follower, struct fts_ts_data, panel_follower);
+	return fts_ts_suspend(ts->dev);
+}
+
+static struct drm_panel_follower_funcs fts_panel_follower_funcs = {
+        .panel_prepared = panel_prepared,
+        .panel_unpreparing = panel_unpreparing,
+};
 
 /*****************************************************************************
 * TP Driver
@@ -2311,6 +2326,11 @@ static int fts_ts_probe(struct spi_device *spi)
 	fts_init_touch_mode_data(ts_data);
 	xiaomitouch_register_modedata(&xiaomi_touch_interfaces);
 #endif
+
+        if (drm_is_panel_follower(dev)) {
+                ts->panel_follower.funcs = &fts_panel_follower_funcs;
+                devm_drm_panel_add_follower(dev, &ts->panel_follower);
+        }
 
 	FTS_INFO("Touch Screen(SPI BUS) driver prboe successfully");
 	return 0;
