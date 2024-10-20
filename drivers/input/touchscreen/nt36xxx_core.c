@@ -1275,7 +1275,7 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts)
 
 	/* set ilm & dlm reg bank */
 	for (i = 0; i < ts->fw_data.partition; i++) {
-		if (strncmp(ts->bin_map[i].name == 0, "ILM", 3)) {
+		if (strncmp(ts->bin_map[i].name, "ILM", 3) == 0) {
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_ILM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_ILM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
@@ -1283,7 +1283,7 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts)
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_G_ILM_CHECKSUM_ADDR], &ts->bin_map[i].crc,
 						sizeof(ts->bin_map[i].crc));
 		}
-		if (strncmp(ts->bin_map[i].name == 0, "DLM", 3)) {
+		if (strncmp(ts->bin_map[i].name, "DLM", 3) == 0) {
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_DLM_DES_ADDR], &ts->bin_map[i].sram_addr, 3);
 			regmap_raw_write(ts->regmap, ts->mmap[MMAP_DLM_LENGTH_ADDR], &ts->bin_map[i].size, 3);
 
@@ -1488,7 +1488,7 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	const struct nt36xxx_chip_data *chip_data;
 	const char *signed_fwname = NULL;
 	int ret;
-	struct nt36xxx_ts *ts
+	struct nt36xxx_ts *ts;
 
 	ts = devm_kzalloc(dev, sizeof(struct nt36xxx_ts), GFP_KERNEL);
 	if (!ts)
@@ -1690,7 +1690,7 @@ static int __maybe_unused nt36xxx_internal_pm_resume(struct device *dev)
 	if(ts->status & (NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE))
                 ts->status &= ~(NT36XXX_STATUS_SUSPEND | NT36XXX_STATUS_DOWNLOAD_COMPLETE);
 
-	if (!ts->status & NT36XXX_STATUS_NEED_FIRMWARE) {
+	if (!(ts->status & NT36XXX_STATUS_NEED_FIRMWARE)) {
 		ret = nt36xxx_bootloader_reset(ts);
                 if (ret)
                         dev_err(ts->dev, "reset failed...\n");
