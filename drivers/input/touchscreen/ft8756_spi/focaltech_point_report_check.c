@@ -2,8 +2,8 @@
  *
  * FocalTech TouchScreen driver.
  *
- * Copyright (c) 2012-2019, FocalTech Systems, Ltd., all rights reserved.
- * Copyright (C) 2020 XiaoMi, Inc.
+ * Copyright (c) 2012-2020, FocalTech Systems, Ltd., all rights reserved.
+ * Copyright (C) 2021-2022 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -41,7 +41,7 @@
 /*****************************************************************************
 * Private constant and macro definitions using #define
 *****************************************************************************/
-#define POINT_REPORT_CHECK_WAIT_TIME              200	/* unit:ms */
+#define POINT_REPORT_CHECK_WAIT_TIME              200    /* unit:ms */
 
 /*****************************************************************************
 * functions body
@@ -56,7 +56,7 @@
 static void fts_prc_func(struct work_struct *work)
 {
 	struct fts_ts_data *ts_data = container_of(work,
-						   struct fts_ts_data, prc_work.work);
+								  struct fts_ts_data, prc_work.work);
 	struct input_dev *input_dev = ts_data->input_dev;
 #if FTS_MT_PROTOCOL_B_EN
 	u32 finger_count = 0;
@@ -92,7 +92,8 @@ static void fts_prc_func(struct work_struct *work)
 void fts_prc_queue_work(struct fts_ts_data *ts_data)
 {
 	cancel_delayed_work_sync(&ts_data->prc_work);
-	queue_delayed_work(ts_data->ts_workqueue, &ts_data->prc_work, msecs_to_jiffies(POINT_REPORT_CHECK_WAIT_TIME));
+	queue_delayed_work(ts_data->ts_workqueue, &ts_data->prc_work,
+					   msecs_to_jiffies(POINT_REPORT_CHECK_WAIT_TIME));
 }
 
 /*****************************************************************************
@@ -132,3 +133,4 @@ int fts_point_report_check_exit(struct fts_ts_data *ts_data)
 	return 0;
 }
 #endif /* FTS_POINT_REPORT_CHECK_EN */
+
