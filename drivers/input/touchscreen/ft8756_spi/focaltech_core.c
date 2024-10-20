@@ -38,6 +38,8 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
+
+#undef CONFIG_DRM
 #if defined(CONFIG_DRM)
 #include <drm/drm_notifier_mi.h>
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
@@ -75,7 +77,14 @@ static int fts_ts_resume(struct device *dev);
 
 #define LPM_EVENT_INPUT 0x1
 extern void lpm_disable_for_dev(bool on, char event_dev);
+__weak void lpm_disable_for_dev(bool on, char event_dev)
+{
+}
+
 extern void touch_irq_boost(void);
+__weak void touch_irq_boost(void)
+{
+}
 
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 static void fts_read_palm_data(u8 reg_value);
@@ -1257,13 +1266,11 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 	}
 
 	/* reset, irq gpio info */
-	pdata->reset_gpio = of_get_named_gpio_flags(np, "focaltech,reset-gpio",
-						0, &pdata->reset_gpio_flags);
+	pdata->reset_gpio = of_get_named_gpio(np, "focaltech,reset-gpio", 0);
 	if (pdata->reset_gpio < 0)
 		FTS_ERROR("Unable to get reset_gpio");
 
-	pdata->irq_gpio = of_get_named_gpio_flags(np, "focaltech,irq-gpio",
-					  0, &pdata->irq_gpio_flags);
+	pdata->irq_gpio = of_get_named_gpio(np, "focaltech,irq-gpio", 0);
 	if (pdata->irq_gpio < 0)
 		FTS_ERROR("Unable to get irq_gpio");
 
@@ -1617,7 +1624,7 @@ err_bus_init:
 	return ret;
 }
 
-static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
+static void fts_ts_remove_entry(struct fts_ts_data *ts_data)
 {
 	FTS_FUNC_ENTER();
 
@@ -1676,7 +1683,7 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 
 	FTS_FUNC_EXIT();
 
-	return 0;
+	return;
 }
 
 static int fts_ts_suspend(struct device *dev)
@@ -2309,9 +2316,9 @@ static int fts_ts_probe(struct spi_device *spi)
 	return 0;
 }
 
-static int fts_ts_remove(struct spi_device *spi)
+static void fts_ts_remove(struct spi_device *spi)
 {
-	return fts_ts_remove_entry(spi_get_drvdata(spi));
+	fts_ts_remove_entry(spi_get_drvdata(spi));
 }
 
 static const struct spi_device_id fts_ts_id[] = {
