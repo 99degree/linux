@@ -29,6 +29,7 @@
 #include <asm/unistd.h>
 #include <linux/vmalloc.h>
 #include <linux/time.h>
+#include "../focaltech_config.h"
 #include "../focaltech_core.h"
 #include "focaltech_test_ini.h"
 
@@ -558,7 +559,9 @@ enum csv_itemcode_sc {
 /*****************************************************************************
 * Global variable or extern global variabls/functions
 *****************************************************************************/
+#if FTS_TEST_EN
 extern struct test_funcs test_func_ft5652;
+#endif
 
 extern struct fts_test *fts_ftest;
 
