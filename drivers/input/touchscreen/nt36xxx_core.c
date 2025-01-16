@@ -1033,7 +1033,7 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 	_nt36xxx_boot_prepare_firmware(ts);
 	mutex_unlock(&ts->lock);
 
-	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
+	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE) || (ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE) )
 		goto exit;
 
 	/* so the pm resume might have code to enable regulators. */
