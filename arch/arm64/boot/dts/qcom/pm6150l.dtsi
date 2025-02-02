@@ -46,7 +46,7 @@
 			compatible = "qcom,pm8998-pon";
 			reg = <0x800>;
 			mode-bootloader = <0x2>;
-			mode-recovery = <0x1>;
+			mode-recovery = <0x2>;
 			mode-system = <0>;
 
 			pm6150l_pwrkey: pwrkey {
