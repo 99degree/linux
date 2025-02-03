@@ -48,6 +48,7 @@
 			mode-bootloader = <0x2>;
 			mode-recovery = <0x2>;
 			mode-system = <0x2>;
+			mode-shutdown = <0x2>;
 
 			pm6150l_pwrkey: pwrkey {
 				compatible = "qcom,pm8941-pwrkey";
