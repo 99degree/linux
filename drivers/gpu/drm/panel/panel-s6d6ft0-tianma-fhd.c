@@ -262,7 +262,7 @@ MODULE_DEVICE_TABLE(of, s6d6ft0_tianma_fhd_of_match);
 
 static struct mipi_dsi_driver s6d6ft0_tianma_fhd_driver = {
 	.probe = s6d6ft0_tianma_fhd_probe,
-	//.remove = s6d6ft0_tianma_fhd_remove,
+	.remove = s6d6ft0_tianma_fhd_remove,
 	.driver = {
 		.name = "panel-s6d6ft0-tianma-fhd",
 		.of_match_table = s6d6ft0_tianma_fhd_of_match,
