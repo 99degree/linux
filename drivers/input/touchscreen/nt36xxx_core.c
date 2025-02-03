@@ -354,7 +354,8 @@ const u32 nt36525_memory_maps[] = {
 	[MMAP_TOP_ADDR] = 0xffffff,
 };
 
-void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line) {
+void __maybe_unused _debug_irq(struct nt36xxx_ts *ts, int line);
+void __maybe_unused __weak _debug_irq(struct nt36xxx_ts *ts, int line) {
         struct irq_desc *desc;
         desc = irq_data_to_desc( irq_get_irq_data(ts->irq));
         dev_info(ts->dev, "%d irq_desc depth=%d", line, desc->depth );
