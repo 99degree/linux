@@ -5,7 +5,7 @@
  * Copyright (C) 2010 - 2018 Novatek, Inc.
  * Copyright (C) 2020 XiaoMi, Inc.
  * Copyright (C) 2020 AngeloGioacchino Del Regno <kholk11@gmail.com>
- * Copyright (C) 2023-2024 George Chan <gchan9527@gmail.com>
+ * Copyright (C) 2023-2025 George Chan <gchan9527@gmail.com>
  *
  * Based on nt36xxx.c i2c driver from AngeloGioacchino Del Regno
  */
@@ -1067,30 +1067,49 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE) || (ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE) )
 		goto exit;
 
-	/* so the pm resume might have code to enable regulators. */
-	ret = pm_runtime_resume_and_get(ts->dev);
-	if (ret) {
-		dev_err(ts->dev, "%s resume fail 0x%x", __func__, ret);
-		goto exit;
+	/* at probe() is force to enable but suspend the dev if not panel-follower */
+	if (ts->status & NT36XXX_STATUS_SUSPEND) {
+		dev_info(ts->dev, "%s suspend1 is issued 0x%x", __func__, ret);
 	}
 
-	/* this might not function properly due to panel-follower take-over */
-	pm_runtime_disable(ts->dev);
+	if (!drm_is_panel_follower(ts->dev))
+	{
+	        /* this might not function properly due to panel-follower take-over */
+        	if (pm_runtime_enabled(ts->dev))
+                	pm_runtime_disable(ts->dev);
+
+		/* so the pm resume might have code to enable regulators. */
+		ret = pm_runtime_resume_and_get(ts->dev);
+		if (ret) {
+			dev_err(ts->dev, "%s resume fail 0x%x", __func__, ret);
+			goto exit;
+		}
+	}
 
 	disable_irq_nosync(ts->irq);
 
 	mutex_lock(&ts->lock);
 
+        if (ts->status & NT36XXX_STATUS_SUSPEND) {
+                dev_info(ts->dev, "%s suspend4 is issued 0x%x", __func__, ret);
+		goto unlock;
+        }
+
 	ret = nt36xxx_eng_reset_idle(ts);
 	if (ret) {
-		dev_err(ts->dev, "Failed to check chip version\n");
+		dev_err(ts->dev, "Failed to check chip version step(3), ret=%d\n", ret);
 		goto unlock;
 	}
+
+        if (ts->status & NT36XXX_STATUS_SUSPEND) {
+                dev_info(ts->dev, "%s suspend5 is issued 0x%x", __func__, ret);
+		goto unlock;
+        }
 
 	/* Set memory maps for the specific chip version */
 	ret = nt36xxx_chip_version_init(ts);
 	if (ret) {
-		dev_err(ts->dev, "Failed to check chip version\n");
+		dev_err(ts->dev, "Failed to check chip version step(4), ret=%d\n", ret);
 		goto unlock;
 	}
 
@@ -1101,9 +1120,10 @@ unlock:
 	mutex_unlock(&ts->lock);
 	enable_irq(ts->irq);
 
-	pm_runtime_enable(ts->dev);
-
-	pm_runtime_put(ts->dev);
+	if (!drm_is_panel_follower(ts->dev)) {
+	        pm_runtime_put(ts->dev);
+		pm_runtime_enable(ts->dev);
+	}
 exit:
 	if (!(ts->status & NT36XXX_STATUS_DOWNLOAD_COMPLETE)) {
 		schedule_delayed_work(&ts->work, 4000);
@@ -1289,14 +1309,14 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	ret = nt36xxx_eng_reset_idle(ts);
         if (ret) {
-                dev_err(dev, "Failed to check chip version\n");
+                dev_err(dev, "Failed to check chip version step(1), ret=%d\n", ret);
                 return ret;
         }
 
 	/* Set memory maps for the specific chip version */
 	ret = nt36xxx_chip_version_init(ts);
 	if (ret) {
-		dev_err(dev, "Failed to check chip version\n");
+		dev_err(dev, "Failed to check chip version step(2), ret=%d\n", ret);
 		return ret;
 	}
 
@@ -1332,17 +1352,19 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 	if (drm_is_panel_follower(dev)) {
 		ts->panel_follower.funcs = &nt36xxx_panel_follower_funcs;
 		devm_drm_panel_add_follower(dev, &ts->panel_follower);
+	} else {
+		pm_runtime_enable(dev);
 	}
-
-	pm_runtime_enable(dev);
 
 	/* have to make sure this is first time schedule work, if devm_drm_panel_add_follower
 	 * called into internal resume with schedule_delay_work, then block it over there */
 	if (ts->fw_name) {
 		ts->status |= NT36XXX_STATUS_NEED_FIRMWARE;
 
-		/* make the driver sleep while waiting tasklet fw download */
-		pm_runtime_suspend(dev);
+		if (!drm_is_panel_follower(dev)) {
+			/* make it suspend and let delay-queue to resume it */
+			pm_runtime_suspend(dev);
+		}
 
 		devm_delayed_work_autocancel(dev, &ts->work, nt36xxx_download_firmware);
 		schedule_delayed_work(&ts->work, 0);
