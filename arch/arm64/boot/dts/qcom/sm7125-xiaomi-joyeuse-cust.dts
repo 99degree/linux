@@ -12,6 +12,15 @@
 /* must add sc7180 into compatible machine or add cpu blocklist with sm7125 */
 / {
 	compatible = "xiaomi,joyeuse", "db845c", "qcom,sm7125", "qcom,sc7180";
+
+	battery: battery {
+		compatible = "simple-battery";
+
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4400000>;
+
+		charge-full-design-microamp-hours = <5160000>;
+	};
 };
 
 /* that can protect ufs partition untouch */
@@ -37,17 +46,6 @@
 
 &qupv3_id_1 {
 	status = "okay";
-};
-
-&soc {
-        battery: battery {
-                compatible = "simple-battery";
-
-                voltage-min-design-microvolt = <3400000>;
-                voltage-max-design-microvolt = <4400000>;
-
-		charge-full-design-microamp-hours = <5160000>;
-        };
 };
 
 &pm6150_qgauge {
