@@ -372,6 +372,9 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 		return -EINVAL;
 	}
 
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
+		return -EIO;
+
 	if(!ts->mmap) {
 		dev_err(ts->dev, "%s %s empty", __func__, "ts->mmap");
 		return -EINVAL;
@@ -407,6 +410,9 @@ static int nt36xxx_eng_reset_idle(struct nt36xxx_ts *ts)
 static int nt36xxx_bootloader_reset(struct nt36xxx_ts *ts)
 {
 	int ret = 0;
+
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
+		return -EIO;
 
 	//in spi version, need to set page to SWRST_N8_ADDR
 	if (ts->mmap[MMAP_SWRST_N8_ADDR]) {
@@ -445,6 +451,9 @@ static int nt36xxx_check_reset_state(struct nt36xxx_ts *ts,
 	int ret = 0, retry = NT36XXX_MAX_FW_RST_RETRY;
 
 	do {
+		if (ts->status & NT36XXX_STATUS_SUSPEND)
+			return -EIO;
+
 		ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR]
 				 | NT36XXX_EVT_RESET_COMPLETE, buf, 6);
 		if (likely(ret == 0) &&
@@ -479,6 +488,9 @@ static void nt36xxx_report(struct nt36xxx_ts *ts)
 	unsigned int ppos = 0;
 	int i, ret, finger_cnt = 0;
 	uint8_t press_id[TOUCH_MAX_FINGER_NUM] = {0};
+
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
+		return;
 
 	ret = regmap_raw_read(ts->regmap, ts->mmap[MMAP_EVENT_BUF_ADDR],
 				point, sizeof(point));
@@ -564,6 +576,9 @@ static irqreturn_t nt36xxx_irq_handler(int irq, void *dev_id)
 	if (!ts->mmap)
 		goto exit;
 
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
+		goto exit;
+
 	disable_irq_nosync(ts->irq);
 
 	nt36xxx_report(ts);
@@ -638,7 +653,7 @@ static int nt36xxx_chip_version_init(struct nt36xxx_ts *ts)
 					goto exit;
 				}
 
-				WARN_ON(ts->hw_crc < 1);
+				WARN(ts->hw_crc < 1, "ts->hw_crc < 1");
 
 				dev_dbg(ts->dev, "hw crc support=%d\n", ts->hw_crc);
 
@@ -792,7 +807,8 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 	uint32_t bin_addr, sram_addr, size;
 	struct nvt_ts_bin_map *bin_map = ts->bin_map;
 
-        nt36xxx_bootloader_reset(ts);
+	if (nt36xxx_bootloader_reset(ts) < 0)
+		return -EIO;
 
 	for (list = 0; list < ts->fw_data.partition; list++) {
 		int j;
@@ -822,8 +838,17 @@ static int32_t nt36xxx_download_firmware_hw_crc(struct nt36xxx_ts *ts) {
 			int window_size = ((size - j) / NT36XXX_TRANSFER_LEN) ? NT36XXX_TRANSFER_LEN :
 						((size - j) % NT36XXX_TRANSFER_LEN);
 
-			regmap_bulk_write(ts->regmap, sram_addr + j, &ts->fw_entry.data[bin_addr + j],
+			int ret = regmap_bulk_write(ts->regmap, sram_addr + j, &ts->fw_entry.data[bin_addr + j],
 							 window_size);
+
+			/*
+			 * supposed this delay-queue-task and susped thread is runing parallel
+			 * so return early the better otherwise caused kernel warning and fail
+			*/
+			if ((ret < 0) || (ts->status & NT36XXX_STATUS_SUSPEND)) {
+				/* in the case of suspend, return value is not important */
+				return (int32_t)ret;
+			}
 		}
 
 	}
@@ -837,8 +862,6 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	size_t fw_need_write_size = 0;
 	const struct firmware *fw_entry;
 	void *data;
-
-	WARN_ON(ts->hw_crc != 2);
 
 	/* add one more guard */
 	if (ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE)
@@ -869,7 +892,7 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	}
 	ts->fw_entry.size = fw_entry->size;
 
-	WARN_ON(ts->fw_entry.data[0] != fw_entry->data[0]);
+	WARN(ts->fw_entry.data[0] != fw_entry->data[0], "ts->fw_entry.data[0] != fw_entry->data[0]");
 
 	for (i = (ts->fw_entry.size / 4096); i > 0; i--) {
 		if (strncmp(&ts->fw_entry.data[i * 4096 - 3], "NVT", 3) == 0) {
@@ -940,8 +963,11 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
         int i, ret, retry = 0;
         u8 val[8 * 4] = {0};
 
+	/* this also avoid suspend with delay-queue active */
 	if (!(ts->status & NT36XXX_STATUS_PREPARE_FIRMWARE))
 		return -EIO;
+
+        WARN(ts->hw_crc != 2, "ts->hw_crc != 2");
 
 	if (ts->hw_crc) {
 		ret = nt36xxx_download_firmware_hw_crc(ts);
@@ -994,6 +1020,10 @@ static int _nt36xxx_boot_download_firmware(struct nt36xxx_ts *ts) {
 	val[0] = 0x1;
 	regmap_raw_write(ts->regmap, ts->mmap[MMAP_BOOT_RDY_ADDR], val, 1);
 
+	/* add checking to those sleep func such that can suspend early */
+	if (ts->status & NT36XXX_STATUS_SUSPEND)
+		return -EIO;
+
 	/* old logic 5ms, retention to 10ms */
 	usleep_range(10000, 11000);
 
@@ -1044,6 +1074,9 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 		goto exit;
 	}
 
+	/* this might not function properly due to panel-follower take-over */
+	pm_runtime_disable(ts->dev);
+
 	disable_irq_nosync(ts->irq);
 
 	mutex_lock(&ts->lock);
@@ -1067,6 +1100,8 @@ static void nt36xxx_download_firmware(struct work_struct *work) {
 unlock:
 	mutex_unlock(&ts->lock);
 	enable_irq(ts->irq);
+
+	pm_runtime_enable(ts->dev);
 
 	pm_runtime_put(ts->dev);
 exit:
@@ -1120,7 +1155,7 @@ static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id
 
 	touchscreen_parse_properties(ts->input, true, &ts->prop);
 
-	WARN_ON(ts->prop.max_x < 1);
+	WARN(ts->prop.max_x < 1, "ts->prop.max_x < 1");
 
 	ret = input_mt_init_slots(ts->input, TOUCH_MAX_FINGER_NUM,
 				  INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
