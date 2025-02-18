@@ -1124,6 +1124,37 @@ static void nt36xxx_disable_regulators(void *data)
 	regulator_bulk_disable(NT36XXX_NUM_SUPPLIES, ts->supplies);
 }
 
+static int nt36xxx_enable_regulators(struct nt36xxx_ts *ts)
+{
+	struct device *dev = ts->dev;
+	int ret;
+
+	if (drm_is_panel_follower(dev))
+		return 0;
+
+	/* These supplies are optional, also shared with LCD panel */
+	ts->supplies[0].supply = "vdd";
+	ts->supplies[1].supply = "vio";
+	ts->supplies[2].supply = "vio2";
+	ts->supplies[3].supply = "vio3";
+
+	ret = devm_regulator_bulk_get(dev, NT36XXX_NUM_SUPPLIES, ts->supplies);
+	if (ret)
+		return dev_err_probe(dev, ret, "Cannot get supplies: %d\n", ret);
+
+	ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
+	if (ret)
+		return ret;
+
+	usleep_range(10000, 11000);
+
+	ret = devm_add_action_or_reset(dev, nt36xxx_disable_regulators, ts);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 static int nt36xxx_input_dev_config(struct nt36xxx_ts *ts, const struct input_id *id)
 {
 	struct device *dev = ts->dev;
@@ -1250,32 +1281,10 @@ int nt36xxx_probe(struct device *dev, int irq, const struct input_id *id,
 
 	gpiod_set_consumer_name(ts->irq_gpio, "nt36xxx_irq");
 
-	if (drm_is_panel_follower(dev))
-		goto skip_regulators;
-
-	/* These supplies are optional, also shared with LCD panel */
-	ts->supplies[0].supply = "vdd";
-	ts->supplies[1].supply = "vio";
-	ts->supplies[2].supply = "vio2";
-	ts->supplies[3].supply = "vio3";
-	ret = devm_regulator_bulk_get(dev,
-				      NT36XXX_NUM_SUPPLIES,
-				      ts->supplies);
-	if (ret)
-		return dev_err_probe(dev, ret,
-				     "Cannot get supplies: %d\n", ret);
-
-	ret = regulator_bulk_enable(NT36XXX_NUM_SUPPLIES, ts->supplies);
+	ret = nt36xxx_enable_regulators(ts);
 	if (ret)
 		return ret;
 
-	usleep_range(10000, 11000);
-
-	ret = devm_add_action_or_reset(dev, nt36xxx_disable_regulators, ts);
-	if (ret)
-		return ret;
-
-skip_regulators:
 	mutex_init(&ts->lock);
 
 	ret = nt36xxx_eng_reset_idle(ts);
