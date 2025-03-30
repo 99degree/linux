@@ -715,7 +715,9 @@ static int s5k5e9_ctrls_init(struct s5k5e9 *s5k5e9)
 	s5k5e9->unit_size = v4l2_ctrl_new_std_compound(ctrl_hdlr,
 				&s5k5e9_ctrl_ops,
 				V4L2_CID_UNIT_CELL_SIZE,
-				v4l2_ctrl_ptr_create((void *)&unit_size));
+				v4l2_ctrl_ptr_create((void *)&unit_size),
+				v4l2_ctrl_ptr_create(NULL),
+				v4l2_ctrl_ptr_create(NULL));
 
 	if (!s5k5e9->unit_size)
 		dev_err(s5k5e9->dev, "%s ctrl fail", "unit_size");
