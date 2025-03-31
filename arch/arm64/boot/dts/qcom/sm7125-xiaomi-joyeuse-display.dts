@@ -6,6 +6,15 @@
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include "sm7125-xiaomi-joyeuse.dts"
 
+
+/ {
+        chosen {
+                framebuffer@9c000000 {
+			status = "disabled";
+		};
+	};
+};
+
 &adreno_smmu {
         status = "okay";
 };
