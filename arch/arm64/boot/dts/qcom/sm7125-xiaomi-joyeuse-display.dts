@@ -6,6 +6,18 @@
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include "sm7125-xiaomi-joyeuse.dts"
 
+/* somehow added this can make AOSP boots into UI 
+ * looks like the simple_drm->freedereno_drm  transition 
+ * is not very fluid.
+ */
+/ {
+        chosen {
+                framebuffer@9c000000 {
+			status = "disabled";
+		};
+	};
+};
+
 &adreno_smmu {
         status = "okay";
 };
