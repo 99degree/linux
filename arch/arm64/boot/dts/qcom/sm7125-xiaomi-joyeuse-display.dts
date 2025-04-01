@@ -8,12 +8,12 @@
 
 /* somehow added this can make AOSP boots into UI 
  * looks like the simple_drm->freedereno_drm  transition 
- * is not very fluid.
+ * is not very fluid. Remove format property should do.
  */
 / {
         chosen {
                 framebuffer@9c000000 {
-			status = "disabled";
+			/delete-property/ format;
 		};
 	};
 };
