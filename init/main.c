@@ -275,12 +275,13 @@ static void * __init get_boot_config_from_initrd(size_t *_size)
 	if (!initrd_end)
 		return NULL;
 
-	data = (char *)initrd_end - BOOTCONFIG_MAGIC_LEN;
+	/* check off-by-one  case too */
+	data = (char *)initrd_end - BOOTCONFIG_MAGIC_LEN + 1;
 	/*
 	 * Since Grub may align the size of initrd to 4, we must
 	 * check the preceding 3 bytes as well.
 	 */
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 12; i++) {
 		if (!memcmp(data, BOOTCONFIG_MAGIC, BOOTCONFIG_MAGIC_LEN))
 			goto found;
 		data--;
@@ -419,12 +420,18 @@ static void __init setup_boot_config(void)
 	int pos, ret;
 	size_t size;
 	char *err;
+	char *bootconfig_src;
 
 	/* Cut out the bootconfig data even if we have no bootconfig option */
 	data = get_boot_config_from_initrd(&size);
 	/* If there is no bootconfig in initrd, try embedded one. */
-	if (!data)
+	if (!data) {
 		data = xbc_get_embedded_bootconfig(&size);
+		if (data)
+			bootconfig_src = "embeded bin";
+	} else {
+		bootconfig_src = "ramdisk";
+	}
 
 	strscpy(tmp_cmdline, boot_command_line, COMMAND_LINE_SIZE);
 	err = parse_args("bootconfig", tmp_cmdline, NULL, 0, 0, 0, NULL,
@@ -461,7 +468,8 @@ static void __init setup_boot_config(void)
 				msg, pos);
 	} else {
 		xbc_get_info(&ret, NULL);
-		pr_info("Load bootconfig: %ld bytes %d nodes\n", (long)size, ret);
+		pr_info("Load bootconfig: %ld bytes %d nodes from %s area\n",
+			(long)size, ret, bootconfig_src);
 		/* keys starting with "kernel." are passed via cmdline */
 		extra_command_line = xbc_make_cmdline("kernel");
 		/* Also, "init." keys are init arguments */
