@@ -464,8 +464,9 @@ static const struct nt36675_match_data cmdline_data = {
 };
 
 static const struct of_device_id nt36675_tianma_of_match[] = {
-	{ .compatible = "mdss,nt36675-tianma", .data = &cmdline_data },
+	//{ .compatible = "mdss,nt36675-tianma", .data = &cmdline_data },
 	{ .compatible = "novatek,nt36675-tianma" },
+	{ .compatible = "mdss,nt36675-tianma" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, nt36675_tianma_of_match);

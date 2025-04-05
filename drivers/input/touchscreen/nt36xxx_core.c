@@ -1229,6 +1229,8 @@ static int nt36xxx_of_compatible(struct device *dev)
 {
 	struct device_node *np = dev->of_node;
 
+	return 0;
+
 	if (!of_device_is_compatible(np, "novatek,NVT-default-spi")) {
 		const char *path = "/chosen";
 		struct device_node *dt_node;
