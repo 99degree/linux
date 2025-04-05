@@ -21,6 +21,12 @@
 
 		charge-full-design-microamp-hours = <5160000>;
 	};
+
+	chosen {
+		framebuffer@9c000000 {
+			status = "disabled";
+		};
+	};
 };
 
 /* that can protect ufs partition untouch */
@@ -71,4 +77,13 @@
 	 * then panel backlight also need to disabled at once
 	 */
 	/delete-property/ backlight;
+};
+
+&usb_1_hsphy {
+        qcom,imp-res-offset-value = <8>;
+        qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_15_PERCENT>;
+        qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
+        qcom,bias-ctrl-value = <0x22>;
+        qcom,charge-ctrl-value = <3>;
+        qcom,hsdisc-trim-value = <0>;
 };
