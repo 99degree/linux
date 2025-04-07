@@ -1,4 +1,6 @@
 # linux
+[![Build nightly images](https://github.com/99degree/linux/actions/workflows/main.yml/badge.svg)](https://github.com/99degree/linux/actions/workflows/main.yml)
+
 Linux kernel source tree
 
 This repo is tracking latest mainline kernel as updated as possible. The idea is to work with sm7125 soc and mainline [1]. 
