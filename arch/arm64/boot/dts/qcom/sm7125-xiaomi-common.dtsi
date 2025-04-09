@@ -197,7 +197,7 @@
 		};
 
 		vreg_l13a_1p8: ldo13 {
-			regulator-min-microvolt = <1696000>;
+			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1904000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
@@ -227,7 +227,7 @@
 		};
 
 		vreg_l18a_3p0: ldo18 {
-			regulator-min-microvolt = <1696000>;
+			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1904000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
