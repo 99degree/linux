@@ -46,6 +46,14 @@
 	status = "okay";
 };
 
+&pm6150_vbus {
+	status = "okay";
+};
+
+&pm6150_typec {
+	status = "okay";
+};
+
 &qupv3_id_0 {
 	status = "okay";
 };
