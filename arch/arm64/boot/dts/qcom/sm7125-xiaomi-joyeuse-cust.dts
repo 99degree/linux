@@ -40,6 +40,18 @@
 	status = "okay";
 };
 
+&pm6150_vbus {
+	regulator-min-microamp = <500000>;
+	regulator-max-microamp = <3000000>;
+	status = "okay";
+};
+
+&pm6150_typec {
+	vdd-vbus-supply = <&pm6150_vbus>;
+	vdd-pdphy-supply = <&vph_pwr>;	
+	status = "okay";
+};
+
 &qupv3_id_0 {
 	status = "okay";
 };
