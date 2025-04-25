@@ -82,8 +82,10 @@ i assumed they are. It is nice to use my github nickname 99degree as copyright r
 
 ## PostmarkerOS image download for Miatoll
 A dual boot Lineageos on ufs and postmarketos on sdcard is available for Joyeuse[9]. And the pmOS binary release is at here[10] for download.
-Further trial of booting Android out of sdcard is under attempt, but failed as result boot media not found in first-stage-init.
-Again, a cloud build bundle with custom postmarketOS is available for rought testing at [10]
+At the time of wroting, a nice pmOS miatoll official image is available at pmOS site. This official image is more preferable.
+
+## LineageOS/AOSP image for Miatoll
+Further trial of booting Android out of sdcard is under attempt and results AOSP UI shows up [13] and tutorial is not available atm. Further tweak for performance is needed. 
 
 ## Afterward
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
@@ -100,3 +102,5 @@ Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 po
  - [10] https://github.com/99degree/postmarket-nightly-builds/actions
  - [11] https://github.com/99degree/linux/commits/nt36xxx/
  - [12] https://github.com/99degree/linux/wiki/
+ - [13] https://www.youtube.com/watch?v=uXGT2QVV2fc
+ - [14] 
