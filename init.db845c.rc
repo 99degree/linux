@@ -1,0 +1,3 @@
+on fs
+    mount none /odm/etc/fstab.${ro.hardware}  /vendor/etc/fstab.${ro.hardware} bind
+    

@@ -1,0 +1,15 @@
+system		/system		erofs	ro				wait,logical,first_stage_mount,slotselect
+/dev/block/platform/soc@0/8804000.mmc/by-name/userdata	/data		f2fs	nodev,noatime,nosuid	latemount,wait,formattable,quota,check,fscompress,checkpoint=fs
+/dev/block/platform/soc@0/8804000.mmc/by-name/userdata	/data		ext4	discard,noatime,noauto_da_alloc,data=ordered,user_xattr,barrier=1	latemount,wait,formattable,quota
+/dev/block/platform/soc@0/8804000.mmc/by-name/metadata	/metadata	ext4	noatime,nosuid,nodev,discard					wait,formattable,first_stage_mount,check
+/dev/block/platform/soc@0/8804000.mmc/by-name/misc /misc emmc defaults defaults
+/devices/platform/soc@0/8804000.sdhci/mmc_host/mmc*	auto	auto	defaults	voldmanaged=sdcard1:auto
+/devices/platform/soc@0/8804000.mmc/mmc_host/mmc*	auto	auto	defaults	voldmanaged=sdcard1:auto
+/devices/platform/soc@0/a8f8800.usb/*/usb*		auto	auto	defaults	voldmanaged=usb1:auto
+/devices/platform/soc@0/1c00000.pci/*/usb*		auto	auto	defaults	voldmanaged=usb2:auto
+vendor		/vendor		erofs	ro				wait,logical,first_stage_mount,slotselect
+system_ext	/system_ext	erofs	ro				wait,logical,first_stage_mount,slotselect
+product		/product	erofs	ro				wait,logical,first_stage_mount,slotselect
+system_dlkm	/system_dlkm	erofs	ro				wait,logical,first_stage_mount,slotselect
+vendor_dlkm	/vendor_dlkm	erofs	ro				wait,logical,first_stage_mount,slotselect
+/dev/block/zram0					none	swap	defaults	zramsize=75%
