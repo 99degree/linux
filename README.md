@@ -85,7 +85,7 @@ A dual boot Lineageos on ufs and postmarketos on sdcard is available for Joyeuse
 At the time of wroting, a nice pmOS miatoll official image is available at pmOS site. This official image is more preferable.
 
 ## LineageOS/AOSP image for Miatoll
-Further trial of booting Android out of sdcard is under attempt and results AOSP UI shows up [13] and tutorial is not available atm. Further tweak for performance is needed. 
+Further trial of booting Android out of sdcard is under attempt and results AOSP UI shows up [13] and a rough tutorial is available[14]. Further tweak for performance is needed. 
 
 ## Afterward
 Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 porting LOS-17, and not-that-active twitter [8]
@@ -103,4 +103,4 @@ Please also Feel free to get a glimpse of my youtube channel [7] for Meizu E3 po
  - [11] https://github.com/99degree/linux/commits/nt36xxx/
  - [12] https://github.com/99degree/linux/wiki/
  - [13] https://www.youtube.com/watch?v=uXGT2QVV2fc
- - [14] 
+ - [14] https://github.com/99degree/linux/wiki/AOSP-image-for-miatoll
