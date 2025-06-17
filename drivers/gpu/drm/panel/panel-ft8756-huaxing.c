@@ -43,21 +43,22 @@ static void ft8756_huaxing_reset(struct ft8756_huaxing *ctx)
 static int ft8756_huaxing_on(struct ft8756_huaxing *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
 	struct device *dev = &dsi->dev;
 	int ret;
 
 	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0x00);
-	mipi_dsi_dcs_write_seq(dsi, 0xff, 0x87, 0x56, 0x01);
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0x80);
-	mipi_dsi_dcs_write_seq(dsi, 0xff, 0x87, 0x56);
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0x80);
-	mipi_dsi_dcs_write_seq(dsi, 0xca,
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xff, 0x87, 0x56, 0x01);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0x80);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xff, 0x87, 0x56);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0x80);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xca,
 			       0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
 			       0x80, 0x80, 0x80, 0x80);
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0x90);
-	mipi_dsi_dcs_write_seq(dsi, 0xca,
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0x90);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xca,
 			       0xfe, 0xff, 0x66, 0xf6, 0xff, 0x66, 0xfb, 0xff,
 			       0x32);
 
@@ -67,10 +68,10 @@ static int ft8756_huaxing_on(struct ft8756_huaxing *ctx)
 		return ret;
 	}
 
-	mipi_dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
-	mipi_dsi_dcs_write_seq(dsi, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0xb5);
-	mipi_dsi_dcs_write_seq(dsi, 0xca, 0x04);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x24);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, MIPI_DCS_WRITE_POWER_SAVE, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0xb5);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xca, 0x04);
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret < 0) {
@@ -92,6 +93,7 @@ static int ft8756_huaxing_on(struct ft8756_huaxing *ctx)
 static int ft8756_huaxing_off(struct ft8756_huaxing *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = dsi };
 	struct device *dev = &dsi->dev;
 	int ret;
 
@@ -111,8 +113,8 @@ static int ft8756_huaxing_off(struct ft8756_huaxing *ctx)
 	}
 	msleep(150);
 
-	mipi_dsi_dcs_write_seq(dsi, 0x00, 0x00);
-	mipi_dsi_dcs_write_seq(dsi, 0xf7, 0x5a, 0xa5, 0x95, 0x27);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0x00, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xf7, 0x5a, 0xa5, 0x95, 0x27);
 
 	return 0;
 }
