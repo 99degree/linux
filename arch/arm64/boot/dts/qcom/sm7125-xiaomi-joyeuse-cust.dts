@@ -84,3 +84,12 @@
 	 */
 	/delete-property/ backlight;
 };
+
+&usb_1_dwc3 {
+	vbus-supply = <&pm6150_vbus>;
+};
+
+/* disable it atm as it stuck the icc driver when fw not ready */
+&venus {
+	status = "disabled";
+};
