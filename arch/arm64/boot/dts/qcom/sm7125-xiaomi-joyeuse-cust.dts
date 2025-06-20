@@ -20,6 +20,8 @@
 		voltage-max-design-microvolt = <4400000>;
 
 		charge-full-design-microamp-hours = <5160000>;
+
+		constant-charge-current-max-microamp = <1800000>;
 	};
 };
 
@@ -38,6 +40,47 @@
 
 &pm6150_rtc {
 	status = "okay";
+};
+
+&pm6150_charger {
+	monitored-battery = <&battery>;
+	status = "okay";
+};
+
+&pm6150_typec {
+	vdd-vbus-supply = <&pm6150_vbus>;
+	vdd-pdphy-supply = <&vreg_l17a_3p1>;
+	status = "okay";
+
+	connector {
+		compatible = "usb-c-connector";
+
+		vbus-supply = <&pm6150_vbus>;
+
+		power-role = "sink";
+		data-role = "device";
+		pd-disable;
+		self-powered;
+
+		typec-power-opmode = "default";
+
+		try-power-role = "sink";
+
+		source-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_DUAL_ROLE |
+				PDO_FIXED_USB_COMM | PDO_FIXED_DATA_SWAP)>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				pm6150_role_switch_in: endpoint {
+					remote-endpoint = <&usb_1_dwc3_hs>;
+				};
+			};
+		};
+	};
 };
 
 &pm6150_vbus {
@@ -86,6 +129,25 @@
 };
 
 &usb_1_dwc3 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	
+		port@0 {
+				reg = <0>;
+	
+				usb_1_dwc3_hs: endpoint {
+				};
+		};
+	
+		port@1 {
+				reg = <1>;
+	
+				usb_1_dwc3_ss: endpoint {
+				};
+		};
+	};
+
 	vbus-supply = <&pm6150_vbus>;
 };
 
