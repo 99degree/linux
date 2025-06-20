@@ -37,6 +37,8 @@ static DEFINE_MUTEX(pmic_spmi_revid_lock);
 #define N_USIDS(n)		((void *)n)
 
 static const struct of_device_id pmic_spmi_id_table[] = {
+	{ .compatible = "qcom,pm6150", .data = N_USIDS(2) },
+	{ .compatible = "qcom,pm6150l", .data = N_USIDS(2) },
 	{ .compatible = "qcom,pm660", .data = N_USIDS(2) },
 	{ .compatible = "qcom,pm660l", .data = N_USIDS(2) },
 	{ .compatible = "qcom,pm8004", .data = N_USIDS(2) },
