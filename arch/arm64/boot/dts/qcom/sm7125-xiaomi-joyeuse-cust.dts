@@ -151,6 +151,10 @@
 	};
 };
 
+&usb_1_dwc3_hs {
+        remote-endpoint = <&pm6150_role_switch_in>;
+};
+
 /* disable it atm as it stuck the icc driver when fw not ready */
 &venus {
 	status = "disabled";
