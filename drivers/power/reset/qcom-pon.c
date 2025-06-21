@@ -48,7 +48,7 @@ static int qcom_pon_probe(struct platform_device *pdev)
 {
 	struct qcom_pon *pon;
 	long reason_shift;
-	int error;
+	int error, ret;
 
 	pon = devm_kzalloc(&pdev->dev, sizeof(*pon), GFP_KERNEL);
 	if (!pon)
@@ -82,7 +82,11 @@ static int qcom_pon_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, pon);
 
-	return devm_of_platform_populate(&pdev->dev);
+	ret = devm_of_platform_populate(&pdev->dev);
+
+	qcom_pon_reboot_mode_write(&pon->reboot_mode, 2);
+
+	return ret;
 }
 
 static const struct of_device_id qcom_pon_id_table[] = {
