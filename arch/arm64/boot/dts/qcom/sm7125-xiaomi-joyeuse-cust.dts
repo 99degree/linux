@@ -128,18 +128,6 @@
 	};
 };
 
-&pm6150l_wled {
-	status = "disabled";
-};
-
-&panel0 {
-	/*
-	 * since wled crashed and above disabled it,
-	 * then panel backlight also need to disabled at once
-	 */
-	/delete-property/ backlight;
-};
-
 &usb_1_dwc3 {
 	vbus-supply = <&pm6150_vbus>;
 
