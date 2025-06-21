@@ -579,13 +579,12 @@ static int smb2_get_prop_health(struct smb_chip *chip, int *val)
 
 static int smb_get_prop_health(struct smb_chip *chip, int *val)
 {
-	if (chip->gen == SMB2)
+	switch (chip->gen) {
+	case SMB2:
 		return smb2_get_prop_health(chip, val);
-	else if (chip->gen == SMB5)
+	case SMB5:
 		return smb5_get_prop_health(chip, val);
-	else
-		pr_warn("chip gen not supported!\n");
-	return -1;
+	}
 }
 
 static int smb_get_property(struct power_supply *psy,
@@ -1022,7 +1021,6 @@ static int smb_probe(struct platform_device *pdev)
 	desc = devm_kzalloc(chip->dev, sizeof(smb_psy_desc), GFP_KERNEL);
 	if (!desc)
 		return -ENOMEM;
-
 	memcpy(desc, &smb_psy_desc, sizeof(smb_psy_desc));
 	desc->name =
 		devm_kasprintf(chip->dev, GFP_KERNEL, "%s-charger",
@@ -1068,7 +1066,6 @@ static int smb_probe(struct platform_device *pdev)
 			   smb_handle_usb_icl_change);
 	if (rc < 0)
 		return rc;
-
 	rc = smb_init_irq(chip, &irq, "wdog-bark", smb_handle_wdog_bark);
 	if (rc < 0)
 		return rc;
