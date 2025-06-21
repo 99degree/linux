@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/usb/pd.h>
 #include "sm7125-xiaomi-joyeuse.dts"
 #include "sm7125-xiaomi-joyeuse-display.dts"
 #include "sm7125-xiaomi-joyeuse-touch.dts"
