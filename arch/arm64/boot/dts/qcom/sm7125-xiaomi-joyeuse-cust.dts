@@ -46,7 +46,7 @@
 
 &pm6150_charger {
 	monitored-battery = <&battery>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pm6150_typec {
