@@ -118,6 +118,16 @@
 	status = "okay";
 };
 
+&pm6150l_lpg {
+        status = "okay";
+
+	led@1 {
+		reg = <1>;
+		color = <LED_COLOR_ID_WHITE>;
+		function = LED_FUNCTION_STATUS;
+	};
+};
+
 &pm6150l_wled {
 	status = "disabled";
 };
