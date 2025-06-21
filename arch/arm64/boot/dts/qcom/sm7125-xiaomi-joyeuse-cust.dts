@@ -141,6 +141,8 @@
 };
 
 &usb_1_dwc3 {
+	vbus-supply = <&pm6150_vbus>;
+
 	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -159,8 +161,6 @@
 				};
 		};
 	};
-
-	vbus-supply = <&pm6150_vbus>;
 };
 
 /* disable it atm as it stuck the icc driver when fw not ready */
