@@ -91,12 +91,6 @@
 	status = "okay";
 };
 
-&pm6150_typec {
-	vdd-vbus-supply = <&pm6150_vbus>;
-	vdd-pdphy-supply = <&vph_pwr>;	
-	status = "okay";
-};
-
 &qupv3_id_0 {
 	status = "okay";
 };
