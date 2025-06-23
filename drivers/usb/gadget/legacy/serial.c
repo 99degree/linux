@@ -86,6 +86,10 @@ MODULE_AUTHOR("Al Borchers");
 MODULE_AUTHOR("David Brownell");
 MODULE_LICENSE("GPL");
 
+static bool mod_enable = true;
+module_param(mod_enable, bool, 0);
+MODULE_PARM_DESC(mod_enable, "Eable gser module, default=yes");
+
 static bool use_acm = true;
 module_param(use_acm, bool, 0);
 MODULE_PARM_DESC(use_acm, "Use CDC ACM, default=yes");
@@ -286,6 +290,10 @@ static int switch_gserial_enable(bool do_enable)
 
 static int __init gserial_init(void)
 {
+
+	if (!mod_enable)
+		return -EINVAL;
+
 	/* We *could* export two configs; that'd be much cleaner...
 	 * but neither of these product IDs was defined that way.
 	 */
