@@ -41,6 +41,10 @@ USB_GADGET_COMPOSITE_OPTIONS();
 
 USB_ETHERNET_MODULE_PARAMETERS();
 
+static bool enable = true;
+module_param(enable, bool, 0);
+MODULE_PARM_DESC(enable, "Eable g_ncm module, default=yes");
+
 static struct usb_device_descriptor device_desc = {
 	.bLength =		sizeof device_desc,
 	.bDescriptorType =	USB_DT_DEVICE,
@@ -133,6 +137,11 @@ static int gncm_bind(struct usb_composite_dev *cdev)
 	f_ncm_inst = usb_get_function_instance("ncm");
 	if (IS_ERR(f_ncm_inst))
 		return PTR_ERR(f_ncm_inst);
+
+	if (!enable) {
+		status = -EINVAL;
+		goto fail;
+	}
 
 	ncm_opts = container_of(f_ncm_inst, struct f_ncm_opts, func_inst);
 
