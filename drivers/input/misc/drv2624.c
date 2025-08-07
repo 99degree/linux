@@ -853,8 +853,8 @@ static int drv2624_i2c_probe(struct i2c_client *client)
 	}
 
 	if (gpio_is_valid(drv2624->plat_data.gpio_nrst)) {
-		err = devm_gpio_request(&client->dev,
-					drv2624->plat_data.gpio_nrst,
+		err = devm_gpio_request_one(&client->dev,
+					drv2624->plat_data.gpio_nrst, GPIOF_OUT_INIT_HIGH,
 					"DRV2624-NRST");
 		if (err < 0) {
 			dev_err(drv2624->dev,
