@@ -44,10 +44,10 @@
 	status = "okay";
 };
 
-&pm6150_charger {
-	monitored-battery = <&battery>;
-	status = "disabled";
-};
+//&pm6150_charger {
+//	monitored-battery = <&battery>;
+//	status = "disabled";
+//};
 
 &pm6150_typec {
 	vdd-vbus-supply = <&pm6150_vbus>;
