@@ -7,7 +7,6 @@
 #include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 
 #include <dt-bindings/clock/qcom,gpucc-sc7180.h>
@@ -221,21 +220,10 @@ static int gpu_cc_sc7180_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 	struct alpha_pll_config gpu_cc_pll_config = {};
 	unsigned int value, mask;
-	int ret;
-
-	ret = devm_pm_runtime_enable(&pdev->dev);
-	if (ret)
-		return ret;
-
-	ret = pm_runtime_resume_and_get(&pdev->dev);
-	if (ret)
-		return ret;
 
 	regmap = qcom_cc_map(pdev, &gpu_cc_sc7180_desc);
-	if (IS_ERR(regmap)) {
-		ret = PTR_ERR(regmap);
-		goto err_put_rpm;
-	}
+	if (IS_ERR(regmap))
+		return PTR_ERR(regmap);
 
 	/* 360MHz Configuration */
 	gpu_cc_pll_config.l = 0x12;
@@ -254,18 +242,7 @@ static int gpu_cc_sc7180_probe(struct platform_device *pdev)
 	value = 0xF << CX_GMU_CBCR_WAKE_SHIFT | 0xF << CX_GMU_CBCR_SLEEP_SHIFT;
 	regmap_update_bits(regmap, 0x1098, mask, value);
 
-	ret = qcom_cc_really_probe(&pdev->dev, &gpu_cc_sc7180_desc, regmap);
-	if (ret)
-		goto err_put_rpm;
-
-	pm_runtime_put(&pdev->dev);
-
-	return 0;
-
-err_put_rpm:
-	pm_runtime_put_sync(&pdev->dev);
-
-	return ret;
+	return qcom_cc_really_probe(&pdev->dev, &gpu_cc_sc7180_desc, regmap);
 }
 
 static struct platform_driver gpu_cc_sc7180_driver = {
