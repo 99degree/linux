@@ -3182,6 +3182,8 @@
 			interconnect-names = "mdp0-mem",
 					     "cpu-cfg";
 
+			resets = <&dispcc DISP_CC_MDSS_CORE_BCR>;
+
 			iommus = <&apps_smmu 0x800 0x2>;
 
 			#address-cells = <2>;
