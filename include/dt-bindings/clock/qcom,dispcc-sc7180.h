@@ -40,6 +40,8 @@
 #define DISP_CC_MDSS_VSYNC_CLK_SRC		31
 #define DISP_CC_XO_CLK				32
 
+#define DISP_CC_MDSS_CORE_BCR			0
+
 /* DISP_CC GDSCR */
 #define MDSS_GDSC				0
 
