@@ -63,14 +63,14 @@
 &mdp {
 	// TODO: check if mdss or mdp hold this memory
 	/* there was a handover problem happened to mdss probe */
-	//memory-region = <&cont_splash_mem>;
+	memory-region = <&cont_splash_mem>;
 
 	status = "okay";
 };
 
 &mdss {
 	// TODO: check if mdss or mdp hold this memory
-	//memory-region = <&cont_splash_mem>;
+	memory-region = <&cont_splash_mem>;
 
 	status = "okay";
 };
