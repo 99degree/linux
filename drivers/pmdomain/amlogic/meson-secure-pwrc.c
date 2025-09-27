@@ -221,7 +221,7 @@ static const struct meson_secure_pwrc_domain_desc t7_pwrc_domains[] = {
 	SEC_PD(T7_VI_CLK2,	0),
 	/* ETH is for ethernet online wakeup, and should be always on */
 	SEC_PD(T7_ETH,		GENPD_FLAG_ALWAYS_ON),
-	SEC_PD(T7_ISP,		0),
+	TOP_PD(T7_ISP,		0, PWRC_T7_MIPI_ISP_ID),
 	SEC_PD(T7_MIPI_ISP,	0),
 	TOP_PD(T7_GDC,		0, PWRC_T7_NIC3_ID),
 	TOP_PD(T7_DEWARP,	0, PWRC_T7_NIC3_ID),
@@ -342,32 +342,32 @@ static int meson_secure_pwrc_probe(struct platform_device *pdev)
 	return of_genpd_add_provider_onecell(pdev->dev.of_node, &pwrc->xlate);
 }
 
-static struct meson_secure_pwrc_domain_data meson_secure_a1_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data meson_secure_a1_pwrc_data = {
 	.domains = a1_pwrc_domains,
 	.count = ARRAY_SIZE(a1_pwrc_domains),
 };
 
-static struct meson_secure_pwrc_domain_data amlogic_secure_a4_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data amlogic_secure_a4_pwrc_data = {
 	.domains = a4_pwrc_domains,
 	.count = ARRAY_SIZE(a4_pwrc_domains),
 };
 
-static struct meson_secure_pwrc_domain_data amlogic_secure_a5_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data amlogic_secure_a5_pwrc_data = {
 	.domains = a5_pwrc_domains,
 	.count = ARRAY_SIZE(a5_pwrc_domains),
 };
 
-static struct meson_secure_pwrc_domain_data amlogic_secure_c3_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data amlogic_secure_c3_pwrc_data = {
 	.domains = c3_pwrc_domains,
 	.count = ARRAY_SIZE(c3_pwrc_domains),
 };
 
-static struct meson_secure_pwrc_domain_data meson_secure_s4_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data meson_secure_s4_pwrc_data = {
 	.domains = s4_pwrc_domains,
 	.count = ARRAY_SIZE(s4_pwrc_domains),
 };
 
-static struct meson_secure_pwrc_domain_data amlogic_secure_t7_pwrc_data = {
+static const struct meson_secure_pwrc_domain_data amlogic_secure_t7_pwrc_data = {
 	.domains = t7_pwrc_domains,
 	.count = ARRAY_SIZE(t7_pwrc_domains),
 };

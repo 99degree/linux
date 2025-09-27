@@ -72,6 +72,8 @@
 #define FILE_SUPPORTS_ENCRYPTION	0x00020000
 #define FILE_SUPPORTS_OBJECT_IDS	0x00010000
 #define FILE_VOLUME_IS_COMPRESSED	0x00008000
+#define FILE_SUPPORTS_POSIX_UNLINK_RENAME 0x00000400
+#define FILE_RETURNS_CLEANUP_RESULT_INFO  0x00000200
 #define FILE_SUPPORTS_REMOTE_STORAGE	0x00000100
 #define FILE_SUPPORTS_REPARSE_POINTS	0x00000080
 #define FILE_SUPPORTS_SPARSE_FILES	0x00000040
@@ -427,7 +429,7 @@ bool ksmbd_smb_request(struct ksmbd_conn *conn);
 
 int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count);
 
-int ksmbd_init_smb_server(struct ksmbd_work *work);
+int ksmbd_init_smb_server(struct ksmbd_conn *conn);
 
 struct ksmbd_kstat;
 int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,

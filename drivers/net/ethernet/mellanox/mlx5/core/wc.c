@@ -378,10 +378,14 @@ err_create_cq:
 	mlx5_free_bfreg(mdev, &sq->bfreg);
 err_alloc_bfreg:
 	kfree(sq);
+
+	if (mdev->wc_state == MLX5_WC_STATE_UNSUPPORTED)
+		mlx5_core_warn(mdev, "Write combining is not supported\n");
 }
 
 bool mlx5_wc_support_get(struct mlx5_core_dev *mdev)
 {
+	struct mutex *wc_state_lock = &mdev->wc_state_lock;
 	struct mlx5_core_dev *parent = NULL;
 
 	if (!MLX5_CAP_GEN(mdev, bf)) {
@@ -400,32 +404,31 @@ bool mlx5_wc_support_get(struct mlx5_core_dev *mdev)
 		 */
 		goto out;
 
-	mutex_lock(&mdev->wc_state_lock);
+#ifdef CONFIG_MLX5_SF
+	if (mlx5_core_is_sf(mdev)) {
+		parent = mdev->priv.parent_mdev;
+		wc_state_lock = &parent->wc_state_lock;
+	}
+#endif
+
+	mutex_lock(wc_state_lock);
 
 	if (mdev->wc_state != MLX5_WC_STATE_UNINITIALIZED)
 		goto unlock;
 
-#ifdef CONFIG_MLX5_SF
-	if (mlx5_core_is_sf(mdev))
-		parent = mdev->priv.parent_mdev;
-#endif
-
 	if (parent) {
-		mutex_lock(&parent->wc_state_lock);
-
 		mlx5_core_test_wc(parent);
 
 		mlx5_core_dbg(mdev, "parent set wc_state=%d\n",
 			      parent->wc_state);
 		mdev->wc_state = parent->wc_state;
 
-		mutex_unlock(&parent->wc_state_lock);
+	} else {
+		mlx5_core_test_wc(mdev);
 	}
 
-	mlx5_core_test_wc(mdev);
-
 unlock:
-	mutex_unlock(&mdev->wc_state_lock);
+	mutex_unlock(wc_state_lock);
 out:
 	mlx5_core_dbg(mdev, "wc_state=%d\n", mdev->wc_state);
 

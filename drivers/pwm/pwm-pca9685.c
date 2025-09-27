@@ -8,7 +8,6 @@
  * based on the pwm-twl-led.c driver
  */
 
-#include <linux/acpi.h>
 #include <linux/gpio/driver.h>
 #include <linux/i2c.h>
 #include <linux/module.h>
@@ -264,12 +263,14 @@ static int pca9685_pwm_gpio_get(struct gpio_chip *gpio, unsigned int offset)
 	return pca9685_pwm_get_duty(chip, offset) != 0;
 }
 
-static void pca9685_pwm_gpio_set(struct gpio_chip *gpio, unsigned int offset,
-				 int value)
+static int pca9685_pwm_gpio_set(struct gpio_chip *gpio, unsigned int offset,
+				int value)
 {
 	struct pwm_chip *chip = gpiochip_get_data(gpio);
 
 	pca9685_pwm_set_duty(chip, offset, value ? PCA9685_COUNTER_RANGE : 0);
+
+	return 0;
 }
 
 static void pca9685_pwm_gpio_free(struct gpio_chip *gpio, unsigned int offset)
@@ -639,21 +640,17 @@ static const struct i2c_device_id pca9685_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, pca9685_id);
 
-#ifdef CONFIG_ACPI
 static const struct acpi_device_id pca9685_acpi_ids[] = {
 	{ "INT3492", 0 },
 	{ /* sentinel */ },
 };
 MODULE_DEVICE_TABLE(acpi, pca9685_acpi_ids);
-#endif
 
-#ifdef CONFIG_OF
 static const struct of_device_id pca9685_dt_ids[] = {
 	{ .compatible = "nxp,pca9685-pwm", },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, pca9685_dt_ids);
-#endif
 
 static const struct dev_pm_ops pca9685_pwm_pm = {
 	SET_RUNTIME_PM_OPS(pca9685_pwm_runtime_suspend,
@@ -663,8 +660,8 @@ static const struct dev_pm_ops pca9685_pwm_pm = {
 static struct i2c_driver pca9685_i2c_driver = {
 	.driver = {
 		.name = "pca9685-pwm",
-		.acpi_match_table = ACPI_PTR(pca9685_acpi_ids),
-		.of_match_table = of_match_ptr(pca9685_dt_ids),
+		.acpi_match_table = pca9685_acpi_ids,
+		.of_match_table = pca9685_dt_ids,
 		.pm = &pca9685_pwm_pm,
 	},
 	.probe = pca9685_pwm_probe,

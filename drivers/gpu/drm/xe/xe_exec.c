@@ -33,7 +33,7 @@
  *
  * In XE we avoid all of this complication by not allowing a BO list to be
  * passed into an exec, using the dma-buf implicit sync uAPI, have binds as
- * seperate operations, and using the DRM scheduler to flow control the ring.
+ * separate operations, and using the DRM scheduler to flow control the ring.
  * Let's deep dive on each of these.
  *
  * We can get away from a BO list by forcing the user to use in / out fences on
@@ -132,12 +132,16 @@ int xe_exec_ioctl(struct drm_device *dev, void *data, struct drm_file *file)
 	if (XE_IOCTL_DBG(xe, !q))
 		return -ENOENT;
 
-	if (XE_IOCTL_DBG(xe, q->flags & EXEC_QUEUE_FLAG_VM))
-		return -EINVAL;
+	if (XE_IOCTL_DBG(xe, q->flags & EXEC_QUEUE_FLAG_VM)) {
+		err = -EINVAL;
+		goto err_exec_queue;
+	}
 
 	if (XE_IOCTL_DBG(xe, args->num_batch_buffer &&
-			 q->width != args->num_batch_buffer))
-		return -EINVAL;
+			 q->width != args->num_batch_buffer)) {
+		err = -EINVAL;
+		goto err_exec_queue;
+	}
 
 	if (XE_IOCTL_DBG(xe, q->ops->reset_status(q))) {
 		err = -ECANCELED;
@@ -172,8 +176,8 @@ int xe_exec_ioctl(struct drm_device *dev, void *data, struct drm_file *file)
 	}
 
 	if (xe_exec_queue_is_parallel(q)) {
-		err = __copy_from_user(addresses, addresses_user, sizeof(u64) *
-				       q->width);
+		err = copy_from_user(addresses, addresses_user, sizeof(u64) *
+				     q->width);
 		if (err) {
 			err = -EFAULT;
 			goto err_syncs;
@@ -199,14 +203,14 @@ retry:
 		write_locked = false;
 	}
 	if (err)
-		goto err_syncs;
+		goto err_hw_exec_mode;
 
 	if (write_locked) {
 		err = xe_vm_userptr_pin(vm);
 		downgrade_write(&vm->lock);
 		write_locked = false;
 		if (err)
-			goto err_hw_exec_mode;
+			goto err_unlock_list;
 	}
 
 	if (!args->num_batch_buffer) {
@@ -220,6 +224,7 @@ retry:
 			fence = xe_sync_in_fence_get(syncs, num_syncs, q, vm);
 			if (IS_ERR(fence)) {
 				err = PTR_ERR(fence);
+				xe_vm_unlock(vm);
 				goto err_unlock_list;
 			}
 			for (i = 0; i < num_syncs; i++)
@@ -231,6 +236,15 @@ retry:
 		xe_vm_unlock(vm);
 		goto err_unlock_list;
 	}
+
+	/*
+	 * It's OK to block interruptible here with the vm lock held, since
+	 * on task freezing during suspend / hibernate, the call will
+	 * return -ERESTARTSYS and the IOCTL will be rerun.
+	 */
+	err = wait_for_completion_interruptible(&xe->pm_block);
+	if (err)
+		goto err_unlock_list;
 
 	vm_exec.vm = &vm->gpuvm;
 	vm_exec.flags = DRM_EXEC_INTERRUPTIBLE_WAIT;
@@ -255,6 +269,12 @@ retry:
 		err = -EWOULDBLOCK;	/* Aliased to -EAGAIN */
 		skip_retry = true;
 		goto err_exec;
+	}
+
+	if (xe_exec_queue_uses_pxp(q)) {
+		err = xe_vm_validate_protected(q->vm);
+		if (err)
+			goto err_exec;
 	}
 
 	job = xe_sched_job_create(q, xe_exec_queue_is_parallel(q) ?

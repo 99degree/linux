@@ -1804,12 +1804,11 @@ static int st_lsm6dsx_read_raw(struct iio_dev *iio_dev,
 
 	switch (mask) {
 	case IIO_CHAN_INFO_RAW:
-		ret = iio_device_claim_direct_mode(iio_dev);
-		if (ret)
-			break;
+		if (!iio_device_claim_direct(iio_dev))
+			return -EBUSY;
 
 		ret = st_lsm6dsx_read_oneshot(sensor, ch->address, val);
-		iio_device_release_direct_mode(iio_dev);
+		iio_device_release_direct(iio_dev);
 		break;
 	case IIO_CHAN_INFO_SAMP_FREQ:
 		*val = sensor->odr / 1000;
@@ -1834,11 +1833,10 @@ static int st_lsm6dsx_write_raw(struct iio_dev *iio_dev,
 				int val, int val2, long mask)
 {
 	struct st_lsm6dsx_sensor *sensor = iio_priv(iio_dev);
-	int err;
+	int err = 0;
 
-	err = iio_device_claim_direct_mode(iio_dev);
-	if (err)
-		return err;
+	if (!iio_device_claim_direct(iio_dev))
+		return -EBUSY;
 
 	switch (mask) {
 	case IIO_CHAN_INFO_SCALE:
@@ -1860,12 +1858,12 @@ static int st_lsm6dsx_write_raw(struct iio_dev *iio_dev,
 		break;
 	}
 
-	iio_device_release_direct_mode(iio_dev);
+	iio_device_release_direct(iio_dev);
 
 	return err;
 }
 
-static int st_lsm6dsx_event_setup(struct st_lsm6dsx_hw *hw, int state)
+static int st_lsm6dsx_event_setup(struct st_lsm6dsx_hw *hw, bool state)
 {
 	const struct st_lsm6dsx_reg *reg;
 	unsigned int data;
@@ -1959,7 +1957,7 @@ static int
 st_lsm6dsx_write_event_config(struct iio_dev *iio_dev,
 			      const struct iio_chan_spec *chan,
 			      enum iio_event_type type,
-			      enum iio_event_direction dir, int state)
+			      enum iio_event_direction dir, bool state)
 {
 	struct st_lsm6dsx_sensor *sensor = iio_priv(iio_dev);
 	struct st_lsm6dsx_hw *hw = sensor->hw;
@@ -2132,14 +2130,11 @@ st_lsm6dsx_get_drdy_reg(struct st_lsm6dsx_hw *hw,
 			const struct st_lsm6dsx_reg **drdy_reg)
 {
 	struct device *dev = hw->dev;
+	const struct st_sensors_platform_data *pdata = dev_get_platdata(dev);
 	int err = 0, drdy_pin;
 
-	if (device_property_read_u32(dev, "st,drdy-int-pin", &drdy_pin) < 0) {
-		struct st_sensors_platform_data *pdata;
-
-		pdata = (struct st_sensors_platform_data *)dev->platform_data;
+	if (device_property_read_u32(dev, "st,drdy-int-pin", &drdy_pin) < 0)
 		drdy_pin = pdata ? pdata->drdy_int_pin : 1;
-	}
 
 	switch (drdy_pin) {
 	case 1:
@@ -2162,14 +2157,13 @@ st_lsm6dsx_get_drdy_reg(struct st_lsm6dsx_hw *hw,
 static int st_lsm6dsx_init_shub(struct st_lsm6dsx_hw *hw)
 {
 	const struct st_lsm6dsx_shub_settings *hub_settings;
-	struct st_sensors_platform_data *pdata;
 	struct device *dev = hw->dev;
+	const struct st_sensors_platform_data *pdata = dev_get_platdata(dev);
 	unsigned int data;
 	int err = 0;
 
 	hub_settings = &hw->settings->shub_settings;
 
-	pdata = (struct st_sensors_platform_data *)dev->platform_data;
 	if (device_property_read_bool(dev, "st,pullups") ||
 	    (pdata && pdata->pullups)) {
 		if (hub_settings->pullup_en.sec_page) {
@@ -2524,15 +2518,14 @@ static irqreturn_t st_lsm6dsx_sw_trigger_handler_thread(int irq,
 
 static int st_lsm6dsx_irq_setup(struct st_lsm6dsx_hw *hw)
 {
-	struct st_sensors_platform_data *pdata;
 	const struct st_lsm6dsx_reg *reg;
 	struct device *dev = hw->dev;
+	const struct st_sensors_platform_data *pdata = dev_get_platdata(dev);
 	unsigned long irq_type;
 	bool irq_active_low;
 	int err;
 
-	irq_type = irqd_get_trigger_type(irq_get_irq_data(hw->irq));
-
+	irq_type = irq_get_trigger_type(hw->irq);
 	switch (irq_type) {
 	case IRQF_TRIGGER_HIGH:
 	case IRQF_TRIGGER_RISING:
@@ -2554,7 +2547,6 @@ static int st_lsm6dsx_irq_setup(struct st_lsm6dsx_hw *hw)
 	if (err < 0)
 		return err;
 
-	pdata = (struct st_sensors_platform_data *)dev->platform_data;
 	if (device_property_read_bool(dev, "drive-open-drain") ||
 	    (pdata && pdata->open_drain)) {
 		reg = &hw->settings->irq_config.od;
@@ -2639,7 +2631,7 @@ static int st_lsm6dsx_init_regulators(struct device *dev)
 int st_lsm6dsx_probe(struct device *dev, int irq, int hw_id,
 		     struct regmap *regmap)
 {
-	struct st_sensors_platform_data *pdata = dev->platform_data;
+	const struct st_sensors_platform_data *pdata = dev_get_platdata(dev);
 	const struct st_lsm6dsx_shub_settings *hub_settings;
 	struct st_lsm6dsx_hw *hw;
 	const char *name = NULL;
@@ -2725,12 +2717,15 @@ int st_lsm6dsx_probe(struct device *dev, int irq, int hw_id,
 	}
 
 	if (device_property_read_bool(dev, "wakeup-source") ||
-	    (pdata && pdata->wakeup_source))
-		device_init_wakeup(dev, true);
+	    (pdata && pdata->wakeup_source)) {
+		err = devm_device_init_wakeup(dev);
+		if (err)
+			return dev_err_probe(dev, err, "Failed to init wakeup\n");
+	}
 
 	return 0;
 }
-EXPORT_SYMBOL_NS(st_lsm6dsx_probe, IIO_LSM6DSX);
+EXPORT_SYMBOL_NS(st_lsm6dsx_probe, "IIO_LSM6DSX");
 
 static int st_lsm6dsx_suspend(struct device *dev)
 {

@@ -10,7 +10,6 @@
 #include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/pm.h>
@@ -40,7 +39,6 @@ struct fsl_pwm_periodcfg {
 };
 
 struct fsl_pwm_chip {
-	struct mutex lock;
 	struct regmap *regmap;
 
 	/* This value is valid iff a pwm is running */
@@ -89,11 +87,8 @@ static int fsl_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
 	struct fsl_pwm_chip *fpc = to_fsl_chip(chip);
 
 	ret = clk_prepare_enable(fpc->ipg_clk);
-	if (!ret && fpc->soc->has_enable_bits) {
-		mutex_lock(&fpc->lock);
+	if (!ret && fpc->soc->has_enable_bits)
 		regmap_set_bits(fpc->regmap, FTM_SC, BIT(pwm->hwpwm + 16));
-		mutex_unlock(&fpc->lock);
-	}
 
 	return ret;
 }
@@ -102,11 +97,8 @@ static void fsl_pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	struct fsl_pwm_chip *fpc = to_fsl_chip(chip);
 
-	if (fpc->soc->has_enable_bits) {
-		mutex_lock(&fpc->lock);
+	if (fpc->soc->has_enable_bits)
 		regmap_clear_bits(fpc->regmap, FTM_SC, BIT(pwm->hwpwm + 16));
-		mutex_unlock(&fpc->lock);
-	}
 
 	clk_disable_unprepare(fpc->ipg_clk);
 }
@@ -118,6 +110,9 @@ static unsigned int fsl_pwm_ticks_to_ns(struct fsl_pwm_chip *fpc,
 	unsigned long long exval;
 
 	rate = clk_get_rate(fpc->clk[fpc->period.clk_select]);
+	if (rate >> fpc->period.clk_ps == 0)
+		return 0;
+
 	exval = ticks;
 	exval *= 1000000000UL;
 	do_div(exval, rate >> fpc->period.clk_ps);
@@ -189,6 +184,9 @@ static unsigned int fsl_pwm_calculate_duty(struct fsl_pwm_chip *fpc,
 
 	unsigned int period = fpc->period.mod_period + 1;
 	unsigned int period_ns = fsl_pwm_ticks_to_ns(fpc, period);
+
+	if (!period_ns)
+		return 0;
 
 	duty = (unsigned long long)duty_ns * period;
 	do_div(duty, period_ns);
@@ -298,7 +296,7 @@ static int fsl_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 {
 	struct fsl_pwm_chip *fpc = to_fsl_chip(chip);
 	struct pwm_state *oldstate = &pwm->state;
-	int ret = 0;
+	int ret;
 
 	/*
 	 * oldstate to newstate : action
@@ -309,8 +307,6 @@ static int fsl_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 	 * disabled to enabled : update settings + enable
 	 */
 
-	mutex_lock(&fpc->lock);
-
 	if (!newstate->enabled) {
 		if (oldstate->enabled) {
 			regmap_set_bits(fpc->regmap, FTM_OUTMASK,
@@ -319,30 +315,28 @@ static int fsl_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 			clk_disable_unprepare(fpc->clk[fpc->period.clk_select]);
 		}
 
-		goto end_mutex;
+		return 0;
 	}
 
 	ret = fsl_pwm_apply_config(chip, pwm, newstate);
 	if (ret)
-		goto end_mutex;
+		return ret;
 
 	/* check if need to enable */
 	if (!oldstate->enabled) {
 		ret = clk_prepare_enable(fpc->clk[fpc->period.clk_select]);
 		if (ret)
-			goto end_mutex;
+			return ret;
 
 		ret = clk_prepare_enable(fpc->clk[FSL_PWM_CLK_CNTEN]);
 		if (ret) {
 			clk_disable_unprepare(fpc->clk[fpc->period.clk_select]);
-			goto end_mutex;
+			return ret;
 		}
 
 		regmap_clear_bits(fpc->regmap, FTM_OUTMASK, BIT(pwm->hwpwm));
 	}
 
-end_mutex:
-	mutex_unlock(&fpc->lock);
 	return ret;
 }
 
@@ -401,8 +395,6 @@ static int fsl_pwm_probe(struct platform_device *pdev)
 	if (IS_ERR(chip))
 		return PTR_ERR(chip);
 	fpc = to_fsl_chip(chip);
-
-	mutex_init(&fpc->lock);
 
 	fpc->soc = of_device_get_match_data(&pdev->dev);
 

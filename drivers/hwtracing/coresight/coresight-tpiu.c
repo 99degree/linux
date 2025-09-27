@@ -307,7 +307,7 @@ MODULE_DEVICE_TABLE(acpi, tpiu_acpi_ids);
 
 static struct platform_driver tpiu_platform_driver = {
 	.probe	= tpiu_platform_probe,
-	.remove_new = tpiu_platform_remove,
+	.remove = tpiu_platform_remove,
 	.driver = {
 		.name			= "coresight-tpiu-platform",
 		.acpi_match_table	= ACPI_PTR(tpiu_acpi_ids),
@@ -318,7 +318,7 @@ static struct platform_driver tpiu_platform_driver = {
 
 static int __init tpiu_init(void)
 {
-	return coresight_init_driver("tpiu", &tpiu_driver, &tpiu_platform_driver);
+	return coresight_init_driver("tpiu", &tpiu_driver, &tpiu_platform_driver, THIS_MODULE);
 }
 
 static void __exit tpiu_exit(void)

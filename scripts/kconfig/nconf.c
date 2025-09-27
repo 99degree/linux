@@ -467,7 +467,7 @@ static void handle_f9(int *key, struct menu *current_item)
 	return;
 }
 
-/* return != 0 to indicate the key was handles */
+/* return != 0 to indicate the key was handled */
 static int process_special_keys(int *key, struct menu *menu)
 {
 	int i;
@@ -592,6 +592,8 @@ static void item_add_str(const char *fmt, ...)
 	strncpy(k_menu_items[index].str,
 		tmp_str,
 		sizeof(k_menu_items[index].str));
+
+	k_menu_items[index].str[sizeof(k_menu_items[index].str) - 1] = '\0';
 
 	free_item(curses_menu_items[index]);
 	curses_menu_items[index] = new_item(

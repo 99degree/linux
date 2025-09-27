@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/landlock.h>
-#include <linux/prctl.h>
 #include <linux/socket.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -24,6 +23,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#if defined(__GLIBC__)
+#include <linux/prctl.h>
+#endif
 
 #ifndef landlock_create_ruleset
 static inline int
@@ -58,7 +61,27 @@ static inline int landlock_restrict_self(const int ruleset_fd,
 #define ENV_TCP_BIND_NAME "LL_TCP_BIND"
 #define ENV_TCP_CONNECT_NAME "LL_TCP_CONNECT"
 #define ENV_SCOPED_NAME "LL_SCOPED"
+#define ENV_FORCE_LOG_NAME "LL_FORCE_LOG"
 #define ENV_DELIMITER ":"
+
+static int str2num(const char *numstr, __u64 *num_dst)
+{
+	char *endptr = NULL;
+	int err = 0;
+	__u64 num;
+
+	errno = 0;
+	num = strtoull(numstr, &endptr, 10);
+	if (errno != 0)
+		err = errno;
+	/* Was the string empty, or not entirely parsed successfully? */
+	else if ((*numstr == '\0') || (*endptr != '\0'))
+		err = EINVAL;
+	else
+		*num_dst = num;
+
+	return err;
+}
 
 static int parse_path(char *env_path, const char ***const path_list)
 {
@@ -72,6 +95,9 @@ static int parse_path(char *env_path, const char ***const path_list)
 		}
 	}
 	*path_list = malloc(num_paths * sizeof(**path_list));
+	if (!*path_list)
+		return -1;
+
 	for (i = 0; i < num_paths; i++)
 		(*path_list)[i] = strsep(&env_path, ENV_DELIMITER);
 
@@ -108,6 +134,10 @@ static int populate_ruleset_fs(const char *const env_var, const int ruleset_fd,
 	env_path_name = strdup(env_path_name);
 	unsetenv(env_var);
 	num_paths = parse_path(env_path_name, &path_list);
+	if (num_paths < 0) {
+		fprintf(stderr, "Failed to allocate memory\n");
+		goto out_free_name;
+	}
 	if (num_paths == 1 && path_list[0][0] == '\0') {
 		/*
 		 * Allows to not use all possible restrictions (e.g. use
@@ -160,7 +190,6 @@ static int populate_ruleset_net(const char *const env_var, const int ruleset_fd,
 	char *env_port_name, *env_port_name_next, *strport;
 	struct landlock_net_port_attr net_port = {
 		.allowed_access = allowed_access,
-		.port = 0,
 	};
 
 	env_port_name = getenv(env_var);
@@ -171,7 +200,17 @@ static int populate_ruleset_net(const char *const env_var, const int ruleset_fd,
 
 	env_port_name_next = env_port_name;
 	while ((strport = strsep(&env_port_name_next, ENV_DELIMITER))) {
-		net_port.port = atoi(strport);
+		__u64 port;
+
+		if (strcmp(strport, "") == 0)
+			continue;
+
+		if (str2num(strport, &port)) {
+			fprintf(stderr, "Failed to parse port at \"%s\"\n",
+				strport);
+			goto out_free_name;
+		}
+		net_port.port = port;
 		if (landlock_add_rule(ruleset_fd, LANDLOCK_RULE_NET_PORT,
 				      &net_port, 0)) {
 			fprintf(stderr,
@@ -260,14 +299,55 @@ out_unset:
 
 /* clang-format on */
 
-#define LANDLOCK_ABI_LAST 6
+#define LANDLOCK_ABI_LAST 7
+
+#define XSTR(s) #s
+#define STR(s) XSTR(s)
+
+/* clang-format off */
+
+static const char help[] =
+	"usage: " ENV_FS_RO_NAME "=\"...\" " ENV_FS_RW_NAME "=\"...\" "
+	"[other environment variables] %1$s <cmd> [args]...\n"
+	"\n"
+	"Execute the given command in a restricted environment.\n"
+	"Multi-valued settings (lists of ports, paths, scopes) are colon-delimited.\n"
+	"\n"
+	"Mandatory settings:\n"
+	"* " ENV_FS_RO_NAME ": paths allowed to be used in a read-only way\n"
+	"* " ENV_FS_RW_NAME ": paths allowed to be used in a read-write way\n"
+	"\n"
+	"Optional settings (when not set, their associated access check "
+	"is always allowed, which is different from an empty string which "
+	"means an empty list):\n"
+	"* " ENV_TCP_BIND_NAME ": ports allowed to bind (server)\n"
+	"* " ENV_TCP_CONNECT_NAME ": ports allowed to connect (client)\n"
+	"* " ENV_SCOPED_NAME ": actions denied on the outside of the landlock domain\n"
+	"  - \"a\" to restrict opening abstract unix sockets\n"
+	"  - \"s\" to restrict sending signals\n"
+	"\n"
+	"A sandboxer should not log denied access requests to avoid spamming logs, "
+	"but to test audit we can set " ENV_FORCE_LOG_NAME "=1\n"
+	"\n"
+	"Example:\n"
+	ENV_FS_RO_NAME "=\"${PATH}:/lib:/usr:/proc:/etc:/dev/urandom\" "
+	ENV_FS_RW_NAME "=\"/dev/null:/dev/full:/dev/zero:/dev/pts:/tmp\" "
+	ENV_TCP_BIND_NAME "=\"9418\" "
+	ENV_TCP_CONNECT_NAME "=\"80:443\" "
+	ENV_SCOPED_NAME "=\"a:s\" "
+	"%1$s bash -i\n"
+	"\n"
+	"This sandboxer can use Landlock features up to ABI version "
+	STR(LANDLOCK_ABI_LAST) ".\n";
+
+/* clang-format on */
 
 int main(const int argc, char *const argv[], char *const *const envp)
 {
 	const char *cmd_path;
 	char *const *cmd_argv;
 	int ruleset_fd, abi;
-	char *env_port_name;
+	char *env_port_name, *env_force_log;
 	__u64 access_fs_ro = ACCESS_FS_ROUGHLY_READ,
 	      access_fs_rw = ACCESS_FS_ROUGHLY_READ | ACCESS_FS_ROUGHLY_WRITE;
 
@@ -278,49 +358,11 @@ int main(const int argc, char *const argv[], char *const *const envp)
 		.scoped = LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET |
 			  LANDLOCK_SCOPE_SIGNAL,
 	};
+	int supported_restrict_flags = LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON;
+	int set_restrict_flags = 0;
 
 	if (argc < 2) {
-		fprintf(stderr,
-			"usage: %s=\"...\" %s=\"...\" %s=\"...\" %s=\"...\" %s=\"...\" %s "
-			"<cmd> [args]...\n\n",
-			ENV_FS_RO_NAME, ENV_FS_RW_NAME, ENV_TCP_BIND_NAME,
-			ENV_TCP_CONNECT_NAME, ENV_SCOPED_NAME, argv[0]);
-		fprintf(stderr,
-			"Execute a command in a restricted environment.\n\n");
-		fprintf(stderr,
-			"Environment variables containing paths and ports "
-			"each separated by a colon:\n");
-		fprintf(stderr,
-			"* %s: list of paths allowed to be used in a read-only way.\n",
-			ENV_FS_RO_NAME);
-		fprintf(stderr,
-			"* %s: list of paths allowed to be used in a read-write way.\n\n",
-			ENV_FS_RW_NAME);
-		fprintf(stderr,
-			"Environment variables containing ports are optional "
-			"and could be skipped.\n");
-		fprintf(stderr,
-			"* %s: list of ports allowed to bind (server).\n",
-			ENV_TCP_BIND_NAME);
-		fprintf(stderr,
-			"* %s: list of ports allowed to connect (client).\n",
-			ENV_TCP_CONNECT_NAME);
-		fprintf(stderr, "* %s: list of scoped IPCs.\n",
-			ENV_SCOPED_NAME);
-		fprintf(stderr,
-			"\nexample:\n"
-			"%s=\"${PATH}:/lib:/usr:/proc:/etc:/dev/urandom\" "
-			"%s=\"/dev/null:/dev/full:/dev/zero:/dev/pts:/tmp\" "
-			"%s=\"9418\" "
-			"%s=\"80:443\" "
-			"%s=\"a:s\" "
-			"%s bash -i\n\n",
-			ENV_FS_RO_NAME, ENV_FS_RW_NAME, ENV_TCP_BIND_NAME,
-			ENV_TCP_CONNECT_NAME, ENV_SCOPED_NAME, argv[0]);
-		fprintf(stderr,
-			"This sandboxer can use Landlock features "
-			"up to ABI version %d.\n",
-			LANDLOCK_ABI_LAST);
+		fprintf(stderr, help, argv[0]);
 		return 1;
 	}
 
@@ -389,6 +431,13 @@ int main(const int argc, char *const argv[], char *const *const envp)
 		/* Removes LANDLOCK_SCOPE_* for ABI < 6 */
 		ruleset_attr.scoped &= ~(LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET |
 					 LANDLOCK_SCOPE_SIGNAL);
+		__attribute__((fallthrough));
+	case 6:
+		/* Removes LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON for ABI < 7 */
+		supported_restrict_flags &=
+			~LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON;
+
+		/* Must be printed for any ABI < LANDLOCK_ABI_LAST. */
 		fprintf(stderr,
 			"Hint: You should update the running kernel "
 			"to leverage Landlock features "
@@ -423,6 +472,24 @@ int main(const int argc, char *const argv[], char *const *const envp)
 	if (check_ruleset_scope(ENV_SCOPED_NAME, &ruleset_attr))
 		return 1;
 
+	/* Enables optional logs. */
+	env_force_log = getenv(ENV_FORCE_LOG_NAME);
+	if (env_force_log) {
+		if (strcmp(env_force_log, "1") != 0) {
+			fprintf(stderr, "Unknown value for " ENV_FORCE_LOG_NAME
+					" (only \"1\" is handled)\n");
+			return 1;
+		}
+		if (!(supported_restrict_flags &
+		      LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON)) {
+			fprintf(stderr,
+				"Audit logs not supported by current kernel\n");
+			return 1;
+		}
+		set_restrict_flags |= LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON;
+		unsetenv(ENV_FORCE_LOG_NAME);
+	}
+
 	ruleset_fd =
 		landlock_create_ruleset(&ruleset_attr, sizeof(ruleset_attr), 0);
 	if (ruleset_fd < 0) {
@@ -450,7 +517,7 @@ int main(const int argc, char *const argv[], char *const *const envp)
 		perror("Failed to restrict privileges");
 		goto err_close_ruleset;
 	}
-	if (landlock_restrict_self(ruleset_fd, 0)) {
+	if (landlock_restrict_self(ruleset_fd, set_restrict_flags)) {
 		perror("Failed to enforce ruleset");
 		goto err_close_ruleset;
 	}

@@ -47,7 +47,6 @@ static int mule_i2c_mux_probe(struct platform_device *pdev)
 	struct mule_i2c_reg_mux *priv;
 	struct i2c_client *client;
 	struct i2c_mux_core *muxc;
-	struct device_node *dev;
 	unsigned int readback;
 	int ndev, ret;
 	bool old_fw;
@@ -66,8 +65,8 @@ static int mule_i2c_mux_probe(struct platform_device *pdev)
 	priv = i2c_mux_priv(muxc);
 
 	priv->regmap = dev_get_regmap(mux_dev->parent, NULL);
-	if (IS_ERR(priv->regmap))
-		return dev_err_probe(mux_dev, PTR_ERR(priv->regmap),
+	if (!priv->regmap)
+		return dev_err_probe(mux_dev, -ENODEV,
 				     "No parent i2c register map\n");
 
 	platform_set_drvdata(pdev, muxc);
@@ -95,7 +94,7 @@ static int mule_i2c_mux_probe(struct platform_device *pdev)
 				     "Failed to register mux remove\n");
 
 	/* Create device adapters */
-	for_each_child_of_node(mux_dev->of_node, dev) {
+	for_each_child_of_node_scoped(mux_dev->of_node, dev) {
 		u32 reg;
 
 		ret = of_property_read_u32(dev, "reg", &reg);

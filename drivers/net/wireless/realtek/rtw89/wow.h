@@ -97,18 +97,16 @@ static inline int rtw89_wow_get_sec_hdr_len(struct rtw89_dev *rtwdev)
 #ifdef CONFIG_PM
 static inline bool rtw89_wow_mgd_linked(struct rtw89_dev *rtwdev)
 {
-	struct ieee80211_vif *wow_vif = rtwdev->wow.wow_vif;
-	struct rtw89_vif *rtwvif = (struct rtw89_vif *)wow_vif->drv_priv;
+	struct rtw89_vif_link *rtwvif_link = rtwdev->wow.rtwvif_link;
 
-	return rtwvif->net_type == RTW89_NET_TYPE_INFRA;
+	return rtwvif_link->net_type == RTW89_NET_TYPE_INFRA;
 }
 
 static inline bool rtw89_wow_no_link(struct rtw89_dev *rtwdev)
 {
-	struct ieee80211_vif *wow_vif = rtwdev->wow.wow_vif;
-	struct rtw89_vif *rtwvif = (struct rtw89_vif *)wow_vif->drv_priv;
+	struct rtw89_vif_link *rtwvif_link = rtwdev->wow.rtwvif_link;
 
-	return rtwvif->net_type == RTW89_NET_TYPE_NO_LINK;
+	return rtwvif_link->net_type == RTW89_NET_TYPE_NO_LINK;
 }
 
 static inline bool rtw_wow_has_mgd_features(struct rtw89_dev *rtwdev)
@@ -118,9 +116,21 @@ static inline bool rtw_wow_has_mgd_features(struct rtw89_dev *rtwdev)
 	return !bitmap_empty(rtw_wow->flags, RTW89_WOW_FLAG_NUM);
 }
 
+void __rtw89_wow_parse_akm(struct rtw89_dev *rtwdev, struct sk_buff *skb);
+
+static inline
+void rtw89_wow_parse_akm(struct rtw89_dev *rtwdev, struct sk_buff *skb)
+{
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+
+	if (likely(!ieee80211_is_assoc_req(hdr->frame_control)))
+		return;
+
+	__rtw89_wow_parse_akm(rtwdev, skb);
+}
+
 int rtw89_wow_suspend(struct rtw89_dev *rtwdev, struct cfg80211_wowlan *wowlan);
 int rtw89_wow_resume(struct rtw89_dev *rtwdev);
-void rtw89_wow_parse_akm(struct rtw89_dev *rtwdev, struct sk_buff *skb);
 #else
 static inline
 void rtw89_wow_parse_akm(struct rtw89_dev *rtwdev, struct sk_buff *skb)

@@ -119,7 +119,7 @@ static inline void gfs2_update_request_times(struct gfs2_glock *gl)
 static void gdlm_ast(void *arg)
 {
 	struct gfs2_glock *gl = arg;
-	unsigned ret = gl->gl_state;
+	unsigned ret;
 
 	/* If the glock is dead, we only react to a dlm_unlock() reply. */
 	if (__lockref_is_dead(&gl->gl_lockref) &&
@@ -139,13 +139,16 @@ static void gdlm_ast(void *arg)
 		gfs2_glock_free(gl);
 		return;
 	case -DLM_ECANCEL: /* Cancel while getting lock */
-		ret |= LM_OUT_CANCELED;
+		ret = LM_OUT_CANCELED;
 		goto out;
 	case -EAGAIN: /* Try lock fails */
+		ret = LM_OUT_TRY_AGAIN;
+		goto out;
 	case -EDEADLK: /* Deadlock detected */
+		ret = LM_OUT_DEADLOCK;
 		goto out;
 	case -ETIMEDOUT: /* Canceled due to timeout */
-		ret |= LM_OUT_ERROR;
+		ret = LM_OUT_ERROR;
 		goto out;
 	case 0: /* Success */
 		break;
@@ -224,8 +227,21 @@ static int make_mode(struct gfs2_sbd *sdp, const unsigned int lmstate)
 	return -1;
 }
 
+/* Taken from fs/dlm/lock.c. */
+
+static bool middle_conversion(int cur, int req)
+{
+	return (cur == DLM_LOCK_PR && req == DLM_LOCK_CW) ||
+	       (cur == DLM_LOCK_CW && req == DLM_LOCK_PR);
+}
+
+static bool down_conversion(int cur, int req)
+{
+	return !middle_conversion(cur, req) && req < cur;
+}
+
 static u32 make_flags(struct gfs2_glock *gl, const unsigned int gfs_flags,
-		      const int req)
+		      const int cur, const int req)
 {
 	u32 lkf = 0;
 
@@ -251,7 +267,14 @@ static u32 make_flags(struct gfs2_glock *gl, const unsigned int gfs_flags,
 
 	if (!test_bit(GLF_INITIAL, &gl->gl_flags)) {
 		lkf |= DLM_LKF_CONVERT;
-		if (test_bit(GLF_BLOCKING, &gl->gl_flags))
+
+		/*
+		 * The DLM_LKF_QUECVT flag needs to be set for "first come,
+		 * first served" semantics, but it must only be set for
+		 * "upward" lock conversions or else DLM will reject the
+		 * request as invalid.
+		 */
+		if (!down_conversion(cur, req))
 			lkf |= DLM_LKF_QUECVT;
 	}
 
@@ -271,13 +294,14 @@ static int gdlm_lock(struct gfs2_glock *gl, unsigned int req_state,
 		     unsigned int flags)
 {
 	struct lm_lockstruct *ls = &gl->gl_name.ln_sbd->sd_lockstruct;
-	int req;
+	int cur, req;
 	u32 lkf;
 	char strname[GDLM_STRNAME_BYTES] = "";
 	int error;
 
+	cur = make_mode(gl->gl_name.ln_sbd, gl->gl_state);
 	req = make_mode(gl->gl_name.ln_sbd, req_state);
-	lkf = make_flags(gl, flags, req);
+	lkf = make_flags(gl, flags, cur, req);
 	gfs2_glstats_inc(gl, GFS2_LKS_DCOUNT);
 	gfs2_sbstats_inc(gl, GFS2_LKS_DCOUNT);
 	if (test_bit(GLF_INITIAL, &gl->gl_flags)) {
@@ -307,6 +331,7 @@ static void gdlm_put_lock(struct gfs2_glock *gl)
 {
 	struct gfs2_sbd *sdp = gl->gl_name.ln_sbd;
 	struct lm_lockstruct *ls = &sdp->sd_lockstruct;
+	uint32_t flags = 0;
 	int error;
 
 	BUG_ON(!__lockref_is_dead(&gl->gl_lockref));
@@ -331,7 +356,7 @@ static void gdlm_put_lock(struct gfs2_glock *gl)
 	 * When the lockspace is released, all remaining glocks will be
 	 * unlocked automatically.  This is more efficient than unlocking them
 	 * individually, but when the lock is held in DLM_LOCK_EX or
-	 * DLM_LOCK_PW mode, the lock value block (LVB) will be lost.
+	 * DLM_LOCK_PW mode, the lock value block (LVB) would be lost.
 	 */
 
 	if (test_bit(SDF_SKIP_DLM_UNLOCK, &sdp->sd_flags) &&
@@ -340,8 +365,11 @@ static void gdlm_put_lock(struct gfs2_glock *gl)
 		return;
 	}
 
+	if (gl->gl_lksb.sb_lvbptr)
+		flags |= DLM_LKF_VALBLK;
+
 again:
-	error = dlm_unlock(ls->ls_dlm, gl->gl_lksb.sb_lkid, DLM_LKF_VALBLK,
+	error = dlm_unlock(ls->ls_dlm, gl->gl_lksb.sb_lkid, flags,
 			   NULL, gl);
 	if (error == -EBUSY) {
 		msleep(20);
@@ -975,14 +1003,15 @@ locks_done:
 		if (sdp->sd_args.ar_spectator) {
 			fs_info(sdp, "Recovery is required. Waiting for a "
 				"non-spectator to mount.\n");
+			spin_unlock(&ls->ls_recover_spin);
 			msleep_interruptible(1000);
 		} else {
 			fs_info(sdp, "control_mount wait1 block %u start %u "
 				"mount %u lvb %u flags %lx\n", block_gen,
 				start_gen, mount_gen, lvb_gen,
 				ls->ls_recover_flags);
+			spin_unlock(&ls->ls_recover_spin);
 		}
-		spin_unlock(&ls->ls_recover_spin);
 		goto restart;
 	}
 

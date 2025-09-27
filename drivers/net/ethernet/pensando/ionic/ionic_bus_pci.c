@@ -394,6 +394,7 @@ err_out_free_irqs:
 err_out_pci:
 	ionic_dev_teardown(ionic);
 	ionic_clear_pci(ionic);
+	ionic_debugfs_del_dev(ionic);
 err_out:
 	mutex_destroy(&ionic->dev_cmd_lock);
 	ionic_devlink_free(ionic);
@@ -408,6 +409,7 @@ static void ionic_remove(struct pci_dev *pdev)
 	timer_shutdown_sync(&ionic->watchdog_timer);
 
 	if (ionic->lif) {
+		cancel_work_sync(&ionic->lif->deferred.work);
 		/* prevent adminq cmds if already known as down */
 		if (test_and_clear_bit(IONIC_LIF_F_FW_RESET, ionic->lif->state))
 			set_bit(IONIC_LIF_F_FW_STOPPING, ionic->lif->state);
@@ -440,7 +442,7 @@ static void ionic_reset_prepare(struct pci_dev *pdev)
 
 	set_bit(IONIC_LIF_F_FW_RESET, lif->state);
 
-	del_timer_sync(&ionic->watchdog_timer);
+	timer_delete_sync(&ionic->watchdog_timer);
 	cancel_work_sync(&lif->deferred.work);
 
 	mutex_lock(&lif->queue_lock);

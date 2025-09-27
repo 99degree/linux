@@ -37,16 +37,16 @@ static inline const struct group_desc *imx_pinctrl_find_group_by_name(
 				struct pinctrl_dev *pctldev,
 				const char *name)
 {
-	const struct group_desc *grp = NULL;
+	const struct group_desc *grp;
 	int i;
 
 	for (i = 0; i < pctldev->num_groups; i++) {
 		grp = pinctrl_generic_get_group(pctldev, i);
 		if (grp && !strcmp(grp->grp.name, name))
-			break;
+			return grp;
 	}
 
-	return grp;
+	return NULL;
 }
 
 static void imx_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
@@ -633,11 +633,11 @@ static int imx_pinctrl_parse_functions(struct device_node *np,
 static bool imx_pinctrl_dt_is_flat_functions(struct device_node *np)
 {
 	for_each_child_of_node_scoped(np, function_np) {
-		if (of_property_read_bool(function_np, "fsl,pins"))
+		if (of_property_present(function_np, "fsl,pins"))
 			return true;
 
 		for_each_child_of_node_scoped(function_np, pinctrl_np) {
-			if (of_property_read_bool(pinctrl_np, "fsl,pins"))
+			if (of_property_present(pinctrl_np, "fsl,pins"))
 				return false;
 		}
 	}
@@ -746,7 +746,7 @@ int imx_pinctrl_probe(struct platform_device *pdev,
 		if (IS_ERR(ipctl->base))
 			return PTR_ERR(ipctl->base);
 
-		if (of_property_read_bool(dev_np, "fsl,input-sel")) {
+		if (of_property_present(dev_np, "fsl,input-sel")) {
 			np = of_parse_phandle(dev_np, "fsl,input-sel", 0);
 			if (!np) {
 				dev_err(&pdev->dev, "iomuxc fsl,input-sel property not found\n");

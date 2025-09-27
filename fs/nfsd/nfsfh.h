@@ -49,17 +49,18 @@ struct knfsd_fh {
 					 * Points to the current size while
 					 * building a new file handle.
 					 */
-	union {
-		char			fh_raw[NFS4_FHSIZE];
-		struct {
-			u8		fh_version;	/* == 1 */
-			u8		fh_auth_type;	/* deprecated */
-			u8		fh_fsid_type;
-			u8		fh_fileid_type;
-			u32		fh_fsid[]; /* flexible-array member */
-		};
-	};
+	u8		fh_raw[NFS4_FHSIZE];
 };
+
+#define fh_version		fh_raw[0]
+#define fh_auth_type		fh_raw[1]
+#define fh_fsid_type		fh_raw[2]
+#define fh_fileid_type		fh_raw[3]
+
+static inline u32 *fh_fsid(const struct knfsd_fh *fh)
+{
+	return (u32 *)&fh->fh_raw[4];
+}
 
 static inline __u32 ino_t_to_u32(ino_t ino)
 {
@@ -260,14 +261,16 @@ static inline bool fh_match(const struct knfsd_fh *fh1,
 static inline bool fh_fsid_match(const struct knfsd_fh *fh1,
 				 const struct knfsd_fh *fh2)
 {
+	u32 *fsid1 = fh_fsid(fh1);
+	u32 *fsid2 = fh_fsid(fh2);
+
 	if (fh1->fh_fsid_type != fh2->fh_fsid_type)
 		return false;
-	if (memcmp(fh1->fh_fsid, fh2->fh_fsid, key_len(fh1->fh_fsid_type)) != 0)
+	if (memcmp(fsid1, fsid2, key_len(fh1->fh_fsid_type)) != 0)
 		return false;
 	return true;
 }
 
-#ifdef CONFIG_CRC32
 /**
  * knfsd_fh_hash - calculate the crc32 hash for the filehandle
  * @fh - pointer to filehandle
@@ -279,12 +282,6 @@ static inline u32 knfsd_fh_hash(const struct knfsd_fh *fh)
 {
 	return ~crc32_le(0xFFFFFFFF, fh->fh_raw, fh->fh_size);
 }
-#else
-static inline u32 knfsd_fh_hash(const struct knfsd_fh *fh)
-{
-	return 0;
-}
-#endif
 
 /**
  * fh_clear_pre_post_attrs - Reset pre/post attributes
@@ -297,8 +294,7 @@ static inline void fh_clear_pre_post_attrs(struct svc_fh *fhp)
 	fhp->fh_pre_saved = false;
 }
 
-u64 nfsd4_change_attribute(const struct kstat *stat,
-			   const struct inode *inode);
+u64 nfsd4_change_attribute(const struct kstat *stat);
 __be32 __must_check fh_fill_pre_attrs(struct svc_fh *fhp);
 __be32 fh_fill_post_attrs(struct svc_fh *fhp);
 __be32 __must_check fh_fill_both_attrs(struct svc_fh *fhp);
