@@ -7,6 +7,7 @@
 #include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 
 #include <dt-bindings/clock/qcom,dispcc-sc7180.h>
@@ -169,7 +170,7 @@ static struct clk_rcg2 disp_cc_mdss_byte0_clk_src = {
 		.name = "disp_cc_mdss_byte0_clk_src",
 		.parent_data = disp_cc_parent_data_2,
 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_2),
-		.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
+		.flags = CLK_SET_RATE_PARENT,
 		.ops = &clk_byte2_ops,
 	},
 };
@@ -278,7 +279,7 @@ static struct clk_rcg2 disp_cc_mdss_pclk0_clk_src = {
 		.name = "disp_cc_mdss_pclk0_clk_src",
 		.parent_data = disp_cc_parent_data_5,
 		.num_parents = ARRAY_SIZE(disp_cc_parent_data_5),
-		.flags = CLK_SET_RATE_PARENT,
+		.flags = CLK_SET_RATE_PARENT | CLK_OPS_PARENT_ENABLE,
 		.ops = &clk_pixel_ops,
 	},
 };
@@ -642,7 +643,7 @@ static struct gdsc *disp_cc_sc7180_gdscs[] = {
 };
 
 static const struct qcom_reset_map disp_cc_sc7180_resets[] = {
-	[DISP_CC_MDSS_CORE_BCR] = { 0x34000 },
+	[DISP_CC_MDSS_CORE_BCR] = { 0x2000 },
 };
 
 static struct clk_regmap *disp_cc_sc7180_clocks[] = {
@@ -708,10 +709,21 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 {
 	struct regmap *regmap;
 	struct alpha_pll_config disp_cc_pll_config = {};
+	int ret;
+
+	ret = devm_pm_runtime_enable(&pdev->dev);
+	if (ret)
+		return ret;
+
+	ret = pm_runtime_resume_and_get(&pdev->dev);
+	if (ret)
+		return ret;
 
 	regmap = qcom_cc_map(pdev, &disp_cc_sc7180_desc);
-	if (IS_ERR(regmap))
-		return PTR_ERR(regmap);
+	if (IS_ERR(regmap)) {
+		ret = PTR_ERR(regmap);
+		goto err_put_rpm;
+	}
 
 	/* 1380MHz configuration */
 	disp_cc_pll_config.l = 0x47;
@@ -721,7 +733,18 @@ static int disp_cc_sc7180_probe(struct platform_device *pdev)
 
 	clk_fabia_pll_configure(&disp_cc_pll0, regmap, &disp_cc_pll_config);
 
-	return qcom_cc_really_probe(&pdev->dev, &disp_cc_sc7180_desc, regmap);
+	ret = qcom_cc_really_probe(&pdev->dev, &disp_cc_sc7180_desc, regmap);
+	if (ret)
+		goto err_put_rpm;
+
+	pm_runtime_put(&pdev->dev);
+
+	return 0;
+
+err_put_rpm:
+	pm_runtime_put_sync(&pdev->dev);
+
+	return ret;
 }
 
 static struct platform_driver disp_cc_sc7180_driver = {
