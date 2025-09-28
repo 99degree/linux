@@ -114,8 +114,7 @@
 
         compatible = "simple-dsi-bridge", "simple,dsi-bridge";
 
-	/* borrow from mmc sense-data pin */
-	mux-gpio = <&tlmm 69 GPIO_ACTIVE_HIGH>;
+	mux-gpio = <&pm6150l_gpios 11 GPIO_ACTIVE_HIGH>;
 
 	status = "okay";
 
@@ -262,7 +261,7 @@
 		bias-disable;
 		output-low;
 	};
-
+#if 0
 	/* board id */
         broad_adc1: disp-state {
                 pins = "gpio7";
@@ -292,6 +291,7 @@
                 bias-disable;
 		input-enable;
         };
+#endif
 };
 
 &pm6150l_wled {
