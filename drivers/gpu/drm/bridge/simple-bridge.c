@@ -83,10 +83,31 @@ static int simple_bridge_select_and_register_dsi(struct device *dev,
                          struct simple_bridge *ctx)
 {
     struct device_node *child;
+    int gpio, mux_val;
+    u32 reg_val = 0;
+dev_info(dev, "%s enter", __func__);
+    /* mux-gpio must match the child's reg to select this panel */
+    gpio = of_get_named_gpio(dev->of_node, "mux-gpio", 0);
+    if (gpio_is_valid(gpio)) {
+                int ret;
+            if (ret = gpio_request_one(gpio, GPIOF_IN, "panel-mux")) {
+dev_info(dev, "get gpio fail %d", ret);
+		goto free_gpio;
+            }
+            mux_val = gpio_get_value(gpio);
+
+dev_info(dev, "get gpio value %d", mux_val);
+
+                /* use always 0 for debug */
+                mux_val = 0;
+free_gpio:
+            gpio_free(gpio);
+    } else {
+	dev_info(dev, "get gpio fail, not valid, ret %d", gpio);
+    }
+dev_info(dev, "%s %d", __func__, __LINE__);
 
     for_each_child_of_node(dev->of_node, child) {
-        u32 reg_val = 0;
-        int gpio, mux_val;
 
         /* consider panel@X children only */
         if (!child->name || strncmp(child->name, "panel", 5) != 0)
@@ -95,18 +116,10 @@ static int simple_bridge_select_and_register_dsi(struct device *dev,
         /* use 'reg' as logical selector */
         if (of_property_read_u32(child, "reg", &reg_val))
             continue;
-#if 0
-        /* mux-gpio must match the child's reg to select this panel */
-        gpio = of_get_named_gpio(child, "mux-gpios", 0);
-        if (gpio_is_valid(gpio)) {
-            if (gpio_request_one(gpio, GPIOF_IN, "panel-mux"))
-                continue;
-            mux_val = gpio_get_value(gpio);
-            gpio_free(gpio);
-            if (mux_val != reg_val)
-                continue;
-        }
-#endif
+
+        if (mux_val != reg_val)
+            continue;
+
         /* prefer reusing existing DSI device if host created it */
         ctx->panel_dsi = of_find_mipi_dsi_device_by_node(child);
         if (ctx->panel_dsi) {
@@ -124,13 +137,12 @@ static int simple_bridge_select_and_register_dsi(struct device *dev,
                 .node    = child,   /* DT node of the selected panel endpoint */
             };
             struct mipi_dsi_device *dsi;
-
             dsi = mipi_dsi_device_register_full(host, &info);
             if (IS_ERR(dsi)) {
                 int err = PTR_ERR(dsi);
                 dev_err(dev, "mipi_dsi_device_register_full(%pOF) failed: %d\n",
                     child, err);
-                continue;
+		continue;
             }
 
             ctx->panel_dsi = dsi;
