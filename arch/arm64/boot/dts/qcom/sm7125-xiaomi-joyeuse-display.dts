@@ -113,7 +113,7 @@
 	#gpio-cells = <1>;
 
         compatible = "simple-dsi-bridge", "simple,dsi-bridge";
-	mux-gpio = <&gpio70_id0>;
+//	mux-gpio = <&gpio70_id0>;
 
 	status = "okay";
 
