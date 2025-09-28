@@ -110,10 +110,12 @@
 &bridge0 {
         #address-cells = <1>;
         #size-cells = <0>;
-	#gpio-cells = <1>;
+//	#gpio-cells = <1>;
 
         compatible = "simple-dsi-bridge", "simple,dsi-bridge";
-//	mux-gpio = <&gpio70_id0>;
+
+	/* borrow from mmc sense-data pin */
+	mux-gpio = <&tlmm 69 GPIO_ACTIVE_HIGH>;
 
 	status = "okay";
 
@@ -191,7 +193,9 @@
         #address-cells = <1>;
         #size-cells = <0>;
 
-	compatible = "mdss,ft8756-huaxing";
+//	compatible = "mdss,ft8756-huaxing";
+        compatible = "mdss,nt36675-tianma", /* "mdss,ft8756-huaxing", */
+                        "mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
 
 	reg = <1>;
 	

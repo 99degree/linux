@@ -88,16 +88,17 @@ static int simple_bridge_select_and_register_dsi(struct device *dev,
     u32 reg_val = 0;
 dev_info(dev, "%s enter", __func__);
     /* mux-gpio must match the child's reg to select this panel */
+/* since i borrow from mmc cs pin and not shared */
     gpio = devm_gpiod_get_optional(dev, "mux", GPIOD_IN);
-    if (gpio) {
-            mux_val = gpiod_get_value_cansleep(gpio);
-
-dev_info(dev, "get gpio value %d", mux_val);
+//    gpio = gpiod_get_shared(dev, "mux", GPIOD_IN);
+    if (IS_ERR(gpio)) {
+        dev_info(dev, "get gpio fail, not valid");
     } else {
-	dev_info(dev, "get gpio fail, not valid");
+        mux_val = gpiod_get_value_cansleep(gpio);
+dev_info(dev, "get gpio value %d", mux_val);
     }
 
-mux_val = 0;
+//mux_val = 1;
 
 dev_info(dev, "%s %d", __func__, __LINE__);
 
@@ -110,6 +111,8 @@ dev_info(dev, "%s %d", __func__, __LINE__);
         /* use 'reg' as logical selector */
         if (of_property_read_u32(child, "reg", &reg_val))
             continue;
+
+dev_info(dev, "%s %d reg_val %d mux_val %d", __func__, __LINE__, reg_val, mux_val);
 
         if (mux_val != reg_val)
             continue;

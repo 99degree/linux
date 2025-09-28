@@ -44,6 +44,11 @@
 	status = "okay";
 };
 
+/* i borrow this gpio to morph test board_id */
+&sdhc_2 {
+        /delete-property/ cd-gpios;
+};
+
 //&pm6150_charger {
 //	monitored-battery = <&battery>;
 //	status = "disabled";
