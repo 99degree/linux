@@ -83,28 +83,22 @@ static int simple_bridge_select_and_register_dsi(struct device *dev,
                          struct simple_bridge *ctx)
 {
     struct device_node *child;
-    int gpio, mux_val;
+    struct gpio_desc *gpio;
+    int mux_val;
     u32 reg_val = 0;
 dev_info(dev, "%s enter", __func__);
     /* mux-gpio must match the child's reg to select this panel */
-    gpio = of_get_named_gpio(dev->of_node, "mux-gpio", 0);
-    if (gpio_is_valid(gpio)) {
-                int ret;
-            if (ret = gpio_request_one(gpio, GPIOF_IN, "panel-mux")) {
-dev_info(dev, "get gpio fail %d", ret);
-		goto free_gpio;
-            }
-            mux_val = gpio_get_value(gpio);
+    gpio = devm_gpiod_get_optional(dev, "mux", GPIOD_IN);
+    if (gpio) {
+            mux_val = gpiod_get_value_cansleep(gpio);
 
 dev_info(dev, "get gpio value %d", mux_val);
-
-                /* use always 0 for debug */
-                mux_val = 0;
-free_gpio:
-            gpio_free(gpio);
     } else {
-	dev_info(dev, "get gpio fail, not valid, ret %d", gpio);
+	dev_info(dev, "get gpio fail, not valid");
     }
+
+mux_val = 0;
+
 dev_info(dev, "%s %d", __func__, __LINE__);
 
     for_each_child_of_node(dev->of_node, child) {
