@@ -104,9 +104,9 @@
         status = "okay";
 };
 
-&touchscreen {
+//&touchscreen {
 //	status = "disabled";
-};
+//};
 
 &remoteproc_mpss {
 	status = "okay";

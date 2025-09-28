@@ -18,6 +18,15 @@
 	};
 };
 
+/*
+ * since under msm dsi_host node, mdss driver wont probe child node
+ * so need to move to soc node
+ */
+&soc {
+	bridge0: bridge@0 {
+	};
+};
+
 &adreno_smmu {
         status = "okay";
 };
@@ -63,14 +72,15 @@
 &mdp {
 	// TODO: check if mdss or mdp hold this memory
 	/* there was a handover problem happened to mdss probe */
-	//memory-region = <&cont_splash_mem>;
+	/* it was due to mdss not reset so access reserved memory issue */
+	memory-region = <&cont_splash_mem>;
 
 	status = "okay";
 };
 
 &mdss {
 	// TODO: check if mdss or mdp hold this memory
-	//memory-region = <&cont_splash_mem>;
+	memory-region = <&cont_splash_mem>;
 
 	status = "okay";
 };
@@ -83,12 +93,13 @@
 	vdda-supply = <&vreg_l3c_1p23>;
 	status = "okay";
 
-        panel0: panel@0 {
-        };
+//        bridge0: bridge@0 {
+//        };
+
 };
 
 &mdss_dsi0_out {
-	remote-endpoint = <&panel0_in>;
+	remote-endpoint = <&bridge0_in>;
 	data-lanes = <0 1 2 3>;
 
 	status = "okay";
@@ -100,8 +111,43 @@
 	status = "okay";
 };
 
+&bridge0 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        compatible = "simple-dsi-bridge", "simple,dsi-bridge";
+	//mux-address-gpio = <&>
+
+	status = "okay";
+
+        ports {
+        	#address-cells = <1>;
+	        #size-cells = <0>;
+                port@1 {
+                        reg = <1>;
+                        bridge0_in: endpoint {
+                                remote-endpoint = <&mdss_dsi0_out>;
+                        };
+                };
+
+                port@0 {
+                        reg = <0>;
+                        bridge0_out: endpoint {
+                                remote-endpoint = <&panel0_in>;
+                        };
+                };
+        };
+
+        panel0: panel@0 {
+        };
+
+};
+
 &panel0 {
-	compatible = "mdss,nt36675-tianma", "mdss,ft8756-huaxing",
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+	compatible = "mdss,nt36675-tianma", /* "mdss,ft8756-huaxing", */
 			"mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
 
 	reg = <0>;
@@ -145,7 +191,7 @@
 		port@0 {
 			reg = <0>;
 			panel0_in: endpoint {
-				remote-endpoint = <&mdss_dsi0_out>;
+				remote-endpoint = <&bridge0_out>;
 			};
 		};
 	};
