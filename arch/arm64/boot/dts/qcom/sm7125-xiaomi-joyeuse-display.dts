@@ -13,7 +13,7 @@
 / {
         chosen {
                 framebuffer@9c000000 {
-//			/delete-property/ format;
+			/delete-property/ format;
 		};
 	};
 };
