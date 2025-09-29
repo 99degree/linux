@@ -13,17 +13,8 @@
 / {
         chosen {
                 framebuffer@9c000000 {
-			/delete-property/ format;
+//			/delete-property/ format;
 		};
-	};
-};
-
-/*
- * since under msm dsi_host node, mdss driver wont probe child node
- * so need to move to soc node
- */
-&soc {
-	bridge0: bridge@0 {
 	};
 };
 
@@ -72,7 +63,6 @@
 &mdp {
 	// TODO: check if mdss or mdp hold this memory
 	/* there was a handover problem happened to mdss probe */
-	/* it was due to mdss not reset so access reserved memory issue */
 	memory-region = <&cont_splash_mem>;
 
 	status = "okay";
@@ -92,10 +82,13 @@
 &mdss_dsi0 {
 	vdda-supply = <&vreg_l3c_1p23>;
 	status = "okay";
+
+        panel0: panel@0 {
+        };
 };
 
 &mdss_dsi0_out {
-	remote-endpoint = <&bridge0_in>;
+	remote-endpoint = <&panel0_in>;
 	data-lanes = <0 1 2 3>;
 
 	status = "okay";
@@ -107,96 +100,11 @@
 	status = "okay";
 };
 
-&bridge0 {
-        #address-cells = <1>;
-        #size-cells = <0>;
-//	#gpio-cells = <1>;
-
-        compatible = "simple-dsi-bridge", "simple,dsi-bridge";
-
-	mux-gpio = <&pm6150l_gpios 11 GPIO_ACTIVE_HIGH>;
-
-	status = "okay";
-
-        ports {
-        	#address-cells = <1>;
-	        #size-cells = <0>;
-
-		/* numbering is flexible */
-                port@2 {
-                        reg = <2>;
-                        bridge0_in: endpoint {
-                                remote-endpoint = <&mdss_dsi0_out>;
-                        };
-                };
-
-                port@1 {
-                        reg = <1>;
-                        bridge1_out: endpoint {
-                                remote-endpoint = <&panel1_in>;
-                        };
-                };
-
-                port@0 {
-                        reg = <0>;
-                        bridge0_out: endpoint {
-                                remote-endpoint = <&panel0_in>;
-                        };
-                };
-        };
-
-        panel0: panel@0 {
-        };
-
-        panel1: panel@1 {
-        };
-
-};
-
 &panel0 {
-        #address-cells = <1>;
-        #size-cells = <0>;
+	compatible = "mdss,nt36675-tianma", "mdss,ft8756-huaxing",
+			"mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
 
-        compatible = "mdss,nt36675-tianma", /* "mdss,ft8756-huaxing", */
-                        "mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
-
-        reg = <0>;
-        vddio-supply = <&vreg_l18a_3p0>;
-
-        backlight = <&pm6150l_wled>;
-
-        pinctrl-names = "default", "te_pin"; //TODO: need to figure out how to handle te_pin
-        pinctrl-0 = <&disp_pins>;
-        pinctrl-1 = <&te_gpio>;
-
-        /* according to panel-nt36675-tianma.c this gpio is finally set to low */
-        reset-gpios = <&pm6150l_gpios 3 GPIO_ACTIVE_LOW>;
-        //disp-te-gpio = <&tlmm 10 GPIO_ACTIVE_LOW>;
-
-	/* even enabled, proxy bridge driver will enumerate with gpio pin */
-        status = "okay";
-
-        ports {
-                #address-cells = <1>;
-                #size-cells = <0>;
-                port@0 {
-                        reg = <0>;
-                        panel0_in: endpoint {
-                                remote-endpoint = <&bridge0_out>;
-                        };
-                };
-        };
-};
-
-&panel1 {
-        #address-cells = <1>;
-        #size-cells = <0>;
-
-//	compatible = "mdss,ft8756-huaxing";
-        compatible = "mdss,nt36675-tianma", /* "mdss,ft8756-huaxing", */
-                        "mdss,nt36675-tianma-fhd", "novatek,nt36675-tianma";
-
-	reg = <1>;
+	reg = <0>;
 	
 	/* TODO: check vreg l3c/l3a */
 	//vdda-supply = <&vreg_l3c_1p23>; //from downstream, need to double check
@@ -236,8 +144,8 @@
 		#size-cells = <0>;
 		port@0 {
 			reg = <0>;
-			panel1_in: endpoint {
-				remote-endpoint = <&bridge1_out>;
+			panel0_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
 			};
 		};
 	};
@@ -261,37 +169,7 @@
 		bias-disable;
 		output-low;
 	};
-#if 0
-	/* board id */
-        broad_adc1: disp-state {
-                pins = "gpio7";
-                function = PMIC_GPIO_FUNC_FUNC1;
-                qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
-                power-source = <0>;
-                bias-disable;
-		input-enable;
-        };
 
-	/* board id */
-        board_adc0: disp-state {
-                pins = "gpio10";
-                function = PMIC_GPIO_FUNC_FUNC1;
-                qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
-                power-source = <0>;
-                bias-disable;
-		input-enable;
-        };
-
-	/* board id */
-        gpio70_id0: disp-state {
-                pins = "gpio11";
-                function = PMIC_GPIO_FUNC_FUNC1;
-                qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
-                power-source = <0>;
-                bias-disable;
-		input-enable;
-        };
-#endif
 };
 
 &pm6150l_wled {
