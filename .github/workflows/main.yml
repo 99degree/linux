@@ -47,10 +47,10 @@ jobs:
           git checkout config -- arch/arm64/configs/sm71xx-xiaomi.config          
 
           # apply local config
-          make defconfig sm71xx-xiaomi.config
+          ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make defconfig sm71xx-xiaomi.config
 
           # make it
-          make -j$(nproc)
+          ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make -j$(nproc)
           
       - name: Create artifact directory
         run: |
