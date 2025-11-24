@@ -529,4 +529,18 @@ config USB_RAW_GADGET
 	  Say "y" to link the driver statically, or "m" to build a
 	  dynamically linked module called "raw_gadget".
 
+config USB_G_ADBD_BRIDGE
+	tristate "ADBBridgeX: Event-driven ADB USB→TCP bridge (legacy gadget)"
+	depends on USB_GADGET
+	select USB_LIBCOMPOSITE
+	select USB_F_ADB
+	help
+	  Exposes a single ADB interface (FF/42/01) and bridges ADB bulk traffic
+	  to a local TCP client (127.0.0.1:5555). Event-driven with an FSM for
+	  lifecycle control, minimal blocking. Useful for recovery or constrained
+	  environments where configfs is unavailable.
+
+	  Say Y to build-in, or M to build as a module.
+
+
 endmenu
