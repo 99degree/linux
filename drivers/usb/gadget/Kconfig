@@ -150,6 +150,9 @@ config USB_LIBCOMPOSITE
 config USB_F_ACM
 	tristate
 
+config USB_F_ADB
+        tristate
+
 config USB_F_SS_LB
 	tristate
 
