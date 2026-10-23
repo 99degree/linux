@@ -884,15 +884,14 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	 *
 	 */
 	ts->fw_entry.data = data = kmemdup(fw_entry->data, fw_entry->size, GFP_KERNEL | GFP_DMA);
+	ts->fw_entry.size = fw_entry->size;
 
+	/* fw_entry must not be touched after release_firmware() */
 	release_firmware(fw_entry);
 	if (!ts->fw_entry.data) {
 		dev_err(ts->dev, "memdup fw_data fail\n");
 		return -ENOMEM;
 	}
-	ts->fw_entry.size = fw_entry->size;
-
-	WARN(ts->fw_entry.data[0] != fw_entry->data[0], "ts->fw_entry.data[0] != fw_entry->data[0]");
 
 	for (i = (ts->fw_entry.size / 4096); i > 0; i--) {
 		if (strncmp(&ts->fw_entry.data[i * 4096 - 3], "NVT", 3) == 0) {
@@ -908,7 +907,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 
 	if (fw_need_write_size == 0) {
 		dev_err(ts->dev, "fw parsing error\n");
-		kfree (data);
+		kfree(data);
+		ts->fw_entry.data = NULL;
+		ts->fw_entry.size = 0;
 		if (ts->bin_map) {
 			kfree(ts->bin_map);
 			ts->bin_map = NULL;
@@ -923,7 +924,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 			*(ts->fw_entry.data+(fw_need_write_size - 4096)),
 			*(ts->fw_entry.data+(fw_need_write_size - 4096 + 1)));
 
-		kfree (data);
+		kfree(data);
+		ts->fw_entry.data = NULL;
+		ts->fw_entry.size = 0;
 		if (ts->bin_map) {
 			kfree(ts->bin_map);
 			ts->bin_map = NULL;
@@ -936,7 +939,9 @@ static int _nt36xxx_boot_prepare_firmware(struct nt36xxx_ts *ts) {
 	ret = nvt_bin_header_parser(ts->dev, ts->hw_crc, ts->fw_entry.data, ts->fw_entry.size,
 			&ts->bin_map, &ts->fw_data.partition, ts->fw_data.ilm_dlm_num);
 	if (ret) {
-		kfree (data);
+		kfree(data);
+		ts->fw_entry.data = NULL;
+		ts->fw_entry.size = 0;
 		if(ret != -ENOMEM){
 			if (ts->bin_map) {
 				kfree(ts->bin_map);
